@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import axios, { AxiosError } from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   TextField,
   Button,
@@ -10,6 +11,7 @@ import {
   Container,
   Alert,
 } from "@mui/material";
+import { useAuth } from "../hooks/useAuth";
 
 const loginSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
@@ -18,6 +20,14 @@ const loginSchema = Yup.object().shape({
 
 const Login = () => {
   const [error, setError] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect location from state or default to home
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ||
+    "/home";
 
   const handleSubmit = async (values: {
     username: string;
@@ -28,16 +38,29 @@ const Login = () => {
         "http://localhost:8080/api/v1/auth/login",
         values
       );
+
       if (response.data.code === 1000) {
-        localStorage.setItem("accessToken", response.data.result.accessToken);
-        localStorage.setItem("refreshToken", response.data.result.refreshToken);
-        window.location.href = "/home";
+        const { accessToken, refreshToken } = response.data.result;
+
+        // Use the login function from AuthContext
+        login(accessToken, refreshToken);
+
+        // Redirect based on user role
+        const decoded = JSON.parse(atob(accessToken.split(".")[1]));
+
+        if (decoded.roleId === 1) {
+          navigate("/admin");
+        } else if (decoded.roleId === 2) {
+          navigate("/home");
+        } else {
+          navigate(from);
+        }
       }
     } catch (err: unknown) {
       const error = err as AxiosError<{ message: string }>;
       setError(error.response?.data?.message || "Login failed");
     }
-  }; // ✅ đóng function tại đây
+  };
 
   return (
     <Container maxWidth="xs">
