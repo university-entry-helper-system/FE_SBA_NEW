@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CountdownBanner } from "./CountdownBanner";
+import "../css/ImageCarousel.css"; // Import CSS file
 
 interface Image {
   id: number;
@@ -72,24 +73,24 @@ export const ImageCarousel = ({
   };
 
   return (
-    <div className="relative w-full overflow-hidden ">
+    <div className="carousel-container">
       {/* Slides */}
       <div
-        className="flex transition-transform duration-3000 ease-out"
+        className="carousel-slides"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {slides.map((slide) => (
-          <div key={slide.id} className="w-full flex-shrink-0">
+          <div key={slide.id} className="carousel-slide">
             {slide.type === "image" && slide.content && (
-              <div className="py-10">
-                <div className="container mx-auto px-4">
-                  <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+              <div className="carousel-padding">
+                <div className="carousel-inner">
+                  <div className="carousel-image-container">
                     <img
                       src={slide.content.url}
                       alt={slide.content.alt}
-                      className="w-full object-cover"
+                      className="carousel-image"
                     />
-                    <div className="absolute inset-0 bg-black/30"></div>
+                    <div className="carousel-overlay"></div>
                   </div>
                 </div>
               </div>
@@ -101,14 +102,14 @@ export const ImageCarousel = ({
 
       {/* Left/Right Navigation Arrows */}
       <button
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors duration-200 z-20"
+        className="carousel-arrow carousel-arrow-left"
         onClick={() =>
           goToSlide((currentIndex - 1 + slides.length) % slides.length)
         }
         aria-label="Previous slide"
       >
         <svg
-          className="w-6 h-6"
+          className="carousel-arrow-icon"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -122,12 +123,12 @@ export const ImageCarousel = ({
         </svg>
       </button>
       <button
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors duration-200 z-20"
+        className="carousel-arrow carousel-arrow-right"
         onClick={() => goToSlide((currentIndex + 1) % slides.length)}
         aria-label="Next slide"
       >
         <svg
-          className="w-6 h-6"
+          className="carousel-arrow-icon"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

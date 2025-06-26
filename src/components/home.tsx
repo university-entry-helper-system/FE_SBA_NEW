@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { ImageCarousel } from "./ImageCarousel";
+import "../css/home.css"; // Đảm bảo import file CSS
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
@@ -66,50 +67,42 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+    <div className="home-container">
       <ImageCarousel />
 
       {/* Hero Section */}
-      <section className="py-12 bg-gradient-to-b from-white to-primary-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+      <section className="hero-section">
+        <div className="container">
+          <div className="hero-content">
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 p-1 bg-white rounded-lg shadow-sm">
+            <div className="tab-navigation">
               <button
-                className={`btn flex-1 rounded-md transition-colors border-primary-700 border-2 ${
-                  activeTab === "de-an"
-                    ? "bg-primary-700 text-white"
-                    : "bg-white text-primary-700 hover:bg-gray-100"
+                className={`tab-button ${
+                  activeTab === "de-an" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("de-an")}
               >
                 Đề án
               </button>
               <button
-                className={`btn flex-1 rounded-md transition-colors border-primary-700 border-2 ${
-                  activeTab === "diem-chuan"
-                    ? "bg-primary-700 text-white"
-                    : "bg-white text-primary-700 hover:bg-gray-100"
+                className={`tab-button ${
+                  activeTab === "diem-chuan" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("diem-chuan")}
               >
                 Điểm chuẩn
               </button>
               <button
-                className={`btn flex-1 rounded-md transition-colors border-primary-700 border-2 ${
-                  activeTab === "khoi-mon"
-                    ? "bg-primary-700 text-white"
-                    : "bg-white text-primary-700 hover:bg-gray-100"
+                className={`tab-button ${
+                  activeTab === "khoi-mon" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("khoi-mon")}
               >
                 Khối - Tổ hợp môn
               </button>
               <button
-                className={`btn flex-1 rounded-md transition-colors border-primary-700 border-2 ${
-                  activeTab === "nganh"
-                    ? "bg-primary-700 text-white"
-                    : "bg-white text-primary-700 hover:bg-gray-100"
+                className={`tab-button ${
+                  activeTab === "nganh" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("nganh")}
               >
@@ -118,54 +111,47 @@ const HomePage = () => {
             </div>
 
             {/* Search Box */}
-            <div className="relative" ref={dropdownRef}>
-              <div className="relative">
+            <div className="search-container" ref={dropdownRef}>
+              <div className="search-box">
                 <input
                   type="text"
                   placeholder="Nhập tên trường/mã trường để xem đề án"
-                  className="input w-full pr-12"
+                  className="search-input"
                   onFocus={() => setShowDropdown(true)}
                 />
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600"
-                  aria-label="Search"
-                >
-                  <SearchIcon className="w-5 h-5" />
+                <button className="search-button" aria-label="Search">
+                  <SearchIcon className="icon-small" />
                 </button>
               </div>
 
               {/* Dropdown Schools */}
               {showDropdown && (
-                <div className="absolute w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-[400px] overflow-y-auto divide-y divide-gray-100">
+                <div className="school-dropdown">
                   {schools.map((school) => (
                     <button
                       key={school.id}
-                      className="flex items-center w-full px-4 py-3 hover:bg-primary-50 text-left transition-colors duration-200 group"
+                      className="school-item"
                       onClick={() => {
                         setShowDropdown(false);
                       }}
                     >
-                      <div className="flex items-center flex-1 min-w-0">
+                      <div className="school-content">
                         <img
                           src={school.logo}
                           alt={school.name}
-                          className="w-10 h-10 object-contain rounded-full bg-white border border-gray-200 p-1 group-hover:border-primary-200 transition-colors"
+                          className="school-logo"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = "https://placehold.co/40x40?text=Logo";
                           }}
                         />
-                        <div className="ml-3 flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate group-hover:text-primary-600">
-                            {school.name}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate group-hover:text-primary-500">
-                            Mã trường: {school.id}
-                          </p>
+                        <div className="school-info">
+                          <p className="school-name">{school.name}</p>
+                          <p className="school-id">Mã trường: {school.id}</p>
                         </div>
                       </div>
                       <svg
-                        className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all"
+                        className="arrow-icon"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -182,12 +168,9 @@ const HomePage = () => {
                 </div>
               )}
 
-              <div className="mt-3 text-center text-gray-600">
+              <div className="search-alt">
                 Hoặc{" "}
-                <Link
-                  to="/search"
-                  className="text-primary-600 hover:text-primary-700 hover:underline"
-                >
+                <Link to="/search" className="search-link">
                   Tìm theo địa phương hoặc ngành
                 </Link>
               </div>
@@ -197,12 +180,12 @@ const HomePage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
+      <section className="features-section">
+        <div className="container">
+          <h2 className="section-title">
             <span className="text-gradient">EDUPATH.COM</span> SẼ GIÚP CÁC EM
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="feature-grid">
             <FeatureCard
               icon="📚"
               title="Tra cứu đề án tuyển sinh"
@@ -226,48 +209,48 @@ const HomePage = () => {
       </section>
 
       {/* Latest Updates Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">
+      <section className="updates-section">
+        <div className="container">
+          <h2 className="section-title-medium">
             THÔNG TIN TUYỂN SINH MỚI NHẤT {new Date().getFullYear()}
           </h2>
-          <p className="text-gray-600 mb-8 max-w-4xl">
+          <p className="section-description">
             Bộ Giáo dục và Đào tạo mới đây đã công bố danh mục 17 phương thức
             xét tuyển đại học năm {new Date().getFullYear()} như: Xét kết quả
             thi tốt nghiệp THPT, xét kết quả học tập cấp THPT (học bạ), xét kết
             quả thi đánh giá năng lực, xét kết quả thi đánh giá tư duy...
           </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="exam-grid">
             <ExamTypeCard
               title="HSA"
               subtitle="Đánh giá năng lực đại học quốc gia Hà Nội"
               description="Thêm cơ hội trúng tuyển từ phương thức xét điểm thi HSA đánh giá năng lực ĐH Quốc gia Hà Nội của 100 trường Đại học."
-              color="bg-red-50"
-              textColor="text-red-500"
+              color="exam-red"
+              textColor="text-red"
               icon={<HSAIcon />}
             />
             <ExamTypeCard
               title="V-ACT"
               subtitle="Đánh giá năng lực ĐHQG TP HCM"
               description="EduPath tổng hợp đầy đủ các trường xét tuyển bằng điểm Đánh giá năng lực của ĐHQG TP HCM."
-              color="bg-green-50"
-              textColor="text-green-500"
+              color="exam-green"
+              textColor="text-green"
               icon={<VACTIcon />}
             />
             <ExamTypeCard
               title="TSA"
               subtitle="Đánh giá tư duy"
               description="Gần 40 trường đại học sử dụng kết quả thi Đánh giá tư duy để xét tuyển năm 2025."
-              color="bg-blue-50"
-              textColor="text-blue-500"
+              color="exam-blue"
+              textColor="text-blue"
               icon={<TSAIcon />}
             />
             <ExamTypeCard
               title="HỌC BẠ"
               subtitle="Xét tuyển học bạ"
               description="EduPath tổng hợp đầy đủ danh sách trường xét học bạ năm 2025, giúp học sinh tăng cơ hội Đỗ Đại học sớm nhất."
-              color="bg-purple-50"
-              textColor="text-purple-500"
+              color="exam-purple"
+              textColor="text-purple"
               icon={<GradeIcon />}
             />
           </div>
@@ -275,15 +258,15 @@ const HomePage = () => {
       </section>
 
       {/* Recent Admission Announcements Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
+      <section className="announcements-section">
+        <div className="container">
           {/* Main Announcement and Schools */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <h2 className="text-2xl font-bold mb-4">
+          <div className="announcement-box">
+            <h2 className="announcement-title">
               Trường đại học mới công bố đề án tuyển sinh{" "}
               {new Date().getFullYear()}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="announcement-text">
               Các trường Đại học đã bắt đầu công bố thông tin tuyển sinh năm{" "}
               {new Date().getFullYear()}. Theo đó phương thức xét tuyển của các
               trường đa số gồm: xét kết quả thi tốt nghiệp THPT, xét học bạ, xét
@@ -292,34 +275,28 @@ const HomePage = () => {
               là thông tin quan trọng giúp các em có những lựa chọn đăng ký xét
               tuyển vào các trường.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="school-grid">
               {schools.map((school) => (
-                <Link
-                  key={school.id}
-                  to="#"
-                  className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
+                <Link key={school.id} to="#" className="school-link">
                   <img
                     src={school.logo}
                     alt={school.name}
-                    className="w-12 h-12 object-contain"
+                    className="school-link-logo"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = "https://placehold.co/48x48?text=Logo";
                     }}
                   />
-                  <span className="ml-4 text-gray-800 font-medium">
-                    {school.name}
-                  </span>
+                  <span className="school-link-name">{school.name}</span>
                 </Link>
               ))}
             </div>
           </div>
 
           {/* Other News */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-xl font-bold mb-4">Các tin khác</h3>
-            <div className="space-y-4">
+          <div className="news-box">
+            <h3 className="news-title">Các tin khác</h3>
+            <div className="news-list">
               {[
                 `Danh sách trường công bố đề án tuyển sinh ${new Date().getFullYear()} - Mới nhất(24/05/${new Date().getFullYear()})`,
                 `Thông tin tuyển sinh Đại học Văn hóa Hà Nội năm ${new Date().getFullYear()}(24/05/${new Date().getFullYear()})`,
@@ -327,13 +304,9 @@ const HomePage = () => {
                 `Danh sách các trường Đại học xét học bạ ${new Date().getFullYear()} - Mới nhất(24/05/${new Date().getFullYear()})`,
                 `Đại học Giao thông vận tải công bố thông tin tuyển sinh ${new Date().getFullYear()}(24/05/${new Date().getFullYear()})`,
               ].map((news, index) => (
-                <Link
-                  key={index}
-                  to="#"
-                  className="flex items-center group hover:bg-gray-50 p-2 rounded-md transition-colors"
-                >
+                <Link key={index} to="#" className="news-item">
                   <svg
-                    className="w-5 h-5 text-primary-600 group-hover:translate-x-1 transition-transform"
+                    className="news-icon"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -345,9 +318,7 @@ const HomePage = () => {
                       d="M17 8l4 4m0 0l-4 4m4-4H3"
                     />
                   </svg>
-                  <span className="ml-2 text-gray-700 group-hover:text-primary-600">
-                    {news}
-                  </span>
+                  <span className="news-text">{news}</span>
                 </Link>
               ))}
             </div>
@@ -366,17 +337,10 @@ interface FeatureCardProps {
 }
 
 const FeatureCard = ({ icon, title, description, link }: FeatureCardProps) => (
-  <Link
-    to={link}
-    className="card p-6 group hover:border-primary-500 hover:border-2 transition-all duration-300"
-  >
-    <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-      {icon}
-    </div>
-    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary-600">
-      {title}
-    </h3>
-    <p className="text-gray-600">{description}</p>
+  <Link to={link} className="feature-card">
+    <div className="feature-icon">{icon}</div>
+    <h3 className="feature-title">{title}</h3>
+    <p className="feature-description">{description}</p>
   </Link>
 );
 
@@ -397,18 +361,16 @@ const ExamTypeCard = ({
   textColor,
   icon,
 }: ExamTypeCardProps) => (
-  <div
-    className={`card p-6 ${color} group hover:scale-[1.02] transition-transform duration-300`}
-  >
-    <div className="mb-4">{icon}</div>
-    <h3 className={`text-xl font-bold mb-2 ${textColor}`}>{title}</h3>
-    <h4 className="font-semibold mb-2 text-gray-800">{subtitle}</h4>
-    <p className="text-gray-600 text-sm">{description}</p>
+  <div className={`exam-card ${color}`}>
+    <div className="exam-icon">{icon}</div>
+    <h3 className={`exam-title ${textColor}`}>{title}</h3>
+    <h4 className="exam-subtitle">{subtitle}</h4>
+    <p className="exam-description">{description}</p>
   </div>
 );
 
 // Icons components
-const SearchIcon = ({ className = "w-6 h-6" }) => (
+const SearchIcon = ({ className = "icon" }) => (
   <svg
     className={className}
     fill="none"
@@ -425,11 +387,7 @@ const SearchIcon = ({ className = "w-6 h-6" }) => (
 );
 
 const HSAIcon = () => (
-  <svg
-    className="w-12 h-12 text-red-500"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
+  <svg className="icon-large text-red" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 14l9-5-9-5-9 5 9 5z" />
     <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
   </svg>
@@ -437,7 +395,7 @@ const HSAIcon = () => (
 
 const VACTIcon = () => (
   <svg
-    className="w-12 h-12 text-green-500"
+    className="icon-large text-green"
     viewBox="0 0 24 24"
     fill="currentColor"
   >
@@ -446,22 +404,19 @@ const VACTIcon = () => (
 );
 
 const TSAIcon = () => (
-  <svg
-    className="w-12 h-12 text-blue-500"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
+  <svg className="icon-large text-blue" viewBox="0 0 24 24" fill="currentColor">
     <path d="M13 6v8l4-4-4-4zm-6 4l4 4V6l-4 4z" />
   </svg>
 );
 
 const GradeIcon = () => (
   <svg
-    className="w-12 h-12 text-purple-500"
+    className="icon-large text-purple"
     viewBox="0 0 24 24"
     fill="currentColor"
   >
     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
   </svg>
 );
+
 export default HomePage;
