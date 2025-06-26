@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import HomePage from "./components/home";
 import Login from "./components/login";
 import Register from "./components/register";
@@ -18,6 +19,7 @@ function App() {
             {/* Thêm các routes khác ở đây */}
           </Routes>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );
