@@ -1,16 +1,24 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./components/login"; // Fix the import path
-import Register from "./components/register"; // Fix the import path
-import Home from "./components/home"; // Fix the import path
+import Navbar from "./components/Navbar";
+import HomePage from "./components/home";
+import Login from "./components/login";
+import Register from "./components/register";
+import "./App.css";
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/home" element={<Home />} />
-      </Routes>
+      <div className="app-container">
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            {/* Thêm các routes khác ở đây */}
+          </Routes>
+        </main>
+      </div>
     </BrowserRouter>
   );
 }
