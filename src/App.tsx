@@ -8,6 +8,7 @@ import Register from "./components/register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminMajors from "./components/admin/AdminMajors";
 import "./App.css";
 
 // User Layout component to wrap user routes with Navbar and Footer
@@ -40,7 +41,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             {/* Nested admin routes */}
             <Route path="universities" element={<div>Quản lý trường</div>} />
-            <Route path="majors" element={<div>Quản lý ngành</div>} />
+            <Route path="majors" element={<AdminMajors />} />
             <Route path="users" element={<div>Quản lý người dùng</div>} />
             <Route path="settings" element={<div>Cài đặt</div>} />
           </Route>
