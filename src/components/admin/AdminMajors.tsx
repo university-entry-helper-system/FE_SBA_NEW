@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
+import "../../css/AdminMajor.css";
 interface Major {
   id: number;
   name: string;

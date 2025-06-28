@@ -131,6 +131,29 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               <span className="admin-nav-text">Cài đặt</span>
             </NavLink>
           </li>
+          <li className="admin-nav-item">
+            <NavLink
+              to="/admin/provinces"
+              className={({ isActive }) =>
+                isActive ? "admin-nav-link active" : "admin-nav-link"
+              }
+            >
+              <svg
+                className="admin-nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5m6-16a4 4 0 110 8 4 4 0 010-8z"
+                />
+              </svg>
+              <span className="admin-nav-text">Quản lý tỉnh/thành</span>
+            </NavLink>
+          </li>
         </ul>
       </nav>
     </aside>
