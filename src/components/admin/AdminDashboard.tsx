@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import "../css/AdminDashboard.css";
+import "../../css/AdminDashboard.css";
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
   const [stats, setStats] = useState({
     users: 128,
     universities: 245,
@@ -11,7 +9,6 @@ const AdminDashboard = () => {
     visits: 9872,
   });
 
-  // Ví dụ hàm cập nhật số liệu thống kê (để sử dụng setStats)
   const refreshStats = () => {
     setStats({
       users: Math.floor(Math.random() * 200) + 100,
@@ -22,15 +19,12 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <div className="admin-user-info">
-          <span>Logged in as: {user?.email}</span>
-          <button onClick={logout} className="admin-logout-button">
-            Đăng xuất
-          </button>
-        </div>
+    <div className="admin-dashboard-content">
+      <div className="admin-dashboard-header">
+        <h1>Dashboard Overview</h1>
+        <button onClick={refreshStats} className="admin-refresh-button">
+          Refresh Stats
+        </button>
       </div>
 
       <div className="admin-stats">
@@ -50,9 +44,6 @@ const AdminDashboard = () => {
           <h3>Lượt truy cập</h3>
           <p className="admin-stat-number">{stats.visits}</p>
         </div>
-        <button onClick={refreshStats} className="admin-refresh-button">
-          Cập nhật số liệu
-        </button>
       </div>
 
       <div className="admin-content">

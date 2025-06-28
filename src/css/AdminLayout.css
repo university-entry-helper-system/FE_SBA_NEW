@@ -1,0 +1,36 @@
+.admin-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-container {
+  display: flex;
+  flex: 1;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 1.5rem;
+  transition: margin-left 0.3s;
+}
+
+.admin-main.sidebar-open {
+  margin-left: 0;
+}
+
+.admin-main.sidebar-closed {
+  margin-left: 0;
+}
+
+@media (max-width: 767px) {
+  .admin-main {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-main.sidebar-closed {
+    margin-left: -180px; /* Adjust based on sidebar width difference */
+  }
+}

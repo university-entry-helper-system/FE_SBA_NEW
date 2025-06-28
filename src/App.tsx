@@ -1,38 +1,59 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AuthProvider from "./contexts/AuthProvider"; // Import AuthProvider
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import AuthProvider from "./contexts/AuthProvider";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomePage from "./components/home";
 import Login from "./components/login";
 import Register from "./components/register";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminDashboard from "./components/AdminDashboard";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./components/admin/AdminDashboard";
 import "./App.css";
+
+// User Layout component to wrap user routes with Navbar and Footer
+const UserLayout = () => {
+  return (
+    <>
+      <Navbar />
+      <main className="main-content">
+        <Outlet />
+      </main>
+      <Footer />
+    </>
+  );
+};
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="app-container">
-          <Navbar />
-          <main className="main-content">
-            <Routes>
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={[1]}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              {/* Other routes */}
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <Routes>
+          {/* Admin Routes with AdminLayout */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={[1]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            {/* Nested admin routes */}
+            <Route path="universities" element={<div>Quản lý trường</div>} />
+            <Route path="majors" element={<div>Quản lý ngành</div>} />
+            <Route path="users" element={<div>Quản lý người dùng</div>} />
+            <Route path="settings" element={<div>Cài đặt</div>} />
+          </Route>
+
+          {/* User Routes with UserLayout (Navbar + Footer) */}
+          <Route element={<UserLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            {/* Other user routes */}
+          </Route>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
