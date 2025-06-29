@@ -14,6 +14,8 @@ import AdminProvince from "./components/admin/AdminProvince";
 import UniversityCategoryPage from "./components/admin/UniversityCategory";
 import AdminExamSubject from "./components/admin/AdminExamSubject";
 import AdminAdmissionMethod from "./components/admin/AdminAdmissionMethod";
+import AdminSubjectCombination from "./components/admin/AdminSubjectCombination";
+import AdminRole from "./components/admin/AdminRole";
 import "./App.css";
 
 // User Layout component to wrap user routes with Navbar and Footer
@@ -54,6 +56,11 @@ function App() {
               path="admission-methods"
               element={<AdminAdmissionMethod />}
             />
+            <Route
+              path="subject-combinations"
+              element={<AdminSubjectCombination />}
+            />
+            <Route path="roles" element={<AdminRole />} />
             <Route path="users" element={<div>Quản lý người dùng</div>} />
             <Route path="settings" element={<div>Cài đặt</div>} />
           </Route>

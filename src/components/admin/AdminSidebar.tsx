@@ -202,6 +202,52 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               </span>
             </NavLink>
           </li>
+          <li className="admin-nav-item">
+            <NavLink
+              to="/admin/subject-combinations"
+              className={({ isActive }) =>
+                isActive ? "admin-nav-link active" : "admin-nav-link"
+              }
+            >
+              <svg
+                className="admin-nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              <span className="admin-nav-text">Quản lý tổ hợp môn</span>
+            </NavLink>
+          </li>
+          <li className="admin-nav-item">
+            <NavLink
+              to="/admin/roles"
+              className={({ isActive }) =>
+                isActive ? "admin-nav-link active" : "admin-nav-link"
+              }
+            >
+              <svg
+                className="admin-nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 12l6-6 6 6M6 18l6-6 6 6"
+                />
+              </svg>
+              <span className="admin-nav-text">Quản lý vai trò</span>
+            </NavLink>
+          </li>
         </ul>
       </nav>
     </aside>
