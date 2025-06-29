@@ -64,6 +64,31 @@
   display: none;
 }
 
+.admin-nav-group-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.75rem 1.5rem 0.5rem 1.5rem;
+  background: #3f72af;
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  border-left: 3px solid #0ea5e9;
+  border-radius: 6px 0 0 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin-nav-group-title:hover {
+  background: #26507a;
+  color: #e0f2fe;
+}
+
+.admin-sidebar.closed .admin-nav-group-title {
+  padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
 @media (max-width: 767px) {
   .admin-sidebar {
     position: fixed;
