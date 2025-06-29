@@ -177,6 +177,31 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               <span className="admin-nav-text">Quản lý môn thi</span>
             </NavLink>
           </li>
+          <li className="admin-nav-item">
+            <NavLink
+              to="/admin/admission-methods"
+              className={({ isActive }) =>
+                isActive ? "admin-nav-link active" : "admin-nav-link"
+              }
+            >
+              <svg
+                className="admin-nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 17v-2a4 4 0 0 1 8 0v2M12 12v-2a4 4 0 1 1 8 0v2M12 12v2a4 4 0 1 0 8 0v-2"
+                />
+              </svg>
+              <span className="admin-nav-text">
+                Quản lý phương thức tuyển sinh
+              </span>
+            </NavLink>
+          </li>
         </ul>
       </nav>
     </aside>

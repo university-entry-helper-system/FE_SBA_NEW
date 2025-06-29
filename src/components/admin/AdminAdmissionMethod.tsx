@@ -8,26 +8,43 @@ interface AdmissionMethod {
   description: string;
 }
 
+const defaultForm: Omit<AdmissionMethod, "id"> = {
+  name: "",
+  description: "",
+};
+
 const AdminAdmissionMethod: React.FC = () => {
   const [methods, setMethods] = useState<AdmissionMethod[]>([]);
+  const [selectedMethod, setSelectedMethod] = useState<AdmissionMethod | null>(
+    null
+  );
+  const [form, setForm] = useState<Omit<AdmissionMethod, "id">>(defaultForm);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
-  const [editId, setEditId] = useState<number | null>(null);
+
+  const token = localStorage.getItem("accessToken");
+  const getAuthConfig = () => ({
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  });
 
   const fetchMethods = async () => {
     setLoading(true);
-    setError("");
     try {
-      const res = await axios.get("/api/v1/admission-methods");
-      setMethods(res.data.result?.items || res.data.result || []);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Lỗi khi tải dữ liệu");
-      } else {
-        setError("Lỗi không xác định khi tải dữ liệu");
-      }
+      const res = await axios.get(
+        "http://localhost:8080/api/v1/admission-methods",
+        getAuthConfig()
+      );
+      setMethods(
+        Array.isArray(res.data.result?.items)
+          ? res.data.result.items
+          : Array.isArray(res.data.result)
+          ? res.data.result
+          : []
+      );
+    } catch {
+      setError("Không thể tải danh sách phương thức tuyển sinh.");
+      setMethods([]);
     } finally {
       setLoading(false);
     }
@@ -37,140 +54,141 @@ const AdminAdmissionMethod: React.FC = () => {
     fetchMethods();
   }, []);
 
-  const handleChange = (
+  const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      if (editId) {
-        await axios.put(`/api/v1/admission-methods/${editId}`, form);
-      } else {
-        await axios.post("/api/v1/admission-methods", form);
-      }
-      setShowForm(false);
-      setForm({ name: "", description: "" });
-      setEditId(null);
-      fetchMethods();
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Lỗi khi lưu dữ liệu");
-      } else {
-        setError("Lỗi không xác định khi lưu dữ liệu");
-      }
-    } finally {
-      setLoading(false);
-    }
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEdit = (method: AdmissionMethod) => {
+    setSelectedMethod(method);
     setForm({ name: method.name, description: method.description });
-    setEditId(method.id);
-    setShowForm(true);
+    setIsEditing(true);
   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn có chắc muốn xóa phương thức này?")) return;
-    setLoading(true);
-    setError("");
     try {
-      await axios.delete(`/api/v1/admission-methods/${id}`);
+      await axios.delete(
+        `http://localhost:8080/api/v1/admission-methods/${id}`,
+        getAuthConfig()
+      );
       fetchMethods();
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Lỗi khi xóa dữ liệu");
-      } else {
-        setError("Lỗi không xác định khi xóa dữ liệu");
-      }
-    } finally {
-      setLoading(false);
+    } catch {
+      setError("Xóa phương thức tuyển sinh thất bại.");
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEditing && selectedMethod) {
+        await axios.put(
+          `http://localhost:8080/api/v1/admission-methods/${selectedMethod.id}`,
+          form,
+          getAuthConfig()
+        );
+      } else {
+        await axios.post(
+          "http://localhost:8080/api/v1/admission-methods",
+          form,
+          getAuthConfig()
+        );
+      }
+      setForm(defaultForm);
+      setIsEditing(false);
+      setSelectedMethod(null);
+      fetchMethods();
+    } catch {
+      setError("Lưu phương thức tuyển sinh thất bại.");
+    }
+  };
+
+  const handleCancel = () => {
+    setForm(defaultForm);
+    setIsEditing(false);
+    setSelectedMethod(null);
+    setError("");
+  };
+
   return (
-    <div className="admin-major-container">
-      <h2>Quản lý phương thức tuyển sinh</h2>
-      {error && <div className="admin-error">{error}</div>}
-      <button
-        className="admin-add-btn"
-        onClick={() => {
-          setShowForm(true);
-          setEditId(null);
-          setForm({ name: "", description: "" });
-        }}
-      >
-        Thêm phương thức
-      </button>
-      {showForm && (
-        <form className="admin-form" onSubmit={handleSubmit}>
-          <label>
-            Tên phương thức
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Mô tả
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-            />
-          </label>
-          <div className="admin-form-actions">
-            <button type="submit" disabled={loading}>
-              {editId ? "Cập nhật" : "Thêm mới"}
-            </button>
+    <div className="admin-majors-page majors-container">
+      <h2 className="majors-title">Quản lý phương thức tuyển sinh</h2>
+      {error && <div className="majors-error">{error}</div>}
+      <form className="majors-form" onSubmit={handleSubmit}>
+        <div className="majors-form-row">
+          <input
+            className="majors-input"
+            name="name"
+            placeholder="Tên phương thức"
+            value={form.name}
+            onChange={handleInputChange}
+            required
+          />
+          <textarea
+            className="majors-textarea"
+            name="description"
+            placeholder="Mô tả"
+            value={form.description}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="majors-form-actions">
+          <button type="submit" className="majors-btn majors-btn-submit">
+            {isEditing ? "Cập nhật" : "Thêm mới"}
+          </button>
+          {isEditing && (
             <button
               type="button"
-              onClick={() => {
-                setShowForm(false);
-                setEditId(null);
-                setForm({ name: "", description: "" });
-              }}
+              className="majors-btn majors-btn-cancel"
+              onClick={handleCancel}
             >
               Hủy
             </button>
-          </div>
-        </form>
+          )}
+        </div>
+      </form>
+      <hr className="majors-divider" />
+      {loading ? (
+        <div className="majors-loading">Đang tải...</div>
+      ) : (
+        <div className="majors-table-wrapper">
+          <table className="majors-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tên phương thức</th>
+                <th>Mô tả</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {methods.map((m) => (
+                <tr key={m.id} className="majors-row">
+                  <td>{m.id}</td>
+                  <td>{m.name}</td>
+                  <td>{m.description}</td>
+                  <td>
+                    <button
+                      className="majors-btn majors-btn-edit"
+                      onClick={() => handleEdit(m)}
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      className="majors-btn majors-btn-delete"
+                      onClick={() => handleDelete(m.id)}
+                    >
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên phương thức</th>
-            <th>Mô tả</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {methods.map((m) => (
-            <tr key={m.id}>
-              <td>{m.id}</td>
-              <td>{m.name}</td>
-              <td>{m.description}</td>
-              <td>
-                <button onClick={() => handleEdit(m)}>Sửa</button>
-                <button
-                  onClick={() => handleDelete(m.id)}
-                  className="admin-delete-btn"
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {loading && <div>Đang tải...</div>}
     </div>
   );
 };
