@@ -56,7 +56,9 @@ const AdminUniversities: React.FC = () => {
         "http://localhost:8080/api/v1/universities",
         getAuthConfig()
       );
-      setUniversities(Array.isArray(res.data.result) ? res.data.result : []);
+      setUniversities(
+        Array.isArray(res.data.result?.items) ? res.data.result.items : []
+      );
     } catch {
       setError("Không thể tải danh sách trường.");
       setUniversities([]);
@@ -185,13 +187,6 @@ const AdminUniversities: React.FC = () => {
         <div className="majors-form-row">
           <input
             className="majors-input"
-            name="address"
-            value={form.address}
-            onChange={handleInputChange}
-            placeholder="Địa chỉ"
-          />
-          <input
-            className="majors-input"
             name="email"
             value={form.email}
             onChange={handleInputChange}
@@ -213,13 +208,6 @@ const AdminUniversities: React.FC = () => {
           />
         </div>
         <div className="majors-form-row">
-          <textarea
-            className="majors-textarea"
-            name="description"
-            value={form.description}
-            onChange={handleInputChange}
-            placeholder="Mô tả"
-          />
           <input
             className="majors-input"
             name="admissionMethodIds"
@@ -269,11 +257,9 @@ const AdminUniversities: React.FC = () => {
                 <th>Logo</th>
                 <th>Năm thành lập</th>
                 <th>Loại</th>
-                <th>Địa chỉ</th>
                 <th>Email</th>
                 <th>Điện thoại</th>
                 <th>Website</th>
-                <th>Mô tả</th>
                 <th>Phương thức tuyển sinh</th>
                 <th>Hành động</th>
               </tr>
@@ -297,11 +283,9 @@ const AdminUniversities: React.FC = () => {
                   </td>
                   <td>{u.foundingYear}</td>
                   <td>{u.type}</td>
-                  <td>{u.address}</td>
                   <td>{u.email}</td>
                   <td>{u.phone}</td>
                   <td>{u.website}</td>
-                  <td>{u.description}</td>
                   <td>
                     {Array.isArray(u.admissionMethodIds)
                       ? u.admissionMethodIds.join(", ")
