@@ -8,11 +8,14 @@ import {
   Box,
   Typography,
   Container,
-  Alert,
   MenuItem,
 } from "@mui/material";
 import axios, { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 
 // 👇 Initial values
 const initialValues: RegisterFormValues = {
@@ -56,6 +59,8 @@ const registerSchema = Yup.object().shape({
 const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<"success" | "error" | "">("");
   const navigate = useNavigate();
 
   const handleSubmit = async (values: RegisterFormValues) => {
@@ -66,17 +71,18 @@ const Register = () => {
       );
       if (response.data.code === 1001) {
         setSuccess(
-          "Registration successful. Please check your email for activation."
+          "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản."
         );
         setError("");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000); // Chờ 2 giây rồi chuyển về trang login
+        setDialogType("success");
+        setOpenDialog(true);
       }
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ message: string }>;
-      setError(axiosError.response?.data?.message || "Registration failed");
+      setError(axiosError.response?.data?.message || "Đăng ký thất bại");
       setSuccess("");
+      setDialogType("error");
+      setOpenDialog(true);
     }
   };
 
@@ -93,17 +99,6 @@ const Register = () => {
         <Typography component="h1" variant="h5">
           Register
         </Typography>
-
-        {error && (
-          <Alert severity="error" sx={{ mt: 2, width: "100%" }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mt: 2, width: "100%" }}>
-            {success}
-          </Alert>
-        )}
 
         <Formik<RegisterFormValues>
           initialValues={initialValues}
@@ -198,6 +193,38 @@ const Register = () => {
             </Form>
           )}
         </Formik>
+
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+          <DialogTitle>
+            {dialogType === "success"
+              ? "Đăng ký thành công"
+              : "Đăng ký thất bại"}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              {dialogType === "success" ? success : error}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            {dialogType === "success" && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  setOpenDialog(false);
+                  navigate("/login");
+                }}
+              >
+                Đăng nhập
+              </Button>
+            )}
+            {dialogType === "error" && (
+              <Button onClick={() => setOpenDialog(false)} color="primary">
+                Đóng
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
       </Box>
     </Container>
   );

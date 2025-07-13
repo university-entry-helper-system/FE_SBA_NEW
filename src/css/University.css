@@ -1,0 +1,97 @@
+/* CSS cho trang danh sách trường đại học */
+.university-container {
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+.university-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+  color: #2d3a4a;
+}
+.university-error {
+  color: #fff;
+  background: #e74c3c;
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.university-loading {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #3f72af;
+}
+.university-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+.university-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f7fafd;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+  padding: 20px 16px;
+  text-decoration: none;
+  color: #2d3a4a;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.university-card:hover {
+  box-shadow: 0 6px 24px rgba(44, 62, 80, 0.12);
+  transform: translateY(-4px);
+}
+.university-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e5ec;
+}
+.university-info {
+  text-align: center;
+}
+.university-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.university-short {
+  font-size: 1rem;
+  color: #3f72af;
+  margin-bottom: 6px;
+}
+.university-address {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+.university-contact {
+  font-size: 0.95rem;
+  color: #2d3a4a;
+  margin-bottom: 6px;
+}
+.university-website {
+  display: inline-block;
+  margin-top: 8px;
+  color: #0369a1;
+  font-weight: 500;
+  text-decoration: underline;
+}
+@media (max-width: 800px) {
+  .university-container {
+    padding: 8px;
+  }
+  .university-list {
+    gap: 12px;
+  }
+}
