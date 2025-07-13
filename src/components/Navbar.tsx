@@ -20,7 +20,7 @@ const Navbar = () => {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img
-              src="https://www.shutterstock.com/image-vector/education-logo-concept-260nw-1127953793.jpg"
+              src="https://static.vecteezy.com/system/resources/previews/050/738/813/non_2x/education-logo-design-with-book-globe-badge-with-leaves-icon-mascot-logo-design-symbol-for-language-school-vector.jpg"
               alt="EduPath"
               className="navbar-logo-img"
             />
