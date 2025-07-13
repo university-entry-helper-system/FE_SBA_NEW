@@ -14,8 +14,16 @@ const Navbar = () => {
     <header className="navbar">
       <div className="navbar-container">
         <div className="navbar-logo-container">
-          <Link to="/" className="navbar-logo">
-            <img src="/logo.png" alt="EduPath" className="navbar-logo-img" />
+          <Link
+            to="/"
+            className="navbar-logo"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            <img
+              src="https://www.shutterstock.com/image-vector/education-logo-concept-260nw-1127953793.jpg"
+              alt="EduPath"
+              className="navbar-logo-img"
+            />
             <span className="navbar-logo-text">EduPath</span>
           </Link>
         </div>
@@ -24,7 +32,11 @@ const Navbar = () => {
         <nav className="navbar-menu-desktop">
           <ul className="navbar-menu-list">
             <li>
-              <Link to="/" className={`navbar-menu-link ${isLinkActive("/")}`}>
+              <Link
+                to="/"
+                className={`navbar-menu-link ${isLinkActive("/")}`}
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              >
                 Trang chủ
               </Link>
             </li>
@@ -46,10 +58,10 @@ const Navbar = () => {
             </li>
             <li>
               <Link
-                to="/exam-info"
-                className={`navbar-menu-link ${isLinkActive("/exam-info")}`}
+                to="/news"
+                className={`navbar-menu-link ${isLinkActive("/news")}`}
               >
-                Thông tin thi
+                Tin Tức
               </Link>
             </li>
             <li>
@@ -58,6 +70,14 @@ const Navbar = () => {
                 className={`navbar-menu-link ${isLinkActive("/contact")}`}
               >
                 Liên hệ
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/about"
+                className={`navbar-menu-link ${isLinkActive("/about")}`}
+              >
+                Tư vấn tuyển sinh
               </Link>
             </li>
           </ul>
@@ -92,7 +112,10 @@ const Navbar = () => {
               <Link
                 to="/"
                 className={`navbar-mobile-link ${isLinkActive("/")}`}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
                 Trang chủ
               </Link>
