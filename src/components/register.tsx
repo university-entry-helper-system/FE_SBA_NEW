@@ -12,6 +12,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import axios, { AxiosError } from "axios";
+import { useNavigate } from "react-router-dom";
 
 // 👇 Initial values
 const initialValues: RegisterFormValues = {
@@ -55,6 +56,7 @@ const registerSchema = Yup.object().shape({
 const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (values: RegisterFormValues) => {
     try {
@@ -67,6 +69,9 @@ const Register = () => {
           "Registration successful. Please check your email for activation."
         );
         setError("");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000); // Chờ 2 giây rồi chuyển về trang login
       }
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ message: string }>;
