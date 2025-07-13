@@ -3,16 +3,25 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import "../css/University.css";
 
+interface Province {
+  id: number;
+  name: string;
+  status?: string;
+  region?: string | null;
+}
+
 interface University {
   id: number;
   name: string;
   shortName: string;
   logoUrl: string;
-  provinceId: number;
+  foundingYear?: number;
+  province?: Province;
   address: string;
   website: string;
   email: string;
   phone: string;
+  description?: string;
 }
 
 const UniversityPage = () => {
@@ -28,7 +37,9 @@ const UniversityPage = () => {
         const res = await axios.get(
           "http://localhost:8080/api/v1/universities"
         );
-        setUniversities(Array.isArray(res.data.result) ? res.data.result : []);
+        setUniversities(
+          Array.isArray(res.data.result?.items) ? res.data.result.items : []
+        );
       } catch {
         setError("Không thể tải danh sách trường.");
       } finally {

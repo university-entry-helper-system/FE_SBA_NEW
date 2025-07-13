@@ -18,6 +18,7 @@ import AdminSubjectCombination from "./components/admin/AdminSubjectCombination"
 import AdminRole from "./components/admin/AdminRole";
 import AdminAccount from "./components/admin/AdminAccount";
 import UniversityPage from "./components/University";
+import UniversityDetail from "./components/UniversityDetail";
 import "./App.css";
 
 // User Layout component to wrap user routes with Navbar and Footer
@@ -75,6 +76,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/universities" element={<UniversityPage />} />
+            <Route path="/universities/:id" element={<UniversityDetail />} />
             {/* Other user routes */}
           </Route>
         </Routes>
