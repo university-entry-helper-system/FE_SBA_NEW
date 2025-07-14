@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Navbar from "../src/components/Navbar";
 import Footer from "../src/components/Footer";
-import HomePage from "../src/components/home";
-import Login from "../src/components/login";
-import Register from "../src/components/register";
+import HomePage from "../src/components/Home";
+import Login from "../src/components/Login";
+import Register from "../src/components/Register";
 import ProtectedRoute from "../src/components/ProtectedRoute";
 import AdminLayout from "../src/components/admin/AdminLayout";
 import AdminDashboard from "../src/components/admin/AdminDashboard";
@@ -18,6 +18,7 @@ import AdminRole from "../src/components/admin/AdminRole";
 import AdminAccount from "../src/components/admin/AdminAccount";
 import UniversityPage from "../src/components/University";
 import UniversityDetail from "../src/components/UniversityDetail";
+import ForgotPassword from "../src/components/ForgotPassword";
 
 const UserLayout = () => {
   return (
@@ -68,6 +69,7 @@ const AppRouter = () => {
           <Route path="/home" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/universities" element={<UniversityPage />} />
           <Route path="/universities/:id" element={<UniversityDetail />} />
           {/* Other user routes */}
@@ -76,5 +78,19 @@ const AppRouter = () => {
     </BrowserRouter>
   );
 };
+
+// Page wrapper for ForgotPassword
+const ForgotPasswordPage = () => (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "60vh",
+    }}
+  >
+    <ForgotPassword />
+  </div>
+);
 
 export default AppRouter;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   TextField,
   Button,
@@ -11,11 +11,12 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { useAuth } from "../hooks/useAuth";
 import * as authApi from "../api/auth";
+import { useAuth } from "../hooks/useAuth";
 
 const loginSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
@@ -25,9 +26,9 @@ const loginSchema = Yup.object().shape({
 const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
 
   // Get the redirect location from state or default to home
   const from =
@@ -121,11 +122,45 @@ const Login = () => {
                   ),
                 }}
               />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 1,
+                }}
+              >
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Quên mật khẩu?
+                </Button>
+                <Link to="/register" style={{ textDecoration: "none" }}>
+                  <Button variant="text" size="small">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </Box>
+              <Tooltip title="Tính năng đang được cập nhật" arrow>
+                <span>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    sx={{ mt: 2, mb: 1 }}
+                    disabled
+                  >
+                    Đăng nhập với Google
+                  </Button>
+                </span>
+              </Tooltip>
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2 }}
+                sx={{ mt: 1, mb: 2 }}
               >
                 Sign In
               </Button>

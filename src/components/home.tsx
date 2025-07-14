@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import "../css/home.css";
+import "../css/Home.css";
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");

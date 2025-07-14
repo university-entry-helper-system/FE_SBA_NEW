@@ -73,19 +73,19 @@ const registerSchema = Yup.object().shape({
       if (!value) return false;
       const date =
         typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
-      return date.isValid();
+      return dayjs.isDayjs(date) && date.isValid();
     })
     .test("past", "Ngày sinh phải trong quá khứ", (value) => {
       if (!value) return false;
       const date =
         typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
-      return date.isBefore(dayjs(), "day");
+      return dayjs.isDayjs(date) && date.isBefore(dayjs(), "day");
     })
     .test("min-age", "Bạn phải ít nhất 3 tuổi", (value) => {
       if (!value) return false;
       const date =
         typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
-      return dayjs().diff(date, "year") >= 3;
+      return dayjs.isDayjs(date) && dayjs().diff(date, "year") >= 3;
     }),
   gender: Yup.string().oneOf(["male", "female", "other"]),
 });
