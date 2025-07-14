@@ -39,6 +39,7 @@ const UniversityCategoryPage: React.FC = () => {
       setTotalPages(res.data.result.totalPages);
       setTotalElements(res.data.result.totalElements);
     } catch (err) {
+      console.log(err);
       setError("Không thể tải danh sách loại trường");
       setCategories([]);
     } finally {

@@ -10,4 +10,14 @@ const instance = axios.create({
   },
 });
 
+// Tự động gắn Authorization header nếu có token
+instance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default instance;
