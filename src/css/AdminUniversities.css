@@ -1193,3 +1193,9 @@
     background: none;
   }
 }
+
+/* Thêm style riêng cho icon loại trường */
+.admin-layout .stat-icon.universities-icon {
+  background: linear-gradient(135deg, #a855f7, #3b82f6);
+  color: #fff;
+}
