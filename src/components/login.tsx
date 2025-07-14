@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import axios, { AxiosError } from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   TextField,
@@ -10,8 +9,13 @@ import {
   Typography,
   Container,
   Alert,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "../hooks/useAuth";
+import * as authApi from "../api/auth";
 
 const loginSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
@@ -20,6 +24,7 @@ const loginSchema = Yup.object().shape({
 
 const Login = () => {
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,31 +39,24 @@ const Login = () => {
     password: string;
   }) => {
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/v1/auth/login",
-        values
-      );
-
-      if (response.data.code === 1000) {
-        const { accessToken, refreshToken } = response.data.result;
-
-        // Use the login function from AuthContext
+      const response = await authApi.login(values);
+      if (response.code === 1000) {
+        const { accessToken, refreshToken } = response.result;
         login(accessToken, refreshToken);
-
-        // Redirect based on user role
+        // Decode token to get roleName
         const decoded = JSON.parse(atob(accessToken.split(".")[1]));
-
-        if (decoded.roleId === 1) {
+        if (decoded.roleName === "ROLE_ADMIN") {
           navigate("/admin");
-        } else if (decoded.roleId === 2) {
-          navigate("/home");
+        } else if (decoded.roleName === "ROLE_CONSULTANT") {
+          navigate("/consultant");
         } else {
           navigate(from);
         }
+      } else {
+        setError(response.message || "Login failed");
       }
-    } catch (err: unknown) {
-      const error = err as AxiosError<{ message: string }>;
-      setError(error.response?.data?.message || "Login failed");
+    } catch {
+      setError("Login failed");
     }
   };
 
@@ -104,11 +102,24 @@ const Login = () => {
                 id="password"
                 name="password"
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 margin="normal"
                 onChange={handleChange}
                 error={touched.password && Boolean(errors.password)}
                 helperText={touched.password && errors.password}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <Button
                 type="submit"

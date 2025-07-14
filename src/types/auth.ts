@@ -22,9 +22,17 @@ export interface DecodedToken {
   exp: number;
 }
 
+export interface RegisterResponse {
+  code: number;
+  message: string;
+}
+
 export interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  register: (data: RegisterFormValues) => Promise<RegisterResponse>;
+  refresh: () => Promise<void>;
+  loading: boolean;
 }

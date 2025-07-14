@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRoles: number[];
+  allowedRoles?: Array<number | string>; // Accept roleId (number) or roleName (string)
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
@@ -16,15 +16,23 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user && !allowedRoles.includes(user.roleId)) {
-    // Redirect based on role if authenticated but not authorized
-    if (user.roleId === 1) {
-      return <Navigate to="/admin" replace />;
-    } else if (user.roleId === 2) {
-      return <Navigate to="/home" replace />;
-    } else {
-      // Fallback for any other roles
-      return <Navigate to="/" replace />;
+  if (user && allowedRoles && allowedRoles.length > 0) {
+    // Support both roleId (number) and roleName (string)
+    const hasRole = allowedRoles.some(
+      (role) =>
+        (typeof role === "number" && user.roleId === role) ||
+        (typeof role === "string" && user.roleName === role)
+    );
+    if (!hasRole) {
+      // Redirect based on role if authenticated but not authorized
+      if (user.roleName === "ROLE_ADMIN") {
+        return <Navigate to="/admin" replace />;
+      } else if (user.roleName === "ROLE_CONSULTANT") {
+        return <Navigate to="/consultant" replace />;
+      } else {
+        // Default user
+        return <Navigate to="/home" replace />;
+      }
     }
   }
 

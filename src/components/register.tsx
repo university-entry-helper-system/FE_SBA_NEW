@@ -9,51 +9,86 @@ import {
   Typography,
   Container,
   MenuItem,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import axios, { AxiosError } from "axios";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs, { Dayjs } from "dayjs";
 import { useNavigate } from "react-router-dom";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import { useAuth } from "../hooks/useAuth";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-// 👇 Initial values
-const initialValues: RegisterFormValues = {
+interface RegisterFormWithConfirm {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+  phone: string;
+  dob: Dayjs | null;
+  gender: string;
+}
+
+const initialValues: RegisterFormWithConfirm = {
   username: "",
   email: "",
   password: "",
+  confirmPassword: "",
   fullName: "",
   phone: "",
-  dob: "",
+  dob: null,
   gender: "other",
 };
 
-// 👇 Yup validation schema
 const registerSchema = Yup.object().shape({
   username: Yup.string()
     .min(4, "Username must be at least 4 characters")
     .max(100, "Username must be less than 100 characters")
     .required("Username is required"),
-  email: Yup.string()
-    .email("Invalid email format")
-    .required("Email is required"),
+  email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
+    .min(8, "Password phải có ít nhất 8 ký tự")
     .matches(
       /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+={}:'"|,.<>/?[\]])/,
-      "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
+      "Password phải có chữ hoa, chữ thường, số và ký tự đặc biệt"
     )
-    .required("Password is required"),
+    .required("Password là bắt buộc"),
+  confirmPassword: Yup.string()
+    .required("Xác nhận mật khẩu là bắt buộc")
+    .oneOf([Yup.ref("password")], "Mật khẩu xác nhận không khớp"),
   fullName: Yup.string(),
-  phone: Yup.string().matches(
-    /^(0|\+84)\d{9}$/,
-    "Phone number must start with 0 or +84 and have 10 digits"
-  ),
-  dob: Yup.string().matches(
-    /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-(19\d{2}|20\d{2})$/,
-    "Date must be in MM-DD-YYYY format"
-  ),
-  gender: Yup.string(),
+  phone: Yup.string()
+    .required("Số điện thoại là bắt buộc")
+    .matches(
+      /^\+84\d{9}$/,
+      "Số điện thoại phải ở dạng +84xxxxxxxxx và có 12 ký tự"
+    ),
+  dob: Yup.mixed()
+    .test("is-date", "Date of birth is required", (value) => !!value)
+    .test("format", "Date must be in MM-DD-YYYY format", (value) => {
+      if (!value) return false;
+      const date =
+        typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
+      return date.isValid();
+    })
+    .test("past", "Ngày sinh phải trong quá khứ", (value) => {
+      if (!value) return false;
+      const date =
+        typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
+      return date.isBefore(dayjs(), "day");
+    })
+    .test("min-age", "Bạn phải ít nhất 3 tuổi", (value) => {
+      if (!value) return false;
+      const date =
+        typeof value === "string" ? dayjs(value, "MM-DD-YYYY", true) : value;
+      return dayjs().diff(date, "year") >= 3;
+    }),
+  gender: Yup.string().oneOf(["male", "female", "other"]),
 });
 
 const Register = () => {
@@ -61,25 +96,59 @@ const Register = () => {
   const [success, setSuccess] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<"success" | "error" | "">("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleSubmit = async (values: RegisterFormValues) => {
+  const handleSubmit = async (values: RegisterFormWithConfirm) => {
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/v1/auth/register",
-        values
-      );
-      if (response.data.code === 1001) {
+      // Format dob as MM-DD-YYYY
+      let dob = values.dob;
+      let dobStr = "";
+      if (dob && typeof dob !== "string") {
+        dobStr = dob.format("MM-DD-YYYY");
+      }
+      // Lowercase gender for API
+      const gender = values.gender.toLowerCase();
+      // Auto-format phone: if starts with 0, convert to +84
+      let phone = values.phone;
+      if (/^0\d{9}$/.test(phone)) {
+        phone = "+84" + phone.substring(1);
+      }
+      // Only send fields required by API
+      const { confirmPassword, ...apiValues } = values;
+      const response = await register({
+        ...apiValues,
+        dob: dobStr,
+        gender,
+        phone,
+      });
+      if (response.code === 1001) {
         setSuccess(
           "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản."
         );
         setError("");
         setDialogType("success");
         setOpenDialog(true);
+        // Auto-redirect to login after 2 seconds
+        setTimeout(() => {
+          setOpenDialog(false);
+          navigate("/login");
+        }, 2000);
+      } else {
+        setError(
+          `Mã lỗi: ${response.code || "500"} - ${
+            response.message || "Đăng ký thất bại"
+          }`
+        );
+        setSuccess("");
+        setDialogType("error");
+        setOpenDialog(true);
       }
     } catch (err: unknown) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setError(axiosError.response?.data?.message || "Đăng ký thất bại");
+      const errorMsg = err instanceof Error ? err.message : "Đăng ký thất bại";
+      setError(`Lỗi hệ thống (500): ${errorMsg}`);
       setSuccess("");
       setDialogType("error");
       setOpenDialog(true);
@@ -100,12 +169,14 @@ const Register = () => {
           Register
         </Typography>
 
-        <Formik<RegisterFormValues>
+        <Formik<RegisterFormWithConfirm>
           initialValues={initialValues}
           validationSchema={registerSchema}
+          validateOnChange={true}
+          validateOnBlur={true}
           onSubmit={handleSubmit}
         >
-          {({ values, errors, touched, handleChange }) => (
+          {({ values, errors, touched, handleChange, setFieldValue }) => (
             <Form style={{ width: "100%", marginTop: "1rem" }}>
               <TextField
                 fullWidth
@@ -132,11 +203,56 @@ const Register = () => {
                 id="password"
                 name="password"
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 margin="normal"
                 onChange={handleChange}
+                value={values.password}
                 error={touched.password && Boolean(errors.password)}
                 helperText={touched.password && errors.password}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                id="confirmPassword"
+                name="confirmPassword"
+                label="Confirm Password"
+                type={showConfirmPassword ? "text" : "password"}
+                margin="normal"
+                onChange={handleChange}
+                value={values.confirmPassword}
+                error={
+                  touched.confirmPassword && Boolean(errors.confirmPassword)
+                }
+                helperText={touched.confirmPassword && errors.confirmPassword}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle confirm password visibility"
+                        onClick={() => setShowConfirmPassword((show) => !show)}
+                        edge="end"
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <TextField
                 fullWidth
@@ -152,19 +268,35 @@ const Register = () => {
                 name="phone"
                 label="Phone"
                 margin="normal"
-                onChange={handleChange}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  // Auto-format: if starts with 0 and 10 digits, convert to +84
+                  if (/^0\d{9}$/.test(val)) {
+                    val = "+84" + val.substring(1);
+                  }
+                  setFieldValue("phone", val);
+                }}
+                value={values.phone}
                 error={touched.phone && Boolean(errors.phone)}
                 helperText={touched.phone && errors.phone}
               />
-              <TextField
-                fullWidth
-                id="dob"
-                name="dob"
-                label="Date of Birth (MM-DD-YYYY)"
-                margin="normal"
-                onChange={handleChange}
-                error={touched.dob && Boolean(errors.dob)}
-                helperText={touched.dob && errors.dob}
+              {/* NOTE: Requires @mui/x-date-pickers and dayjs. Install with:
+              npm install @mui/x-date-pickers dayjs */}
+              <DatePicker
+                label="Date of Birth"
+                value={values.dob}
+                onChange={(date: Dayjs | null) => setFieldValue("dob", date)}
+                format="MM-DD-YYYY"
+                maxDate={dayjs().subtract(3, "year")}
+                minDate={dayjs("1900-01-01")}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    margin: "normal",
+                    error: touched.dob && Boolean(errors.dob),
+                    helperText: touched.dob && errors.dob,
+                  },
+                }}
               />
               <TextField
                 fullWidth
@@ -194,7 +326,13 @@ const Register = () => {
           )}
         </Formik>
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <Dialog
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            if (dialogType === "success") navigate("/login");
+          }}
+        >
           <DialogTitle>
             {dialogType === "success"
               ? "Đăng ký thành công"

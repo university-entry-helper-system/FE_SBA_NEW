@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import "../css/Navbar.css";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const isLinkActive = (path: string) => {
     return location.pathname === path ? "active" : "";
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   return (
@@ -80,16 +88,50 @@ const Navbar = () => {
                 Tư vấn tuyển sinh
               </Link>
             </li>
+            {/* Role-based links */}
+            {isAuthenticated && user?.roleName === "ROLE_ADMIN" && (
+              <li>
+                <Link
+                  to="/admin"
+                  className={`navbar-menu-link ${isLinkActive("/admin")}`}
+                >
+                  Quản trị
+                </Link>
+              </li>
+            )}
+            {isAuthenticated && user?.roleName === "ROLE_CONSULTANT" && (
+              <li>
+                <Link
+                  to="/consultant"
+                  className={`navbar-menu-link ${isLinkActive("/consultant")}`}
+                >
+                  Tư vấn viên
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 
         <div className="navbar-actions">
-          <Link to="/login" className="navbar-login-button">
-            Đăng nhập
-          </Link>
-          <Link to="/register" className="navbar-register-button">
-            Đăng ký
-          </Link>
+          {!isAuthenticated ? (
+            <>
+              <Link to="/login" className="navbar-login-button">
+                Đăng nhập
+              </Link>
+              <Link to="/register" className="navbar-register-button">
+                Đăng ký
+              </Link>
+            </>
+          ) : (
+            <div className="navbar-user-info">
+              <span className="navbar-user-name">
+                {user?.email || user?.accountId}
+              </span>
+              <button className="navbar-logout-button" onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -158,22 +200,66 @@ const Navbar = () => {
                 Liên hệ
               </Link>
             </li>
+            {/* Role-based links */}
+            {isAuthenticated && user?.roleName === "ROLE_ADMIN" && (
+              <li>
+                <Link
+                  to="/admin"
+                  className={`navbar-mobile-link ${isLinkActive("/admin")}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Quản trị
+                </Link>
+              </li>
+            )}
+            {isAuthenticated && user?.roleName === "ROLE_CONSULTANT" && (
+              <li>
+                <Link
+                  to="/consultant"
+                  className={`navbar-mobile-link ${isLinkActive(
+                    "/consultant"
+                  )}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tư vấn viên
+                </Link>
+              </li>
+            )}
           </ul>
           <div className="navbar-mobile-buttons">
-            <Link
-              to="/login"
-              className="navbar-mobile-login"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Đăng nhập
-            </Link>
-            <Link
-              to="/register"
-              className="navbar-mobile-register"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Đăng ký
-            </Link>
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  to="/login"
+                  className="navbar-mobile-login"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="navbar-mobile-register"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng ký
+                </Link>
+              </>
+            ) : (
+              <div className="navbar-user-info">
+                <span className="navbar-user-name">
+                  {user?.email || user?.accountId}
+                </span>
+                <button
+                  className="navbar-logout-button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         </nav>
       </div>
