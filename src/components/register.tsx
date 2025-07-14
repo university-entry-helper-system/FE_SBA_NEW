@@ -4,9 +4,7 @@ import * as Yup from "yup";
 import {
   TextField,
   Button,
-  Box,
   Typography,
-  Container,
   MenuItem,
   InputAdornment,
   IconButton,
@@ -21,6 +19,7 @@ import DialogActions from "@mui/material/DialogActions";
 import { useAuth } from "../hooks/useAuth";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import "../css/Register.css"; // ← Add CSS import
 
 interface RegisterFormWithConfirm {
   username: string;
@@ -155,19 +154,22 @@ const Register = () => {
   };
 
   return (
-    <Container maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          Register
-        </Typography>
-
+    <div className="register-page">
+      {" "}
+      {/* ← Add wrapper div */}
+      <div className="register-container">
+        {" "}
+        {/* ← Replace Container with div */}
+        <div className="register-header">
+          {" "}
+          {/* ← Add header */}
+          <Typography component="h1" className="register-title">
+            Đăng ký
+          </Typography>
+          <Typography className="register-subtitle">
+            Tạo tài khoản mới để khám phá EduPath
+          </Typography>
+        </div>
         <Formik<RegisterFormWithConfirm>
           initialValues={initialValues}
           validationSchema={registerSchema}
@@ -176,12 +178,12 @@ const Register = () => {
           onSubmit={handleSubmit}
         >
           {({ values, errors, touched, handleChange, setFieldValue }) => (
-            <Form style={{ width: "100%", marginTop: "1rem" }}>
+            <Form>
               <TextField
                 fullWidth
                 id="username"
                 name="username"
-                label="Username"
+                label="Tên đăng nhập"
                 margin="normal"
                 onChange={handleChange}
                 error={touched.username && Boolean(errors.username)}
@@ -201,7 +203,7 @@ const Register = () => {
                 fullWidth
                 id="password"
                 name="password"
-                label="Password"
+                label="Mật khẩu"
                 type={showPassword ? "text" : "password"}
                 margin="normal"
                 onChange={handleChange}
@@ -226,7 +228,7 @@ const Register = () => {
                 fullWidth
                 id="confirmPassword"
                 name="confirmPassword"
-                label="Confirm Password"
+                label="Xác nhận mật khẩu"
                 type={showConfirmPassword ? "text" : "password"}
                 margin="normal"
                 onChange={handleChange}
@@ -257,7 +259,7 @@ const Register = () => {
                 fullWidth
                 id="fullName"
                 name="fullName"
-                label="Full Name"
+                label="Họ và tên"
                 margin="normal"
                 onChange={handleChange}
               />
@@ -265,7 +267,7 @@ const Register = () => {
                 fullWidth
                 id="phone"
                 name="phone"
-                label="Phone"
+                label="Số điện thoại"
                 margin="normal"
                 onChange={(e) => {
                   let val = e.target.value;
@@ -279,10 +281,9 @@ const Register = () => {
                 error={touched.phone && Boolean(errors.phone)}
                 helperText={touched.phone && errors.phone}
               />
-              {/* NOTE: Requires @mui/x-date-pickers and dayjs. Install with:
-              npm install @mui/x-date-pickers dayjs */}
+              {/* DatePicker with custom styling */}
               <DatePicker
-                label="Date of Birth"
+                label="Ngày sinh"
                 value={values.dob}
                 onChange={(date: Dayjs | null) => setFieldValue("dob", date)}
                 format="MM-DD-YYYY"
@@ -302,16 +303,16 @@ const Register = () => {
                 select
                 id="gender"
                 name="gender"
-                label="Gender"
+                label="Giới tính"
                 margin="normal"
                 onChange={handleChange}
                 value={values.gender}
                 error={touched.gender && Boolean(errors.gender)}
                 helperText={touched.gender && errors.gender}
               >
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                <MenuItem value="male">Nam</MenuItem>
+                <MenuItem value="female">Nữ</MenuItem>
+                <MenuItem value="other">Khác</MenuItem>
               </TextField>
               <Button
                 type="submit"
@@ -319,12 +320,11 @@ const Register = () => {
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
               >
-                Register
+                Đăng ký
               </Button>
             </Form>
           )}
         </Formik>
-
         <Dialog
           open={openDialog}
           onClose={() => {
@@ -362,8 +362,8 @@ const Register = () => {
             )}
           </DialogActions>
         </Dialog>
-      </Box>
-    </Container>
+      </div>
+    </div>
   );
 };
 

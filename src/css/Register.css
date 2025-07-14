@@ -1,0 +1,761 @@
+.register-page {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0f2f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.register-page::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(
+    circle,
+    rgba(56, 217, 169, 0.08) 0%,
+    transparent 70%
+  );
+  animation: float 25s ease-in-out infinite;
+}
+
+.register-page::after {
+  content: "";
+  position: absolute;
+  bottom: 10%;
+  right: 10%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(
+    circle,
+    rgba(96, 165, 250, 0.08) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: float 30s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: rotate(0deg) translate(-15px, -8px);
+  }
+  50% {
+    transform: rotate(180deg) translate(15px, 8px);
+  }
+}
+
+/* Register Container */
+.register-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(56, 217, 169, 0.12);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 520px;
+  min-height: 700px;
+  border: 1px solid rgba(56, 217, 169, 0.2);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.register-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+/* Register Header */
+.register-header {
+  text-align: center;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.register-header::before {
+  content: "📝";
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 12px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+.register-title {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+  margin-bottom: 8px !important;
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.register-subtitle {
+  font-size: 1rem !important;
+  color: #6b7280 !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
+}
+
+/* Override Material-UI TextField */
+.MuiTextField-root {
+  margin-bottom: 16px !important;
+}
+
+.MuiTextField-root .MuiOutlinedInput-root {
+  border-radius: 12px !important;
+  background: rgba(248, 250, 252, 0.8) !important;
+  transition: all 0.3s ease !important;
+  font-size: 1rem !important;
+  position: relative !important;
+}
+
+.MuiTextField-root .MuiOutlinedInput-input {
+  padding: 14px 12px !important;
+  font-size: 0.95rem !important;
+  transition: padding-left 0.3s ease, padding-right 0.3s ease !important;
+}
+
+.MuiTextField-root .MuiInputLabel-root {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+}
+
+.MuiTextField-root
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(56, 217, 169, 0.5) !important;
+  border-width: 2px !important;
+}
+
+.MuiTextField-root
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #38d9a9 !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 0 3px rgba(56, 217, 169, 0.1) !important;
+}
+
+.MuiTextField-root .MuiInputLabel-root.Mui-focused {
+  color: #38d9a9 !important;
+  font-weight: 600 !important;
+}
+
+.MuiTextField-root .MuiFormHelperText-root.Mui-error {
+  color: #ef4444 !important;
+  font-weight: 500 !important;
+  margin-left: 6px !important;
+  font-size: 0.8rem !important;
+}
+
+/* Field Icons - Show when focused */
+.MuiTextField-root:nth-of-type(1) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "👤";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.MuiTextField-root:nth-of-type(2) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "📧";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.MuiTextField-root:nth-of-type(3) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "🔒";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.MuiTextField-root:nth-of-type(4) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "🔑";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.MuiTextField-root:nth-of-type(5) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "🏷️";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.MuiTextField-root:nth-of-type(6) .MuiOutlinedInput-root.Mui-focused::before {
+  content: "📱";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+/* Gender Select Field Icon */
+.MuiTextField-root:last-of-type .MuiOutlinedInput-root.Mui-focused::before {
+  content: "⚧️";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+  opacity: 0.7;
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+@keyframes iconSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-8px);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Focused state padding adjustments */
+.MuiTextField-root:nth-of-type(1)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input,
+.MuiTextField-root:nth-of-type(2)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input,
+.MuiTextField-root:nth-of-type(5)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input,
+.MuiTextField-root:nth-of-type(6)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input,
+.MuiTextField-root:last-of-type
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input {
+  padding-left: 36px !important;
+}
+
+/* Password fields need space for both icon and eye */
+.MuiTextField-root:nth-of-type(3)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input,
+.MuiTextField-root:nth-of-type(4)
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-input {
+  padding-left: 36px !important;
+  padding-right: 44px !important;
+}
+
+/* Password fields always need right padding for eye icon */
+.MuiTextField-root:nth-of-type(3) .MuiOutlinedInput-input,
+.MuiTextField-root:nth-of-type(4) .MuiOutlinedInput-input {
+  padding-right: 44px !important;
+}
+
+/* Password Visibility Toggle */
+.MuiTextField-root .MuiInputAdornment-root {
+  margin-right: 6px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.MuiTextField-root .MuiIconButton-root {
+  color: #6b7280 !important;
+  transition: color 0.2s ease !important;
+  padding: 6px !important;
+  margin: 0 !important;
+}
+
+.MuiTextField-root .MuiIconButton-root:hover {
+  color: #38d9a9 !important;
+  background: rgba(56, 217, 169, 0.1) !important;
+}
+
+/* DatePicker Styling */
+.MuiDateCalendar-root {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(56, 217, 169, 0.15) !important;
+}
+
+.MuiPickersDay-root {
+  color: #374151 !important;
+  font-weight: 500 !important;
+}
+
+.MuiPickersDay-root:hover {
+  background: rgba(56, 217, 169, 0.1) !important;
+}
+
+.MuiPickersDay-root.Mui-selected {
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%) !important;
+  color: #fff !important;
+}
+
+.MuiPickersDay-root.Mui-selected:hover {
+  background: linear-gradient(90deg, #60a5fa 0%, #38d9a9 100%) !important;
+}
+
+/* Select Dropdown Styling */
+.MuiSelect-select {
+  padding: 14px 12px !important;
+}
+
+.MuiMenuItem-root {
+  padding: 12px 16px !important;
+  transition: background 0.2s ease !important;
+}
+
+.MuiMenuItem-root:hover {
+  background: rgba(56, 217, 169, 0.1) !important;
+}
+
+.MuiMenuItem-root.Mui-selected {
+  background: rgba(56, 217, 169, 0.15) !important;
+  color: #38d9a9 !important;
+  font-weight: 600 !important;
+}
+
+/* Override Material-UI Buttons */
+.MuiButton-contained {
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  padding: 14px 24px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  text-transform: none !important;
+  box-shadow: 0 6px 20px rgba(56, 217, 169, 0.25) !important;
+  transition: all 0.3s ease !important;
+  min-height: 48px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin-top: 24px !important;
+}
+
+.MuiButton-contained::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.MuiButton-contained:hover::before {
+  left: 100%;
+}
+
+.MuiButton-contained:hover {
+  background: linear-gradient(90deg, #60a5fa 0%, #38d9a9 100%) !important;
+  box-shadow: 0 8px 28px rgba(56, 217, 169, 0.35) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Dialog Styling */
+.MuiDialog-paper {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(56, 217, 169, 0.15) !important;
+  border: 1px solid rgba(56, 217, 169, 0.2) !important;
+}
+
+.MuiDialogTitle-root {
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  padding: 20px 24px !important;
+}
+
+.MuiDialogContent-root {
+  padding: 24px !important;
+  background: rgba(248, 250, 252, 0.5) !important;
+}
+
+.MuiDialogActions-root {
+  padding: 16px 24px 24px 24px !important;
+  background: rgba(248, 250, 252, 0.5) !important;
+  justify-content: center !important;
+}
+
+.MuiDialogActions-root .MuiButton-contained {
+  margin: 0 !important;
+  min-width: 120px !important;
+}
+
+.MuiDialogActions-root .MuiButton-text {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.MuiDialogActions-root .MuiButton-text:hover {
+  background: rgba(107, 114, 128, 0.1) !important;
+  color: #374151 !important;
+}
+
+/* Form Validation Styles */
+.MuiTextField-root.Mui-error .MuiOutlinedInput-root {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.MuiTextField-root.Mui-error .MuiOutlinedInput-root:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Form Animation */
+.register-container form {
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Visual Elements */
+.register-container::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .register-page {
+    padding: 16px;
+  }
+
+  .register-container {
+    padding: 32px 28px;
+    margin: 0;
+    max-width: 100%;
+    min-height: auto;
+    border-radius: 16px;
+  }
+
+  .register-title {
+    font-size: 1.8rem !important;
+  }
+
+  .register-subtitle {
+    font-size: 0.95rem !important;
+  }
+
+  .register-header::before {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .MuiButton-contained {
+    padding: 12px 20px !important;
+    font-size: 0.95rem !important;
+    min-height: 44px !important;
+  }
+
+  .MuiTextField-root .MuiOutlinedInput-input {
+    padding: 12px 10px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .MuiTextField-root:nth-of-type(1)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(2)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(5)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(6)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:last-of-type
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 32px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 32px !important;
+    padding-right: 40px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3) .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4) .MuiOutlinedInput-input {
+    padding-right: 40px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-page {
+    padding: 12px;
+  }
+
+  .register-container {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+
+  .register-title {
+    font-size: 1.6rem !important;
+  }
+
+  .register-subtitle {
+    font-size: 0.9rem !important;
+  }
+
+  .register-header::before {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+
+  .MuiTextField-root {
+    margin-bottom: 14px !important;
+  }
+
+  .MuiTextField-root .MuiOutlinedInput-input {
+    padding: 11px 8px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .MuiTextField-root:nth-of-type(1)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(2)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(5)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(6)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:last-of-type
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 30px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 30px !important;
+    padding-right: 36px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3) .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4) .MuiOutlinedInput-input {
+    padding-right: 36px !important;
+  }
+
+  .MuiButton-contained {
+    padding: 10px 18px !important;
+    font-size: 0.9rem !important;
+    min-height: 40px !important;
+    margin-top: 20px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .register-container {
+    padding: 24px 16px;
+  }
+
+  .register-title {
+    font-size: 1.4rem !important;
+  }
+
+  .MuiTextField-root .MuiOutlinedInput-input {
+    padding: 10px 6px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(1)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(2)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(5)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(6)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:last-of-type
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 28px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4)
+    .MuiOutlinedInput-root.Mui-focused
+    .MuiOutlinedInput-input {
+    padding-left: 28px !important;
+    padding-right: 34px !important;
+  }
+
+  .MuiTextField-root:nth-of-type(3) .MuiOutlinedInput-input,
+  .MuiTextField-root:nth-of-type(4) .MuiOutlinedInput-input {
+    padding-right: 34px !important;
+  }
+}
+
+/* Large Screens */
+@media (min-width: 1200px) {
+  .register-container {
+    max-width: 560px;
+    padding: 48px 44px;
+  }
+
+  .register-title {
+    font-size: 2.2rem !important;
+  }
+
+  .register-subtitle {
+    font-size: 1.1rem !important;
+  }
+
+  .register-header::before {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+
+  .MuiTextField-root .MuiOutlinedInput-input {
+    padding: 16px 14px !important;
+    font-size: 1rem !important;
+  }
+
+  .MuiButton-contained {
+    padding: 16px 28px !important;
+    font-size: 1.1rem !important;
+    min-height: 52px !important;
+  }
+}
+
+/* Focus States for Accessibility */
+.MuiButton-root:focus-visible {
+  outline: 2px solid #38d9a9 !important;
+  outline-offset: 2px !important;
+}
+
+.MuiTextField-root .MuiOutlinedInput-root:focus-within {
+  box-shadow: 0 0 0 3px rgba(56, 217, 169, 0.1) !important;
+}
+
+/* Print Styles */
+@media print {
+  .register-page::before,
+  .register-page::after,
+  .register-container::before,
+  .register-container::after {
+    display: none !important;
+  }
+
+  .register-page {
+    background: white !important;
+  }
+
+  .register-container {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
