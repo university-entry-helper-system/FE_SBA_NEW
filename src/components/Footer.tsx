@@ -11,7 +11,11 @@ const Footer = () => {
           {/* Logo and description */}
           <div className="footer-branding">
             <Link to="/" className="footer-logo">
-              <img src="/logo.png" alt="EduPath" className="footer-logo-img" />
+              <img
+                src="https://static.vecteezy.com/system/resources/previews/050/738/813/non_2x/education-logo-design-with-book-globe-badge-with-leaves-icon-mascot-logo-design-symbol-for-language-school-vector.jpg"
+                alt="EduPath"
+                className="footer-logo-img"
+              />
               <span className="footer-logo-text">EduPath</span>
             </Link>
             <p className="footer-description">
