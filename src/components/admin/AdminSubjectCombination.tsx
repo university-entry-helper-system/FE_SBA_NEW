@@ -33,7 +33,7 @@ const AdminSubjectCombination: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        "http://localhost:8080/api/subject-combinations",
+        "http://localhost:8080/api/v1/subject-combinations",
         getAuthConfig()
       );
       setCombinations(Array.isArray(res.data.result) ? res.data.result : []);
@@ -79,7 +79,7 @@ const AdminSubjectCombination: React.FC = () => {
     if (!window.confirm("Bạn có chắc muốn xóa tổ hợp môn này?")) return;
     try {
       await axios.delete(
-        `http://localhost:8080/api/subject-combinations/${id}`,
+        `http://localhost:8080/api/v1/subject-combinations/${id}`,
         getAuthConfig()
       );
       fetchCombinations();
@@ -93,13 +93,13 @@ const AdminSubjectCombination: React.FC = () => {
     try {
       if (isEditing && selectedCombination) {
         await axios.put(
-          `http://localhost:8080/api/subject-combinations/${selectedCombination.id}`,
+          `http://localhost:8080/api/v1/subject-combinations/${selectedCombination.id}`,
           form,
           getAuthConfig()
         );
       } else {
         await axios.post(
-          "http://localhost:8080/api/subject-combinations",
+          "http://localhost:8080/api/v1/subject-combinations",
           form,
           getAuthConfig()
         );

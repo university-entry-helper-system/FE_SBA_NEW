@@ -203,9 +203,7 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                       d="M9 17v-2a4 4 0 0 1 8 0v2M12 12v-2a4 4 0 1 1 8 0v2M12 12v2a4 4 0 1 0 8 0v-2"
                     />
                   </svg>
-                  <span className="admin-nav-text">
-                    Quản lý phương thức tuyển sinh
-                  </span>
+                  <span className="admin-nav-text">Quản lý PTTS</span>
                 </NavLink>
               </li>
             </>
