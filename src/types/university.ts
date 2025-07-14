@@ -1,6 +1,7 @@
 export interface Province {
   id: number;
   name: string;
+  description: string;
   region: string;
 }
 
@@ -17,7 +18,9 @@ export interface Category {
 
 export interface University {
   id: number;
+  categoryId: number;
   category: Category;
+  admissionMethodIds: number[];
   name: string;
   shortName: string;
   logoUrl: string;
@@ -38,6 +41,7 @@ export interface University {
 export interface UniversityListItem {
   id: number;
   categoryId: number;
+  admissionMethodIds: number[];
   name: string;
   shortName: string;
   logoUrl: string;
@@ -87,4 +91,8 @@ export interface UniversityCreateRequest {
   website: string;
   description: string;
   admissionMethodIds: number[];
+}
+
+export interface UniversityStatusUpdateRequest {
+  status: string;
 }

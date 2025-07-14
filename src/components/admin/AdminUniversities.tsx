@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from "react";
 import "../../css/AdminUniversities.css";
 import * as universityApi from "../../api/university";
+import * as provinceApi from "../../api/province";
+import * as universityCategoryApi from "../../api/universityCategory";
+import * as admissionMethodApi from "../../api/admissionMethod";
 import type {
   UniversityListItem,
   University,
   UniversityCreateRequest,
 } from "../../types/university";
+import type { Province as ProvinceType } from "../../types/province";
+import type { UniversityCategory } from "../../types/universityCategory";
+import type { AdmissionMethod } from "../../types/admissionMethod";
 
 const defaultForm: UniversityCreateRequest = {
   categoryId: 0,
@@ -14,7 +20,7 @@ const defaultForm: UniversityCreateRequest = {
   logoUrl: "",
   foundingYear: new Date().getFullYear(),
   provinceId: 0,
-  type: "",
+  type: "public", // Keep this for API compatibility
   address: "",
   email: "",
   phone: "",
@@ -26,6 +32,11 @@ const defaultForm: UniversityCreateRequest = {
 const AdminUniversities: React.FC = () => {
   // State management
   const [universities, setUniversities] = useState<UniversityListItem[]>([]);
+  const [categories, setCategories] = useState<UniversityCategory[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceType[]>([]);
+  const [admissionMethods, setAdmissionMethods] = useState<AdmissionMethod[]>(
+    []
+  );
   const [selectedUniversity, setSelectedUniversity] =
     useState<University | null>(null);
   const [form, setForm] = useState<UniversityCreateRequest>(defaultForm);
@@ -33,17 +44,20 @@ const AdminUniversities: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [viewDetail, setViewDetail] = useState<University | null>(null);
+
+  // Pagination, search, sort, filter
   const [page, setPage] = useState(0);
+  const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [viewDetail, setViewDetail] = useState<University | null>(null);
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [sortField, setSortField] = useState<"province" | "name" | "shortName">(
-    "name"
-  );
+  const [provinceFilter, setProvinceFilter] = useState("");
+  const [sortField, setSortField] = useState<
+    "id" | "name" | "shortName" | "foundingYear"
+  >("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Fetch universities
@@ -51,14 +65,29 @@ const AdminUniversities: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await universityApi.getUniversities({
+      const params: {
+        page: number;
+        size: number;
+        sort: string;
+        search?: string;
+        categoryId?: number;
+        provinceId?: number;
+      } = {
         page,
-        search,
-        size: 10,
-      });
-      setUniversities(res.data.result.items);
-      setTotalPages(res.data.result.totalPages);
-      setTotalElements(res.data.result.totalElements);
+        size,
+        sort: `${sortField},${sortOrder}`,
+      };
+
+      if (search) params.search = search;
+      if (provinceFilter) params.provinceId = parseInt(provinceFilter);
+
+      const res = await universityApi.getUniversities(params);
+      const items = Array.isArray(res.data?.result?.items)
+        ? res.data.result.items
+        : [];
+      setUniversities(items);
+      setTotalPages(res.data.result.totalPages ?? 1);
+      setTotalElements(res.data.result.totalElements ?? 0);
     } catch (err) {
       setError("Không thể tải danh sách trường đại học");
       setUniversities([]);
@@ -68,9 +97,63 @@ const AdminUniversities: React.FC = () => {
     }
   };
 
+  // Fetch categories for dropdown
+  const fetchCategories = async () => {
+    try {
+      const res = await universityCategoryApi.getUniversityCategoriesPaginated({
+        size: 100, // Get all categories
+      });
+      const items = Array.isArray(res.data?.result?.items)
+        ? res.data.result.items
+        : [];
+      // Sort by name A-Z
+      const sortedItems = items.sort((a, b) =>
+        a.name.localeCompare(b.name, "vi", { sensitivity: "base" })
+      );
+      setCategories(sortedItems);
+    } catch (err) {
+      console.error("Không thể tải danh sách loại trường:", err);
+    }
+  };
+
+  // Fetch provinces for dropdown
+  const fetchProvinces = async () => {
+    try {
+      const res = await provinceApi.getProvinces({
+        size: 100, // Get all provinces
+        sort: "name,asc", // Sort by name A-Z
+      });
+      const items = Array.isArray(res.data?.result?.items)
+        ? res.data.result.items
+        : [];
+      setProvinces(items);
+    } catch (err) {
+      console.error("Không thể tải danh sách tỉnh/thành:", err);
+    }
+  };
+
+  // Fetch admission methods for dropdown
+  const fetchAdmissionMethods = async () => {
+    try {
+      const res = await admissionMethodApi.getAdmissionMethods({
+        size: 100, // Get all admission methods
+        sort: "name,asc", // Sort by name A-Z
+      });
+      const items = Array.isArray(res.data?.result?.items)
+        ? res.data.result.items
+        : [];
+      setAdmissionMethods(items);
+    } catch (err) {
+      console.error("Không thể tải danh sách phương thức tuyển sinh:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUniversities();
-  }, [page, search]);
+    fetchCategories();
+    fetchProvinces();
+    fetchAdmissionMethods();
+  }, [page, search, sortField, sortOrder, provinceFilter]);
 
   // Auto clear messages
   useEffect(() => {
@@ -87,82 +170,32 @@ const AdminUniversities: React.FC = () => {
     }
   }, [error]);
 
-  // Form validation
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!form.name.trim()) {
-      errors.name = "Tên trường là bắt buộc";
-    }
-
-    if (!form.shortName.trim()) {
-      errors.shortName = "Tên viết tắt là bắt buộc";
-    }
-
-    if (form.categoryId <= 0) {
-      errors.categoryId = "Vui lòng chọn danh mục";
-    }
-
-    if (form.provinceId <= 0) {
-      errors.provinceId = "Vui lòng chọn tỉnh/thành";
-    }
-
-    if (
-      form.foundingYear < 1900 ||
-      form.foundingYear > new Date().getFullYear()
-    ) {
-      errors.foundingYear = `Năm thành lập phải từ 1900 đến ${new Date().getFullYear()}`;
-    }
-
-    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
-      errors.email = "Email không hợp lệ";
-    }
-
-    if (form.website && !form.website.startsWith("http")) {
-      errors.website = "Website phải bắt đầu bằng http:// hoặc https://";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Handle input changes
+  // Form handlers
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    // Clear specific field error when user types
-    if (formErrors[name]) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  // Search functionality
-  const handleSearch = () => {
-    setSearch(searchInput);
-    setPage(0);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    setForm((prev) => ({
+      ...prev,
+      [name]:
+        name === "categoryId" ||
+        name === "provinceId" ||
+        name === "foundingYear"
+          ? value === ""
+            ? 0
+            : parseInt(value, 10)
+          : value,
+    }));
   };
 
   // CRUD operations
   const handleAdd = () => {
     setForm(defaultForm);
     setIsEditing(false);
-    setFormErrors({});
     setShowFormModal(true);
+    setSelectedUniversity(null);
   };
 
   const handleEdit = async (id: number) => {
@@ -171,23 +204,25 @@ const AdminUniversities: React.FC = () => {
       const res = await universityApi.getUniversityDetail(id);
       const university = res.data.result;
       setSelectedUniversity(university);
-      setForm({
-        categoryId: university.category.id,
+
+      const formData = {
+        categoryId: university.categoryId,
         name: university.name,
         shortName: university.shortName,
-        logoUrl: university.logoUrl,
+        logoUrl: university.logoUrl || "",
         foundingYear: university.foundingYear,
         provinceId: university.province.id,
-        type: university.category?.name || "",
-        address: university.address,
-        email: university.email,
-        phone: university.phone,
-        website: university.website,
-        description: university.description,
-        admissionMethodIds: [],
-      });
+        type: "public", // Keep default for API compatibility
+        address: university.address || "",
+        email: university.email || "",
+        phone: university.phone || "",
+        website: university.website || "",
+        description: university.description || "",
+        admissionMethodIds: university.admissionMethodIds || [],
+      };
+
+      setForm(formData);
       setIsEditing(true);
-      setFormErrors({});
       setShowFormModal(true);
     } catch (err) {
       setError("Không thể lấy chi tiết trường");
@@ -215,11 +250,6 @@ const AdminUniversities: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
     setLoading(true);
     try {
       if (isEditing && selectedUniversity) {
@@ -234,7 +264,6 @@ const AdminUniversities: React.FC = () => {
       setIsEditing(false);
       setSelectedUniversity(null);
       setShowFormModal(false);
-      setFormErrors({});
       fetchUniversities();
     } catch (err) {
       setError(isEditing ? "Cập nhật trường thất bại" : "Thêm trường thất bại");
@@ -262,38 +291,61 @@ const AdminUniversities: React.FC = () => {
     setForm(defaultForm);
     setIsEditing(false);
     setSelectedUniversity(null);
-    setFormErrors({});
   };
 
-  const filteredUniversities = universities
-    .filter((u) => {
-      if (search.trim()) {
-        const s = search.trim().toLowerCase();
-        return (
-          u.name.toLowerCase().includes(s) ||
-          u.shortName.toLowerCase().includes(s) ||
-          (u.province?.name?.toLowerCase().includes(s) ?? false)
-        );
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      let vA = "",
-        vB = "";
-      if (sortField === "province") {
-        vA = a.province?.name || "";
-        vB = b.province?.name || "";
-      } else if (sortField === "name") {
-        vA = a.name;
-        vB = b.name;
-      } else if (sortField === "shortName") {
-        vA = a.shortName;
-        vB = b.shortName;
-      }
-      if (sortOrder === "asc")
-        return vA.localeCompare(vB, "vi", { sensitivity: "base" });
-      return vB.localeCompare(vA, "vi", { sensitivity: "base" });
-    });
+  // Search and filter handlers
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setPage(0);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleFilterChange = (filterType: string, value: string) => {
+    if (filterType === "province") {
+      setProvinceFilter(value);
+    }
+    setPage(0);
+  };
+
+  const handleSort = (field: "id" | "name" | "shortName" | "foundingYear") => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+    setPage(0);
+  };
+
+  const getStatusText = (status: string) => {
+    return status === "active" ? "Hoạt động" : "Đã xóa";
+  };
+
+  const getRegionText = (region: string) => {
+    return region === "BAC"
+      ? "Miền Bắc"
+      : region === "TRUNG"
+      ? "Miền Trung"
+      : region === "NAM"
+      ? "Miền Nam"
+      : "N/A";
+  };
+
+  const getAdmissionMethodNames = (admissionMethodIds: number[]) => {
+    if (!admissionMethodIds || admissionMethodIds.length === 0)
+      return "Chưa có";
+    return admissionMethodIds
+      .map((id) => {
+        const method = admissionMethods.find((m) => m.id === id);
+        return method ? method.name : "N/A";
+      })
+      .join(", ");
+  };
 
   return (
     <div className="admin-universities">
@@ -420,6 +472,21 @@ const AdminUniversities: React.FC = () => {
           </div>
         </div>
 
+        <div className="filter-controls">
+          <select
+            className="filter-select"
+            value={provinceFilter}
+            onChange={(e) => handleFilterChange("province", e.target.value)}
+          >
+            <option value="">Tất cả tỉnh/thành</option>
+            {provinces.map((province) => (
+              <option key={province.id} value={province.id}>
+                {province.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Pagination Info */}
         <div className="pagination-info">
           <span className="admin-text-sm admin-text-gray-600">
@@ -440,226 +507,68 @@ const AdminUniversities: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>
+                    <button
+                      className="sort-header"
+                      onClick={() => handleSort("id")}
+                    >
+                      ID
+                      {sortField === "id" && (
+                        <span className="sort-indicator">
+                          {sortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </button>
+                  </th>
                   <th>Logo</th>
                   <th>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
+                    <button
+                      className="sort-header"
+                      onClick={() => handleSort("name")}
                     >
                       Tên trường
-                      <button
-                        className="sort-th-btn"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          marginLeft: 2,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                        }}
-                        onClick={() => {
-                          if (sortField === "name") {
-                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                          } else {
-                            setSortField("name");
-                            setSortOrder("asc");
-                          }
-                        }}
-                        title="Sắp xếp theo tên trường"
-                      >
-                        {sortField === "name" ? (
-                          sortOrder === "asc" ? (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M6 15l6-6 6 6" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M18 9l-6 6-6-6" />
-                            </svg>
-                          )
-                        ) : (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{ opacity: 0.3 }}
-                          >
-                            <path d="M6 15l6-6 6 6" />
-                          </svg>
-                        )}
-                      </button>
-                    </span>
+                      {sortField === "name" && (
+                        <span className="sort-indicator">
+                          {sortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </button>
                   </th>
                   <th>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
+                    <button
+                      className="sort-header"
+                      onClick={() => handleSort("shortName")}
                     >
                       Tên viết tắt
-                      <button
-                        className="sort-th-btn"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          marginLeft: 2,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                        }}
-                        onClick={() => {
-                          if (sortField === "shortName") {
-                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                          } else {
-                            setSortField("shortName");
-                            setSortOrder("asc");
-                          }
-                        }}
-                        title="Sắp xếp theo viết tắt"
-                      >
-                        {sortField === "shortName" ? (
-                          sortOrder === "asc" ? (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M6 15l6-6 6 6" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M18 9l-6 6-6-6" />
-                            </svg>
-                          )
-                        ) : (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{ opacity: 0.3 }}
-                          >
-                            <path d="M6 15l6-6 6 6" />
-                          </svg>
-                        )}
-                      </button>
-                    </span>
+                      {sortField === "shortName" && (
+                        <span className="sort-indicator">
+                          {sortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </button>
                   </th>
-                  <th>Năm thành lập</th>
                   <th>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
+                    <button
+                      className="sort-header"
+                      onClick={() => handleSort("foundingYear")}
                     >
-                      Tỉnh/Thành
-                      <button
-                        className="sort-th-btn"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          marginLeft: 2,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                        }}
-                        onClick={() => {
-                          if (sortField === "province") {
-                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                          } else {
-                            setSortField("province");
-                            setSortOrder("asc");
-                          }
-                        }}
-                        title="Sắp xếp theo tỉnh/thành"
-                      >
-                        {sortField === "province" ? (
-                          sortOrder === "asc" ? (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M6 15l6-6 6 6" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M18 9l-6 6-6-6" />
-                            </svg>
-                          )
-                        ) : (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{ opacity: 0.3 }}
-                          >
-                            <path d="M6 15l6-6 6 6" />
-                          </svg>
-                        )}
-                      </button>
-                    </span>
+                      Năm thành lập
+                      {sortField === "foundingYear" && (
+                        <span className="sort-indicator">
+                          {sortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </button>
                   </th>
-                  <th>Email</th>
+
+                  <th>Tỉnh/Thành</th>
+                  <th>Vùng miền</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUniversities.map((university) => (
+                {universities.map((university) => (
                   <tr key={university.id} className="table-row">
                     <td className="admin-font-medium">{university.id}</td>
                     <td>
@@ -705,19 +614,23 @@ const AdminUniversities: React.FC = () => {
                       {university.shortName}
                     </td>
                     <td>{university.foundingYear}</td>
+
                     <td>
                       <span className="admin-badge admin-badge-info">
                         {university.province?.name || "N/A"}
                       </span>
                     </td>
-                    <td className="admin-text-sm">
-                      {university.email || "N/A"}
+                    <td>
+                      <span className="admin-badge admin-badge-secondary">
+                        {getRegionText(university.province?.region || "")}
+                      </span>
                     </td>
+
                     <td>
                       <span
                         className={`status-badge ${university.status?.toLowerCase()}`}
                       >
-                        {university.status || "Hoạt động"}
+                        {getStatusText(university.status || "active")}
                       </span>
                     </td>
                     <td>
@@ -793,7 +706,7 @@ const AdminUniversities: React.FC = () => {
               </tbody>
             </table>
 
-            {filteredUniversities.length === 0 && !loading && (
+            {universities.length === 0 && !loading && (
               <div className="empty-state">
                 <svg
                   className="empty-icon"
@@ -888,15 +801,13 @@ const AdminUniversities: React.FC = () => {
                     Tên trường <span className="required">*</span>
                   </label>
                   <input
-                    className={`admin-input ${formErrors.name ? "error" : ""}`}
+                    className="admin-input"
                     name="name"
-                    value={form.name}
+                    value={form.name || ""}
                     onChange={handleInputChange}
                     placeholder="Ví dụ: Đại học Bách khoa Hà Nội"
+                    required
                   />
-                  {formErrors.name && (
-                    <span className="error-text">{formErrors.name}</span>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -904,55 +815,53 @@ const AdminUniversities: React.FC = () => {
                     Tên viết tắt <span className="required">*</span>
                   </label>
                   <input
-                    className={`admin-input ${
-                      formErrors.shortName ? "error" : ""
-                    }`}
+                    className="admin-input"
                     name="shortName"
-                    value={form.shortName}
+                    value={form.shortName || ""}
                     onChange={handleInputChange}
                     placeholder="Ví dụ: HUST"
+                    required
                   />
-                  {formErrors.shortName && (
-                    <span className="error-text">{formErrors.shortName}</span>
-                  )}
                 </div>
 
                 <div className="form-group">
                   <label className="admin-label">
-                    ID Danh mục <span className="required">*</span>
+                    Loại trường <span className="required">*</span>
                   </label>
-                  <input
-                    className={`admin-input ${
-                      formErrors.categoryId ? "error" : ""
-                    }`}
+                  <select
+                    className="admin-input"
                     name="categoryId"
-                    type="number"
-                    value={form.categoryId}
+                    value={String(form.categoryId || "")}
                     onChange={handleInputChange}
-                    placeholder="ID danh mục trường"
-                  />
-                  {formErrors.categoryId && (
-                    <span className="error-text">{formErrors.categoryId}</span>
-                  )}
+                    required
+                  >
+                    <option value="">Chọn loại trường</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={String(category.id)}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
                   <label className="admin-label">
-                    ID Tỉnh/Thành <span className="required">*</span>
+                    Tỉnh/Thành <span className="required">*</span>
                   </label>
-                  <input
-                    className={`admin-input ${
-                      formErrors.provinceId ? "error" : ""
-                    }`}
+                  <select
+                    className="admin-input"
                     name="provinceId"
-                    type="number"
-                    value={form.provinceId}
+                    value={String(form.provinceId || "")}
                     onChange={handleInputChange}
-                    placeholder="ID tỉnh/thành phố"
-                  />
-                  {formErrors.provinceId && (
-                    <span className="error-text">{formErrors.provinceId}</span>
-                  )}
+                    required
+                  >
+                    <option value="">Chọn tỉnh/thành</option>
+                    {provinces.map((province) => (
+                      <option key={province.id} value={String(province.id)}>
+                        {province.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -960,20 +869,16 @@ const AdminUniversities: React.FC = () => {
                     Năm thành lập <span className="required">*</span>
                   </label>
                   <input
-                    className={`admin-input ${
-                      formErrors.foundingYear ? "error" : ""
-                    }`}
+                    className="admin-input"
                     name="foundingYear"
                     type="number"
-                    value={form.foundingYear}
+                    value={form.foundingYear || ""}
                     onChange={handleInputChange}
                     placeholder="Ví dụ: 1956"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    required
                   />
-                  {formErrors.foundingYear && (
-                    <span className="error-text">
-                      {formErrors.foundingYear}
-                    </span>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -981,7 +886,7 @@ const AdminUniversities: React.FC = () => {
                   <input
                     className="admin-input"
                     name="logoUrl"
-                    value={form.logoUrl}
+                    value={form.logoUrl || ""}
                     onChange={handleInputChange}
                     placeholder="https://example.com/logo.png"
                   />
@@ -992,7 +897,7 @@ const AdminUniversities: React.FC = () => {
                   <input
                     className="admin-input"
                     name="address"
-                    value={form.address}
+                    value={form.address || ""}
                     onChange={handleInputChange}
                     placeholder="Địa chỉ đầy đủ của trường"
                   />
@@ -1001,16 +906,13 @@ const AdminUniversities: React.FC = () => {
                 <div className="form-group">
                   <label className="admin-label">Email</label>
                   <input
-                    className={`admin-input ${formErrors.email ? "error" : ""}`}
+                    className="admin-input"
                     name="email"
                     type="email"
-                    value={form.email}
+                    value={form.email || ""}
                     onChange={handleInputChange}
                     placeholder="contact@university.edu.vn"
                   />
-                  {formErrors.email && (
-                    <span className="error-text">{formErrors.email}</span>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -1018,7 +920,7 @@ const AdminUniversities: React.FC = () => {
                   <input
                     className="admin-input"
                     name="phone"
-                    value={form.phone}
+                    value={form.phone || ""}
                     onChange={handleInputChange}
                     placeholder="024.3869.2008"
                   />
@@ -1027,17 +929,12 @@ const AdminUniversities: React.FC = () => {
                 <div className="form-group">
                   <label className="admin-label">Website</label>
                   <input
-                    className={`admin-input ${
-                      formErrors.website ? "error" : ""
-                    }`}
+                    className="admin-input"
                     name="website"
-                    value={form.website}
+                    value={form.website || ""}
                     onChange={handleInputChange}
                     placeholder="https://university.edu.vn"
                   />
-                  {formErrors.website && (
-                    <span className="error-text">{formErrors.website}</span>
-                  )}
                 </div>
 
                 <div className="form-group full-width">
@@ -1045,11 +942,50 @@ const AdminUniversities: React.FC = () => {
                   <textarea
                     className="admin-input"
                     name="description"
-                    value={form.description}
+                    value={form.description || ""}
                     onChange={handleInputChange}
                     placeholder="Mô tả về trường đại học..."
                     rows={3}
                   />
+                </div>
+
+                <div className="form-group full-width">
+                  <label className="admin-label">Phương thức tuyển sinh</label>
+                  <div className="checkbox-group">
+                    {admissionMethods.map((method) => (
+                      <label key={method.id} className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={form.admissionMethodIds.includes(method.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setForm((prev) => ({
+                                ...prev,
+                                admissionMethodIds: [
+                                  ...prev.admissionMethodIds,
+                                  method.id,
+                                ],
+                              }));
+                            } else {
+                              setForm((prev) => ({
+                                ...prev,
+                                admissionMethodIds:
+                                  prev.admissionMethodIds.filter(
+                                    (id) => id !== method.id
+                                  ),
+                              }));
+                            }
+                          }}
+                        />
+                        <span className="checkbox-label">{method.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {admissionMethods.length === 0 && (
+                    <p className="admin-text-sm admin-text-gray-500">
+                      Không có phương thức tuyển sinh nào
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1126,63 +1062,151 @@ const AdminUniversities: React.FC = () => {
                   <p className="admin-text-sm admin-text-gray-600">
                     {viewDetail.shortName}
                   </p>
-                  <span className="admin-badge admin-badge-info">
-                    {viewDetail.category?.name}
-                  </span>
+                  <div className="detail-badges">
+                    <span className="admin-badge admin-badge-info">
+                      {viewDetail.category?.name ||
+                        `ID: ${viewDetail.categoryId}`}
+                    </span>
+                    <span className="admin-badge admin-badge-secondary">
+                      {getRegionText(viewDetail.province?.region || "")}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="detail-grid">
-                <div className="detail-item">
-                  <label>ID:</label>
-                  <span>{viewDetail.id}</span>
+                {/* Thông tin cơ bản */}
+                <div className="detail-section">
+                  <h4 className="detail-section-title">Thông tin cơ bản</h4>
+                  <div className="detail-section-content">
+                    <div className="detail-item">
+                      <label>ID:</label>
+                      <span>{viewDetail.id}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Năm thành lập:</label>
+                      <span>{viewDetail.foundingYear}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Trạng thái:</label>
+                      <span
+                        className={`status-badge ${viewDetail.status?.toLowerCase()}`}
+                      >
+                        {getStatusText(viewDetail.status || "active")}
+                      </span>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Mô tả:</label>
+                      <span>{viewDetail.description || "Chưa có mô tả"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-item">
-                  <label>Năm thành lập:</label>
-                  <span>{viewDetail.foundingYear}</span>
+
+                {/* Thông tin phân loại */}
+                <div className="detail-section">
+                  <h4 className="detail-section-title">Phân loại</h4>
+                  <div className="detail-section-content">
+                    <div className="detail-item">
+                      <label>Loại trường:</label>
+                      <span>
+                        {viewDetail.category?.name ||
+                          `ID: ${viewDetail.categoryId}`}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Tỉnh/Thành:</label>
+                      <span>{viewDetail.province?.name}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Vùng miền:</label>
+                      <span>
+                        {getRegionText(viewDetail.province?.region || "")}
+                      </span>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Phương thức tuyển sinh:</label>
+                      <span>
+                        {getAdmissionMethodNames(
+                          viewDetail.admissionMethodIds || []
+                        )}
+                      </span>
+                    </div>
+                    {viewDetail.province?.description && (
+                      <div className="detail-item full-width">
+                        <label>Mô tả tỉnh/thành:</label>
+                        <span>{viewDetail.province.description}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="detail-item">
-                  <label>Tỉnh/Thành:</label>
-                  <span>{viewDetail.province?.name}</span>
+
+                {/* Thông tin liên hệ */}
+                <div className="detail-section">
+                  <h4 className="detail-section-title">Thông tin liên hệ</h4>
+                  <div className="detail-section-content">
+                    <div className="detail-item full-width">
+                      <label>Địa chỉ:</label>
+                      <span>{viewDetail.address || "Chưa cập nhật"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Email:</label>
+                      <span>{viewDetail.email || "Chưa cập nhật"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Điện thoại:</label>
+                      <span>{viewDetail.phone || "Chưa cập nhật"}</span>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Website:</label>
+                      {viewDetail.website ? (
+                        <a
+                          href={viewDetail.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link"
+                        >
+                          {viewDetail.website}
+                        </a>
+                      ) : (
+                        <span>Chưa cập nhật</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-item">
-                  <label>Trạng thái:</label>
-                  <span
-                    className={`status-badge ${viewDetail.status?.toLowerCase()}`}
-                  >
-                    {viewDetail.status || "Hoạt động"}
-                  </span>
-                </div>
-                <div className="detail-item full-width">
-                  <label>Địa chỉ:</label>
-                  <span>{viewDetail.address || "Chưa cập nhật"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Email:</label>
-                  <span>{viewDetail.email || "Chưa cập nhật"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Điện thoại:</label>
-                  <span>{viewDetail.phone || "Chưa cập nhật"}</span>
-                </div>
-                <div className="detail-item full-width">
-                  <label>Website:</label>
-                  {viewDetail.website ? (
-                    <a
-                      href={viewDetail.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link"
-                    >
-                      {viewDetail.website}
-                    </a>
-                  ) : (
-                    <span>Chưa cập nhật</span>
-                  )}
-                </div>
-                <div className="detail-item full-width">
-                  <label>Mô tả:</label>
-                  <span>{viewDetail.description || "Chưa có mô tả"}</span>
+
+                {/* Thông tin hệ thống */}
+                <div className="detail-section">
+                  <h4 className="detail-section-title">Thông tin hệ thống</h4>
+                  <div className="detail-section-content">
+                    <div className="detail-item">
+                      <label>Người tạo:</label>
+                      <span>{viewDetail.createdBy || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Thời gian tạo:</label>
+                      <span>
+                        {viewDetail.createdAt
+                          ? new Date(viewDetail.createdAt).toLocaleString(
+                              "vi-VN"
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Người cập nhật:</label>
+                      <span>{viewDetail.updatedBy || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Thời gian cập nhật:</label>
+                      <span>
+                        {viewDetail.updatedAt
+                          ? new Date(viewDetail.updatedAt).toLocaleString(
+                              "vi-VN"
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

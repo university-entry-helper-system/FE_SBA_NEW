@@ -11,6 +11,9 @@ export const getUniversities = (params?: {
   page?: number;
   size?: number;
   search?: string;
+  sort?: string;
+  categoryId?: number;
+  provinceId?: number;
 }) => {
   return axios.get<UniversityListResponse>(BASE_URL, { params });
 };
@@ -31,6 +34,6 @@ export const deleteUniversity = (id: number) => {
   return axios.delete(`${BASE_URL}/${id}`);
 };
 
-export const getProvinces = () => {
-  return axios.get("/provinces");
+export const updateUniversityStatus = (id: number, status: string) => {
+  return axios.patch(`${BASE_URL}/${id}/status`, { status });
 };
