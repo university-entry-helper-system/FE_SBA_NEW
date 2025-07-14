@@ -1,20 +1,27 @@
 .admin-navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: var(--navbar-height, 64px);
   padding: 0 1.5rem;
   background-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  border-bottom: 1px solid var(--admin-border, #e2e8f0);
+  box-shadow: var(--admin-shadow, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
 }
 
+/* Logo Section */
 .admin-navbar-logo {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 .admin-sidebar-toggle {
@@ -27,17 +34,25 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border-radius: 0.375rem;
+  border-radius: 8px;
+  transition: var(--transition-fast, all 0.15s ease);
+  color: #6b7280;
 }
 
 .admin-sidebar-toggle:hover {
   background-color: #f3f4f6;
+  color: #374151;
+}
+
+.admin-sidebar-toggle:active {
+  background-color: #e5e7eb;
+  transform: scale(0.95);
 }
 
 .toggle-icon {
-  width: 24px;
-  height: 24px;
-  color: #4b5563;
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
 }
 
 .admin-logo {
@@ -45,58 +60,78 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: var(--transition-fast, all 0.15s ease);
+}
+
+.admin-logo:hover {
+  opacity: 0.8;
 }
 
 .admin-logo-text {
   font-size: 1.25rem;
   font-weight: 700;
   color: #1f2937;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* Actions Section */
 .admin-navbar-actions {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .admin-navbar-user {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: var(--transition-fast, all 0.15s ease);
+}
+
+.admin-navbar-user:hover {
+  background-color: #f9fafb;
 }
 
 .admin-user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #0369a1;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
-  border-radius: 9999px;
+  border-radius: 50%;
   font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  flex-shrink: 0;
 }
 
 .admin-user-details {
   display: none;
-}
-
-@media (min-width: 768px) {
-  .admin-user-details {
-    display: flex;
-    flex-direction: column;
-  }
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
 
 .admin-user-name {
   font-size: 0.875rem;
   font-weight: 600;
   color: #1f2937;
+  line-height: 1.2;
 }
 
 .admin-user-role {
   font-size: 0.75rem;
   color: #6b7280;
+  line-height: 1.2;
+  text-transform: capitalize;
 }
 
 .admin-logout-btn {
@@ -104,30 +139,148 @@
   align-items: center;
   gap: 0.5rem;
   background-color: #f3f4f6;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
+  font-weight: 500;
   color: #4b5563;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast, all 0.15s ease);
+  white-space: nowrap;
 }
 
 .admin-logout-btn:hover {
   background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.admin-logout-btn:active {
+  background-color: #d1d5db;
+  transform: scale(0.98);
 }
 
 .logout-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+  flex-shrink: 0;
 }
 
+/* Responsive Design */
+@media (min-width: 768px) {
+  .admin-navbar {
+    padding: 0 2rem;
+  }
+
+  .admin-navbar-actions {
+    gap: 1.5rem;
+  }
+
+  .admin-user-details {
+    display: flex;
+  }
+
+  .admin-logout-btn {
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-navbar-logo {
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile Adjustments */
 @media (max-width: 767px) {
+  .admin-navbar {
+    padding: 0 1rem;
+  }
+
+  .admin-navbar-actions {
+    gap: 0.75rem;
+  }
+
   .admin-logout-btn span {
     display: none;
   }
 
   .admin-logout-btn {
     padding: 0.5rem;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  .admin-navbar-user {
+    padding: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-navbar {
+    padding: 0 0.75rem;
+  }
+
+  .admin-logo-text {
+    font-size: 1.125rem;
+  }
+
+  .admin-user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Focus States */
+.admin-sidebar-toggle:focus,
+.admin-logout-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Dark Mode Support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .admin-navbar {
+    background-color: rgba(17, 24, 39, 0.95);
+    border-bottom-color: #374151;
+  }
+
+  .admin-logo-text {
+    color: #f9fafb;
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .admin-user-name {
+    color: #f9fafb;
+  }
+
+  .admin-user-role {
+    color: #9ca3af;
+  }
+
+  .admin-sidebar-toggle {
+    color: #9ca3af;
+  }
+
+  .admin-sidebar-toggle:hover {
+    background-color: #374151;
+    color: #f3f4f6;
+  }
+
+  .admin-logout-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .admin-logout-btn:hover {
+    background-color: #4b5563;
+    border-color: #6b7280;
+    color: #f3f4f6;
   }
 }

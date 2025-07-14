@@ -1,101 +1,316 @@
 .admin-sidebar {
-  position: sticky;
-  top: 64px; /* Match the navbar height */
-  height: calc(100vh - 64px); /* Full height minus navbar */
-  width: 250px;
-  background-color: #f9fafb;
-  border-right: 1px solid #e5e7eb;
-  transition: width 0.3s;
+  position: fixed;
+  top: var(--navbar-height, 64px);
+  left: 0;
+  width: var(--sidebar-width, 280px);
+  height: calc(100vh - var(--navbar-height, 64px));
+  background-color: #ffffff;
+  border-right: 1px solid var(--admin-border, #e2e8f0);
+  box-shadow: var(--admin-shadow, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+  z-index: 40;
   overflow-y: auto;
+  overflow-x: hidden;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sidebar States */
+.admin-sidebar.open {
+  transform: translateX(0);
 }
 
 .admin-sidebar.closed {
-  width: 70px;
+  transform: translateX(-100%);
 }
 
+/* Navigation Container */
 .admin-nav {
   padding: 1.5rem 0;
+  height: 100%;
 }
 
 .admin-nav-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
+/* Group Titles */
+.admin-nav-group-title {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 0;
+  transition: var(--transition-fast, all 0.15s ease);
+  margin: 0.5rem 0 0.25rem 0;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-left: 3px solid #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-nav-group-title:hover {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  color: #1f2937;
+}
+
+.admin-nav-group-title:first-child {
+  margin-top: 0;
+}
+
+/* Navigation Items */
 .admin-nav-item {
-  margin-bottom: 0.5rem;
+  margin: 0;
+  padding: 0 1rem;
 }
 
 .admin-nav-link {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 0.5rem;
+  color: #6b7280;
   text-decoration: none;
-  color: #4b5563;
-  transition: all 0.2s;
-  border-left: 3px solid transparent;
+  border-radius: 8px;
+  transition: var(--transition-fast, all 0.15s ease);
+  font-size: 0.875rem;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
 }
 
-.admin-sidebar.closed .admin-nav-link {
-  padding: 0.75rem;
-  justify-content: center;
+.admin-nav-link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  opacity: 0;
+  transition: var(--transition-fast, all 0.15s ease);
+  z-index: -1;
 }
 
 .admin-nav-link:hover {
-  background-color: #f3f4f6;
-  color: #1f2937;
+  color: #374151;
+  background-color: #f8fafc;
+  transform: translateX(2px);
+}
+
+.admin-nav-link:hover::before {
+  opacity: 0.05;
 }
 
 .admin-nav-link.active {
-  background-color: #e0f2fe;
-  color: #0369a1;
-  border-left-color: #0369a1;
+  color: #3b82f6;
+  background-color: #eff6ff;
+  font-weight: 600;
+  border-left: 3px solid #3b82f6;
+  margin-left: -3px;
+  padding-left: calc(0.5rem + 3px);
 }
 
+.admin-nav-link.active::before {
+  opacity: 0.1;
+}
+
+.admin-nav-link.active:hover {
+  color: #1d4ed8;
+  background-color: #dbeafe;
+}
+
+/* Navigation Icons */
 .admin-nav-icon {
   width: 20px;
   height: 20px;
+  stroke-width: 2;
   flex-shrink: 0;
+  transition: var(--transition-fast, all 0.15s ease);
 }
 
-.admin-sidebar.closed .admin-nav-text {
-  display: none;
+.admin-nav-link:hover .admin-nav-icon {
+  transform: scale(1.1);
 }
 
-.admin-nav-group-title {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #fff;
-  padding: 0.75rem 1.5rem 0.5rem 1.5rem;
-  background: #3f72af;
-  letter-spacing: 0.5px;
-  margin-top: 10px;
-  margin-bottom: 2px;
-  border-left: 3px solid #0ea5e9;
-  border-radius: 6px 0 0 6px;
-  transition: background 0.2s, color 0.2s;
+.admin-nav-link.active .admin-nav-icon {
+  color: #3b82f6;
 }
 
-.admin-nav-group-title:hover {
-  background: #26507a;
-  color: #e0f2fe;
+/* Navigation Text */
+.admin-nav-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
-.admin-sidebar.closed .admin-nav-group-title {
-  padding: 0.75rem 0.75rem 0.5rem 0.75rem;
-  font-size: 1rem;
-  text-align: center;
+/* Scrollbar Styling */
+.admin-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+  transition: var(--transition-fast, all 0.15s ease);
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
+
+/* Responsive Design */
+@media (min-width: 1024px) {
+  .admin-sidebar.closed {
+    transform: translateX(0);
+    width: var(--sidebar-collapsed-width, 0px);
+    border-right: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .admin-sidebar {
+    box-shadow: var(--admin-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+  }
+
+  .admin-sidebar.closed {
+    transform: translateX(-100%);
+  }
 }
 
 @media (max-width: 767px) {
   .admin-sidebar {
-    position: fixed;
-    z-index: 90;
+    width: min(var(--sidebar-width, 280px), calc(100vw - 2rem));
   }
 
-  .admin-sidebar.closed {
-    width: 0;
+  .admin-nav {
+    padding: 1rem 0;
+  }
+
+  .admin-nav-group-title {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .admin-nav-item {
+    padding: 0 0.75rem;
+  }
+
+  .admin-nav-link {
+    padding: 0.625rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Focus States */
+.admin-nav-group-title:focus,
+.admin-nav-link:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animation for Group Toggle */
+.admin-nav-group-title span:last-child {
+  transition: var(--transition-fast, all 0.15s ease);
+  font-size: 0.75rem;
+}
+
+.admin-nav-group-title:hover span:last-child {
+  transform: scale(1.1);
+}
+
+/* Improved Active Link Indicator */
+.admin-nav-link.active::after {
+  content: "";
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+/* Smooth Transitions for Group Toggles */
+.admin-nav-item {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .admin-sidebar {
+    background-color: rgba(17, 24, 39, 0.95);
+    border-right-color: #374151;
+  }
+
+  .admin-nav-group-title {
+    color: #d1d5db;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border-left-color: #60a5fa;
+  }
+
+  .admin-nav-group-title:hover {
+    background: linear-gradient(135deg, #374151, #1f2937);
+    color: #f3f4f6;
+  }
+
+  .admin-nav-link {
+    color: #9ca3af;
+  }
+
+  .admin-nav-link:hover {
+    color: #d1d5db;
+    background-color: #1f2937;
+  }
+
+  .admin-nav-link.active {
+    color: #60a5fa;
+    background-color: #1e3a8a;
+    border-left-color: #60a5fa;
+  }
+
+  .admin-nav-link.active:hover {
+    color: #93c5fd;
+    background-color: #1e40af;
+  }
+
+  .admin-nav-link.active .admin-nav-icon {
+    color: #60a5fa;
+  }
+
+  .admin-sidebar::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+
+  .admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
   }
 }

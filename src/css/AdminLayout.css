@@ -1,36 +1,171 @@
+:root {
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 0px;
+  --navbar-height: 64px;
+  --admin-bg: #f8fafc;
+  --admin-text: #334155;
+  --admin-border: #e2e8f0;
+  --admin-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --admin-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Main Layout Container */
 .admin-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
+  overflow-x: hidden;
 }
 
+/* Container for Sidebar and Main Content */
 .admin-container {
   display: flex;
   flex: 1;
+  position: relative;
+  min-height: calc(100vh - var(--navbar-height));
 }
 
+/* Main Content Area */
 .admin-main {
   flex: 1;
-  padding: 1.5rem;
-  transition: margin-left 0.3s;
+  min-width: 0;
+  padding: 2rem;
+  transition: var(--transition-smooth);
+  background-color: var(--admin-bg);
+  min-height: calc(100vh - var(--navbar-height));
+  position: relative;
+  overflow-x: auto;
 }
 
-.admin-main.sidebar-open {
-  margin-left: 0;
-}
+/* Desktop Sidebar States */
+@media (min-width: 1024px) {
+  .admin-main.sidebar-open {
+    margin-left: var(--sidebar-width);
+  }
 
-.admin-main.sidebar-closed {
-  margin-left: 0;
-}
-
-@media (max-width: 767px) {
-  .admin-main {
-    width: 100%;
+  .admin-main.sidebar-closed {
+    margin-left: 0;
   }
 }
 
-@media (min-width: 768px) {
-  .admin-main.sidebar-closed {
-    margin-left: -180px; /* Adjust based on sidebar width difference */
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .admin-main {
+    padding: 1.5rem;
+    margin-left: 0;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .admin-main {
+    padding: 1rem;
+    margin-left: 0;
+  }
+
+  /* Mobile overlay when sidebar is open */
+  .admin-main.sidebar-open::before {
+    content: "";
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    opacity: 1;
+    transition: var(--transition-fast);
+  }
+
+  .admin-main.sidebar-closed::before {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Content spacing */
+.admin-main > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Focus styles */
+.admin-main *:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+.admin-main {
+  scroll-behavior: smooth;
+}
+
+/* Loading states */
+.admin-main.loading {
+  pointer-events: none;
+  opacity: 0.7;
+  transition: var(--transition-fast);
+}
+
+.admin-main.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 100;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Print styles */
+@media print {
+  .admin-layout {
+    background: white;
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 0;
+    box-shadow: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  :root {
+    --admin-bg: #ffffff;
+    --admin-text: #000000;
+    --admin-border: #000000;
+    --admin-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-main {
+    transition: none;
+  }
+
+  .admin-main.loading::after {
+    animation: none;
   }
 }
