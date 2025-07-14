@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import type { RegisterFormValues } from "../types/auth";
 import {
   TextField,
   Button,
@@ -104,7 +103,7 @@ const Register = () => {
   const handleSubmit = async (values: RegisterFormWithConfirm) => {
     try {
       // Format dob as MM-DD-YYYY
-      let dob = values.dob;
+      const dob = values.dob;
       let dobStr = "";
       if (dob && typeof dob !== "string") {
         dobStr = dob.format("MM-DD-YYYY");
@@ -116,7 +115,7 @@ const Register = () => {
       if (/^0\d{9}$/.test(phone)) {
         phone = "+84" + phone.substring(1);
       }
-      // Only send fields required by API
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword, ...apiValues } = values;
       const response = await register({
         ...apiValues,
