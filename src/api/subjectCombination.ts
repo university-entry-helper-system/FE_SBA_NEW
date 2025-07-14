@@ -10,6 +10,8 @@ export const getSubjectCombinations = (params: {
   page?: number;
   size?: number;
   sort?: string;
+  block?: string;
+  examSubject?: string;
 }) => instance.get("/subject-combinations", { params });
 
 export const getSubjectCombination = (id: number) =>

@@ -40,6 +40,8 @@ const AdminSubjectCombination: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [block, setBlock] = useState("");
+  const [examSubject, setExamSubject] = useState("");
   const [sortField, setSortField] = useState<"id" | "name">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   // Exam subject dropdown states
@@ -53,6 +55,8 @@ const AdminSubjectCombination: React.FC = () => {
     try {
       const res = await subjectCombinationApi.getSubjectCombinations({
         search,
+        block,
+        examSubject,
         page,
         size,
         sort: `${sortField},${sortOrder}`,
@@ -231,7 +235,27 @@ const AdminSubjectCombination: React.FC = () => {
 
   // Search handlers
   const handleSearch = () => {
-    setSearch(searchInput);
+    // Parse searchInput: nếu chỉ 1 từ => search theo tên tổ hợp môn
+    // Nếu nhiều từ: từ đầu là block (A, B, C, D...), còn lại là examSubject
+    let s = "";
+    let b = "";
+    let e = "";
+    const parts = searchInput.trim().split(/\s+/);
+    if (parts.length === 1) {
+      s = parts[0];
+    } else if (parts.length > 1) {
+      // Nếu từ đầu là 1 ký tự hoặc A, B, C, D... thì là block
+      if (/^[A-Z]$/.test(parts[0])) {
+        b = parts[0];
+        e = parts.slice(1).join(" ");
+      } else {
+        // Nếu không, search toàn bộ chuỗi
+        s = searchInput;
+      }
+    }
+    setSearch(s);
+    setBlock(b);
+    setExamSubject(e);
     setPage(0);
   };
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -273,7 +297,10 @@ const AdminSubjectCombination: React.FC = () => {
       {/* Search and Filters */}
       <div className="search-section">
         <div className="search-controls">
-          <div className="search-input-group">
+          <div
+            className="search-input-group"
+            style={{ gap: 8, display: "flex", flexWrap: "wrap" }}
+          >
             <svg
               className="search-icon"
               viewBox="0 0 24 24"
@@ -290,10 +317,11 @@ const AdminSubjectCombination: React.FC = () => {
             </svg>
             <input
               className="search-input"
-              placeholder="Tìm kiếm theo tên tổ hợp môn..."
+              placeholder="Tìm kiếm tổ hợp môn, khối hoặc môn thi. VD: 'A Toán' hoặc 'A00' hoặc 'Toán'"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleKeyPress}
+              style={{ minWidth: 260 }}
             />
             <button className="search-btn" onClick={handleSearch}>
               Tìm kiếm
@@ -522,6 +550,7 @@ const AdminSubjectCombination: React.FC = () => {
                   </th>
                   <th>Mô tả</th>
                   <th>Môn thi</th>
+                  <th>Khối</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
@@ -541,6 +570,7 @@ const AdminSubjectCombination: React.FC = () => {
                         ))}
                       </div>
                     </td>
+                    <td>{c.block ? c.block.name : "Không thuộc khối nào"}</td>
                     <td>
                       <span
                         className={`status-badge ${c.status?.toLowerCase()}`}
@@ -914,6 +944,14 @@ const AdminSubjectCombination: React.FC = () => {
                       </span>
                     ))}
                   </div>
+                </div>
+                <div className="detail-item">
+                  <label>Khối:</label>
+                  <span>
+                    {viewDetail.block
+                      ? viewDetail.block.name
+                      : "Không thuộc khối nào"}
+                  </span>
                 </div>
               </div>
             </div>

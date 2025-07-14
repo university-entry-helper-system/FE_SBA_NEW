@@ -12,6 +12,7 @@ export interface SubjectCombination {
   description: string;
   examSubjects: ExamSubject[];
   status: SubjectCombinationStatus;
+  block?: { id: number; name: string } | null;
 }
 
 export interface SubjectCombinationCreateRequest {
