@@ -3,14 +3,19 @@ import type {
   Province,
   ProvinceCreateRequest,
   ProvinceUpdateRequest,
-  ProvinceListResponse,
+  ProvincePaginatedResponse,
   ApiResponse,
 } from "../types/province";
 
 const BASE_URL = "/provinces";
 
-// Lấy danh sách tỉnh/thành
-export const getProvinces = () => axios.get<ProvinceListResponse>(BASE_URL);
+// Lấy danh sách tỉnh/thành (có tìm kiếm, phân trang, sắp xếp)
+export const getProvinces = (params?: {
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}) => axios.get<ProvincePaginatedResponse>(BASE_URL, { params });
 
 // Lấy chi tiết tỉnh/thành theo ID
 export const getProvinceDetail = (id: number) =>
@@ -20,7 +25,7 @@ export const getProvinceDetail = (id: number) =>
 export const createProvince = (data: ProvinceCreateRequest) =>
   axios.post<ApiResponse<Province>>(BASE_URL, data);
 
-// Cập nhật tỉnh/thành
+// Cập nhật tỉnh/thành (có thể thêm status)
 export const updateProvince = (id: number, data: ProvinceUpdateRequest) =>
   axios.put<ApiResponse<Province>>(`${BASE_URL}/${id}`, data);
 

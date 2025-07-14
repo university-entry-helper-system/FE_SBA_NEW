@@ -1,11 +1,44 @@
 import React, { useEffect, useState } from "react";
 import "../../css/AdminUniversities.css";
 import * as provinceApi from "../../api/province";
-import type { Province, ProvinceCreateRequest } from "../../types/province";
+import type {
+  Province,
+  ProvinceRegion,
+  ProvinceUpdateRequest,
+  ProvinceStatus,
+} from "../../types/province";
 
-const defaultForm: ProvinceCreateRequest = {
+// Convert tiếng Việt → Enum (khi gửi lên API)
+const regionToEnum: Record<string, ProvinceRegion> = {
+  Bắc: "BAC",
+  Trung: "TRUNG",
+  Nam: "NAM",
+};
+
+// Convert Enum → tiếng Việt (khi nhận từ API)
+const enumToRegion: Record<ProvinceRegion, string> = {
+  BAC: "Bắc",
+  TRUNG: "Trung",
+  NAM: "Nam",
+};
+
+const REGION_OPTIONS = [
+  { value: "Bắc", label: "Bắc" },
+  { value: "Trung", label: "Trung" },
+  { value: "Nam", label: "Nam" },
+];
+
+// Thêm status vào form type
+const defaultForm: {
+  name: string;
+  description: string;
+  region: string;
+  status?: string;
+} = {
   name: "",
-  region: "",
+  description: "",
+  region: "Bắc",
+  status: "ACTIVE",
 };
 
 const AdminProvince: React.FC = () => {
@@ -13,20 +46,37 @@ const AdminProvince: React.FC = () => {
   const [selectedProvince, setSelectedProvince] = useState<Province | null>(
     null
   );
-  const [form, setForm] = useState<ProvinceCreateRequest>(defaultForm);
+  const [form, setForm] = useState(defaultForm);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showFormModal, setShowFormModal] = useState(false);
+  const [viewDetail, setViewDetail] = useState<Province | null>(null);
+  // Pagination, search, sort
+  const [page, setPage] = useState(0);
+  const [size] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [sortField, setSortField] = useState<"id" | "name" | "region">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Fetch provinces
   const fetchProvinces = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await provinceApi.getProvinces();
-      setProvinces(res.data.result);
+      const res = await provinceApi.getProvinces({
+        search,
+        page,
+        size,
+        sort: `${sortField},${sortOrder}`,
+      });
+      setProvinces(res.data.result.items);
+      setTotalPages(res.data.result.totalPages);
+      setTotalElements(res.data.result.totalElements);
     } catch {
       setError("Không thể tải danh sách tỉnh/thành");
       setProvinces([]);
@@ -37,7 +87,8 @@ const AdminProvince: React.FC = () => {
 
   useEffect(() => {
     fetchProvinces();
-  }, []);
+    // eslint-disable-next-line
+  }, [page, search, sortField, sortOrder]);
 
   // Auto clear messages
   useEffect(() => {
@@ -56,7 +107,9 @@ const AdminProvince: React.FC = () => {
 
   // Form handlers
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -71,9 +124,18 @@ const AdminProvince: React.FC = () => {
 
   const handleEdit = (province: Province) => {
     setSelectedProvince(province);
-    setForm({ name: province.name, region: province.region });
+    setForm({
+      name: province.name,
+      description: province.description,
+      region: enumToRegion[province.region],
+      status: province.status,
+    });
     setIsEditing(true);
     setShowFormModal(true);
+  };
+
+  const handleViewDetail = (province: Province) => {
+    setViewDetail(province);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -94,11 +156,18 @@ const AdminProvince: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const apiData: ProvinceUpdateRequest = {
+        name: form.name,
+        description: form.description,
+        region: regionToEnum[form.region],
+        status: (form.status as ProvinceStatus) || undefined,
+      };
+      if (!isEditing) delete apiData.status;
       if (isEditing && selectedProvince) {
-        await provinceApi.updateProvince(selectedProvince.id, form);
+        await provinceApi.updateProvince(selectedProvince.id, apiData);
         setSuccess("Cập nhật tỉnh/thành thành công");
       } else {
-        await provinceApi.createProvince(form);
+        await provinceApi.createProvince(apiData);
         setSuccess("Thêm tỉnh/thành mới thành công");
       }
       setForm(defaultForm);
@@ -120,6 +189,15 @@ const AdminProvince: React.FC = () => {
     setForm(defaultForm);
     setIsEditing(false);
     setSelectedProvince(null);
+  };
+
+  // Search handlers
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setPage(0);
+  };
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
@@ -152,6 +230,43 @@ const AdminProvince: React.FC = () => {
           </svg>
           Thêm tỉnh/thành
         </button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="search-section">
+        <div className="search-controls">
+          <div className="search-input-group">
+            <svg
+              className="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m21 21-4.35-4.35"
+              />
+            </svg>
+            <input
+              className="search-input"
+              placeholder="Tìm kiếm theo tên tỉnh/thành..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <button className="search-btn" onClick={handleSearch}>
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
+        <div className="pagination-info">
+          <span className="admin-text-sm admin-text-gray-600">
+            Hiển thị {provinces.length} trên tổng số {totalElements} tỉnh/thành
+          </span>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -210,7 +325,7 @@ const AdminProvince: React.FC = () => {
           </div>
           <div className="stat-content">
             <h3>Tổng số tỉnh/thành</h3>
-            <p className="stat-number">{provinces.length}</p>
+            <p className="stat-number">{totalElements}</p>
           </div>
         </div>
       </div>
@@ -227,9 +342,217 @@ const AdminProvince: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Tên tỉnh/thành</th>
-                  <th>Vùng miền</th>
+                  <th>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      ID
+                      <button
+                        className="sort-th-btn"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          marginLeft: 2,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => {
+                          if (sortField === "id") {
+                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                          } else {
+                            setSortField("id");
+                            setSortOrder("asc");
+                          }
+                        }}
+                        title="Sắp xếp theo ID"
+                      >
+                        {sortField === "id" ? (
+                          sortOrder === "asc" ? (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M6 15l6-6 6 6" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M18 9l-6 6-6-6" />
+                            </svg>
+                          )
+                        ) : (
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{ opacity: 0.3 }}
+                          >
+                            <path d="M6 15l6-6 6 6" />
+                          </svg>
+                        )}
+                      </button>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      Tên tỉnh/thành
+                      <button
+                        className="sort-th-btn"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          marginLeft: 2,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => {
+                          if (sortField === "name") {
+                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                          } else {
+                            setSortField("name");
+                            setSortOrder("asc");
+                          }
+                        }}
+                        title="Sắp xếp theo tên"
+                      >
+                        {sortField === "name" ? (
+                          sortOrder === "asc" ? (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M6 15l6-6 6 6" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M18 9l-6 6-6-6" />
+                            </svg>
+                          )
+                        ) : (
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{ opacity: 0.3 }}
+                          >
+                            <path d="M6 15l6-6 6 6" />
+                          </svg>
+                        )}
+                      </button>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      Vùng miền
+                      <button
+                        className="sort-th-btn"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          marginLeft: 2,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => {
+                          if (sortField === "region") {
+                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                          } else {
+                            setSortField("region");
+                            setSortOrder("asc");
+                          }
+                        }}
+                        title="Sắp xếp theo vùng miền"
+                      >
+                        {sortField === "region" ? (
+                          sortOrder === "asc" ? (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M6 15l6-6 6 6" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M18 9l-6 6-6-6" />
+                            </svg>
+                          )
+                        ) : (
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{ opacity: 0.3 }}
+                          >
+                            <path d="M6 15l6-6 6 6" />
+                          </svg>
+                        )}
+                      </button>
+                    </span>
+                  </th>
+                  <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
@@ -238,9 +561,39 @@ const AdminProvince: React.FC = () => {
                   <tr key={p.id} className="table-row">
                     <td>{p.id}</td>
                     <td>{p.name}</td>
-                    <td>{p.region}</td>
+                    <td>{enumToRegion[p.region]}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${p.status?.toLowerCase()}`}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
                     <td>
                       <div className="action-buttons">
+                        <button
+                          className="action-btn view-btn"
+                          onClick={() => handleViewDetail(p)}
+                          title="Xem chi tiết"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
                         <button
                           className="action-btn edit-btn"
                           onClick={() => handleEdit(p)}
@@ -310,6 +663,47 @@ const AdminProvince: React.FC = () => {
         )}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="pagination-btn"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="15,18 9,12 15,6" />
+            </svg>
+            Trước
+          </button>
+          <div className="pagination-info">
+            <span>
+              Trang {page + 1} / {totalPages}
+            </span>
+          </div>
+          <button
+            className="pagination-btn"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Sau
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="9,18 15,12 9,6" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Form Modal */}
       {showFormModal && (
         <div className="modal-overlay" onClick={closeModal}>
@@ -346,18 +740,47 @@ const AdminProvince: React.FC = () => {
                   />
                 </div>
                 <div className="form-group full-width">
+                  <label className="admin-label">Mô tả</label>
+                  <input
+                    className="admin-input"
+                    name="description"
+                    value={form.description}
+                    onChange={handleInputChange}
+                    placeholder="Mô tả về tỉnh/thành"
+                  />
+                </div>
+                <div className="form-group full-width">
                   <label className="admin-label">
                     Vùng miền <span className="required">*</span>
                   </label>
-                  <input
+                  <select
                     className="admin-input"
                     name="region"
                     value={form.region}
                     onChange={handleInputChange}
-                    placeholder="Ví dụ: North"
                     required
-                  />
+                  >
+                    {REGION_OPTIONS.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                {isEditing && (
+                  <div className="form-group full-width">
+                    <label className="admin-label">Trạng thái</label>
+                    <select
+                      className="admin-input"
+                      name="status"
+                      value={form.status || "ACTIVE"}
+                      onChange={handleInputChange}
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="DELETED">DELETED</option>
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button
@@ -385,6 +808,73 @@ const AdminProvince: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {viewDetail && (
+        <div className="modal-overlay" onClick={() => setViewDetail(null)}>
+          <div
+            className="modal-content detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 className="admin-text-xl admin-font-semibold">
+                Chi tiết tỉnh/thành phố
+              </h2>
+              <button
+                className="modal-close"
+                onClick={() => setViewDetail(null)}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="detail-content">
+              <div className="detail-header">
+                <div className="detail-title">
+                  <h3 className="admin-text-lg admin-font-semibold">
+                    {viewDetail.name}
+                  </h3>
+                  <span className="admin-badge admin-badge-info">
+                    {enumToRegion[viewDetail.region]}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-grid">
+                <div className="detail-item">
+                  <label>ID:</label>
+                  <span>{viewDetail.id}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Trạng thái:</label>
+                  <span
+                    className={`status-badge ${viewDetail.status?.toLowerCase()}`}
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    {viewDetail.status}
+                  </span>
+                </div>
+                <div className="detail-item full-width">
+                  <label>Mô tả:</label>
+                  <span>{viewDetail.description || "Chưa có mô tả"}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -1,20 +1,34 @@
+export type ProvinceRegion = "BAC" | "TRUNG" | "NAM";
+export type ProvinceStatus = "ACTIVE" | "DELETED";
+
 export interface Province {
   id: number;
   name: string;
-  region: string;
+  description: string;
+  region: ProvinceRegion;
+  status: ProvinceStatus;
 }
 
 export interface ProvinceCreateRequest {
   name: string;
-  region: string;
+  description: string;
+  region: ProvinceRegion;
 }
 
-export type ProvinceUpdateRequest = ProvinceCreateRequest;
+export interface ProvinceUpdateRequest extends ProvinceCreateRequest {
+  status?: ProvinceStatus;
+}
 
-export interface ProvinceListResponse {
+export interface ProvincePaginatedResponse {
   code: number;
   message: string;
-  result: Province[];
+  result: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    items: Province[];
+  };
 }
 
 export interface ApiResponse<T> {
