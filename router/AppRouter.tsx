@@ -19,6 +19,7 @@ import AdminAccount from "../src/components/admin/AdminAccount";
 import UniversityPage from "../src/components/University";
 import UniversityDetail from "../src/components/UniversityDetail";
 import ForgotPassword from "../src/components/ForgotPassword";
+import AdminBlock from "../src/components/admin/AdminBlock";
 
 const UserLayout = () => {
   return (
@@ -61,6 +62,7 @@ const AppRouter = () => {
           <Route path="users" element={<div>Quản lý người dùng</div>} />
           <Route path="settings" element={<div>Cài đặt</div>} />
           <Route path="accounts" element={<AdminAccount />} />
+          <Route path="blocks" element={<AdminBlock />} />
         </Route>
 
         {/* User Routes with UserLayout (Navbar + Footer) */}

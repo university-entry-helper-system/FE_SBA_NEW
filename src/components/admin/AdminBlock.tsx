@@ -1,38 +1,35 @@
 import React, { useEffect, useState } from "react";
 import "../../css/AdminMajor.css";
+import * as blockApi from "../../api/block";
 import * as subjectCombinationApi from "../../api/subjectCombination";
-import * as examSubjectApi from "../../api/examSubject";
-import type {
-  SubjectCombination,
-  SubjectCombinationStatus,
-  SubjectCombinationUpdateRequest,
-  ExamSubject as ExamSubjectType,
-} from "../../types/subjectCombination";
+import type { Block, BlockStatus, BlockUpdateRequest } from "../../types/block";
+import type { SubjectCombination } from "../../types/subjectCombination";
 
 const defaultForm: {
   name: string;
   description: string;
-  examSubjectIds: number[];
+  subjectCombinationIds: number[];
   status?: string;
 } = {
   name: "",
   description: "",
-  examSubjectIds: [],
+  subjectCombinationIds: [],
   status: "ACTIVE",
 };
 
-const AdminSubjectCombination: React.FC = () => {
-  const [combinations, setCombinations] = useState<SubjectCombination[]>([]);
-  const [examSubjects, setExamSubjects] = useState<ExamSubjectType[]>([]);
-  const [selectedCombination, setSelectedCombination] =
-    useState<SubjectCombination | null>(null);
+const AdminBlock: React.FC = () => {
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [subjectCombinations, setSubjectCombinations] = useState<
+    SubjectCombination[]
+  >([]);
+  const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showFormModal, setShowFormModal] = useState(false);
-  const [viewDetail, setViewDetail] = useState<SubjectCombination | null>(null);
+  const [viewDetail, setViewDetail] = useState<Block | null>(null);
   // Pagination, search, sort
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -42,54 +39,54 @@ const AdminSubjectCombination: React.FC = () => {
   const [searchInput, setSearchInput] = useState("");
   const [sortField, setSortField] = useState<"id" | "name">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  // Exam subject dropdown states
-  const [examSubjectSearch, setExamSubjectSearch] = useState("");
-  const [showExamSubjectDropdown, setShowExamSubjectDropdown] = useState(false);
+  // Subject combination dropdown states
+  const [subjectCombinationSearch, setSubjectCombinationSearch] = useState("");
+  const [showSubjectCombinationDropdown, setShowSubjectCombinationDropdown] =
+    useState(false);
 
-  // Fetch combinations
-  const fetchCombinations = async () => {
+  // Fetch blocks
+  const fetchBlocks = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await subjectCombinationApi.getSubjectCombinations({
+      const res = await blockApi.getBlocks({
         search,
         page,
         size,
         sort: `${sortField},${sortOrder}`,
       });
-      // Defensive: ensure items is always an array
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items
         : [];
-      setCombinations(items);
+      setBlocks(items);
       setTotalPages(res.data.result.totalPages ?? 1);
       setTotalElements(res.data.result.totalElements ?? 0);
     } catch {
-      setError("Không thể tải danh sách tổ hợp môn");
-      setCombinations([]);
+      setError("Không thể tải danh sách khối");
+      setBlocks([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch exam subjects for dropdown
-  const fetchExamSubjects = async () => {
+  // Fetch subject combinations for dropdown
+  const fetchSubjectCombinations = async () => {
     try {
-      const res = await examSubjectApi.getExamSubjects({
-        size: 100, // Get all subjects
+      const res = await subjectCombinationApi.getSubjectCombinations({
+        size: 100,
       });
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items
         : [];
-      setExamSubjects(items);
+      setSubjectCombinations(items);
     } catch {
-      console.error("Không thể tải danh sách môn thi");
+      console.error("Không thể tải danh sách tổ hợp môn");
     }
   };
 
   useEffect(() => {
-    fetchCombinations();
-    fetchExamSubjects();
+    fetchBlocks();
+    fetchSubjectCombinations();
     // eslint-disable-next-line
   }, [page, search, sortField, sortOrder]);
 
@@ -115,38 +112,55 @@ const AdminSubjectCombination: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Helper: get first letter for block filter
+  const getBlockPrefix = () => {
+    // Remove 'Khối ' prefix if present, trim, and get first letter
+    const name = form.name.trim();
+    let prefix = name;
+    if (name.toLowerCase().startsWith("khối ")) {
+      prefix = name.slice(5).trim();
+    }
+    return prefix.charAt(0).toUpperCase();
+  };
+
+  // Filtered subject combinations based on block prefix and search
+  const filteredSubjectCombinations = subjectCombinations.filter((combo) => {
+    const blockPrefix = getBlockPrefix();
+    const matchesPrefix = combo.name.toUpperCase().startsWith(blockPrefix);
+    const matchesSearch =
+      combo.name
+        .toLowerCase()
+        .includes(subjectCombinationSearch.toLowerCase()) ||
+      combo.description
+        .toLowerCase()
+        .includes(subjectCombinationSearch.toLowerCase());
+    return matchesPrefix && matchesSearch;
+  });
+
+  const handleSubjectCombinationToggle = (comboId: number) => {
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      subjectCombinationIds: prev.subjectCombinationIds.includes(comboId)
+        ? prev.subjectCombinationIds.filter((id) => id !== comboId)
+        : [...prev.subjectCombinationIds, comboId],
     }));
   };
 
-  // Filtered exam subjects based on search
-  const filteredExamSubjects = examSubjects.filter(
-    (subject) =>
-      subject.name.toLowerCase().includes(examSubjectSearch.toLowerCase()) ||
-      subject.shortName.toLowerCase().includes(examSubjectSearch.toLowerCase())
-  );
-
-  const handleExamSubjectToggle = (subjectId: number) => {
+  const handleSubjectCombinationRemove = (comboId: number) => {
     setForm((prev) => ({
       ...prev,
-      examSubjectIds: prev.examSubjectIds.includes(subjectId)
-        ? prev.examSubjectIds.filter((id) => id !== subjectId)
-        : [...prev.examSubjectIds, subjectId],
+      subjectCombinationIds: prev.subjectCombinationIds.filter(
+        (id) => id !== comboId
+      ),
     }));
   };
 
-  const handleExamSubjectRemove = (subjectId: number) => {
-    setForm((prev) => ({
-      ...prev,
-      examSubjectIds: prev.examSubjectIds.filter((id) => id !== subjectId),
-    }));
-  };
-
-  const getSelectedSubjects = () => {
-    return examSubjects.filter((subject) =>
-      form.examSubjectIds.includes(subject.id)
+  const getSelectedCombinations = () => {
+    return subjectCombinations.filter((combo) =>
+      form.subjectCombinationIds.includes(combo.id)
     );
   };
 
@@ -154,34 +168,34 @@ const AdminSubjectCombination: React.FC = () => {
     setForm(defaultForm);
     setIsEditing(false);
     setShowFormModal(true);
-    setSelectedCombination(null);
+    setSelectedBlock(null);
   };
 
-  const handleEdit = (combination: SubjectCombination) => {
-    setSelectedCombination(combination);
+  const handleEdit = (block: Block) => {
+    setSelectedBlock(block);
     setForm({
-      name: combination.name,
-      description: combination.description,
-      examSubjectIds: combination.examSubjects.map((subject) => subject.id),
-      status: combination.status,
+      name: block.name,
+      description: block.description,
+      subjectCombinationIds: block.subjectCombinations.map((combo) => combo.id),
+      status: block.status,
     });
     setIsEditing(true);
     setShowFormModal(true);
   };
 
-  const handleViewDetail = (combination: SubjectCombination) => {
-    setViewDetail(combination);
+  const handleViewDetail = (block: Block) => {
+    setViewDetail(block);
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa tổ hợp môn "${name}"?`)) return;
+    if (!window.confirm(`Bạn có chắc muốn xóa khối "${name}"?`)) return;
     setLoading(true);
     try {
-      await subjectCombinationApi.deleteSubjectCombination(id);
-      setSuccess("Xóa tổ hợp môn thành công");
-      fetchCombinations();
+      await blockApi.deleteBlock(id);
+      setSuccess("Xóa khối thành công");
+      fetchBlocks();
     } catch {
-      setError("Xóa tổ hợp môn thất bại");
+      setError("Xóa khối thất bại");
     } finally {
       setLoading(false);
     }
@@ -191,32 +205,27 @@ const AdminSubjectCombination: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const apiData: SubjectCombinationUpdateRequest = {
+      const apiData: BlockUpdateRequest = {
         name: form.name,
         description: form.description,
-        examSubjectIds: form.examSubjectIds,
-        status: (form.status as SubjectCombinationStatus) || undefined,
+        subjectCombinationIds: form.subjectCombinationIds,
+        status: (form.status as BlockStatus) || undefined,
       };
       if (!isEditing) delete apiData.status;
-      if (isEditing && selectedCombination) {
-        await subjectCombinationApi.updateSubjectCombination(
-          selectedCombination.id,
-          apiData
-        );
-        setSuccess("Cập nhật tổ hợp môn thành công");
+      if (isEditing && selectedBlock) {
+        await blockApi.updateBlock(selectedBlock.id, apiData);
+        setSuccess("Cập nhật khối thành công");
       } else {
-        await subjectCombinationApi.createSubjectCombination(apiData);
-        setSuccess("Thêm tổ hợp môn mới thành công");
+        await blockApi.createBlock(apiData);
+        setSuccess("Thêm khối mới thành công");
       }
       setForm(defaultForm);
       setIsEditing(false);
-      setSelectedCombination(null);
+      setSelectedBlock(null);
       setShowFormModal(false);
-      fetchCombinations();
+      fetchBlocks();
     } catch {
-      setError(
-        isEditing ? "Cập nhật tổ hợp môn thất bại" : "Thêm tổ hợp môn thất bại"
-      );
+      setError(isEditing ? "Cập nhật khối thất bại" : "Thêm khối thất bại");
     } finally {
       setLoading(false);
     }
@@ -226,7 +235,7 @@ const AdminSubjectCombination: React.FC = () => {
     setShowFormModal(false);
     setForm(defaultForm);
     setIsEditing(false);
-    setSelectedCombination(null);
+    setSelectedBlock(null);
   };
 
   // Search handlers
@@ -243,10 +252,10 @@ const AdminSubjectCombination: React.FC = () => {
       <div className="universities-header">
         <div className="header-content">
           <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
-            Quản lý tổ hợp môn
+            Quản lý khối
           </h1>
           <p className="admin-text-sm admin-text-gray-600">
-            Quản lý thông tin các tổ hợp môn trong hệ thống
+            Quản lý thông tin các khối trong hệ thống
           </p>
         </div>
         <button
@@ -266,7 +275,7 @@ const AdminSubjectCombination: React.FC = () => {
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             />
           </svg>
-          Thêm tổ hợp môn
+          Thêm khối
         </button>
       </div>
 
@@ -290,7 +299,7 @@ const AdminSubjectCombination: React.FC = () => {
             </svg>
             <input
               className="search-input"
-              placeholder="Tìm kiếm theo tên tổ hợp môn..."
+              placeholder="Tìm kiếm theo tên khối..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -302,8 +311,8 @@ const AdminSubjectCombination: React.FC = () => {
         </div>
         <div className="pagination-info">
           <span className="admin-text-sm admin-text-gray-600">
-            Hiển thị {Array.isArray(combinations) ? combinations.length : 0}{" "}
-            trên tổng số {totalElements} tổ hợp môn
+            Hiển thị {Array.isArray(blocks) ? blocks.length : 0} trên tổng số{" "}
+            {totalElements} khối
           </span>
         </div>
       </div>
@@ -354,15 +363,12 @@ const AdminSubjectCombination: React.FC = () => {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
             </svg>
           </div>
           <div className="stat-content">
-            <h3>Tổng số tổ hợp môn</h3>
+            <h3>Tổng số khối</h3>
             <p className="stat-number">{totalElements}</p>
           </div>
         </div>
@@ -458,7 +464,7 @@ const AdminSubjectCombination: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      Tên tổ hợp môn
+                      Tên khối
                       <button
                         className="sort-th-btn"
                         style={{
@@ -521,38 +527,38 @@ const AdminSubjectCombination: React.FC = () => {
                     </span>
                   </th>
                   <th>Mô tả</th>
-                  <th>Môn thi</th>
+                  <th>Tổ hợp môn</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
-                {combinations.map((c) => (
-                  <tr key={c.id} className="table-row">
-                    <td>{c.id}</td>
-                    <td>{c.name}</td>
-                    <td>{c.description}</td>
+                {blocks.map((b) => (
+                  <tr key={b.id} className="table-row">
+                    <td>{b.id}</td>
+                    <td>{b.name}</td>
+                    <td>{b.description}</td>
                     <td>
                       <div className="subject-tags">
-                        {c.examSubjects.map((subject) => (
-                          <span key={subject.id} className="subject-tag">
-                            {subject.shortName}
+                        {b.subjectCombinations.map((combo) => (
+                          <span key={combo.id} className="subject-tag">
+                            {combo.name}
                           </span>
                         ))}
                       </div>
                     </td>
                     <td>
                       <span
-                        className={`status-badge ${c.status?.toLowerCase()}`}
+                        className={`status-badge ${b.status?.toLowerCase()}`}
                       >
-                        {c.status}
+                        {b.status}
                       </span>
                     </td>
                     <td>
                       <div className="action-buttons">
                         <button
                           className="action-btn view-btn"
-                          onClick={() => handleViewDetail(c)}
+                          onClick={() => handleViewDetail(b)}
                           title="Xem chi tiết"
                         >
                           <svg
@@ -575,7 +581,7 @@ const AdminSubjectCombination: React.FC = () => {
                         </button>
                         <button
                           className="action-btn edit-btn"
-                          onClick={() => handleEdit(c)}
+                          onClick={() => handleEdit(b)}
                           title="Chỉnh sửa"
                         >
                           <svg
@@ -593,7 +599,7 @@ const AdminSubjectCombination: React.FC = () => {
                         </button>
                         <button
                           className="action-btn delete-btn"
-                          onClick={() => handleDelete(c.id, c.name)}
+                          onClick={() => handleDelete(b.id, b.name)}
                           title="Xóa"
                         >
                           <svg
@@ -618,7 +624,7 @@ const AdminSubjectCombination: React.FC = () => {
                 ))}
               </tbody>
             </table>
-            {combinations.length === 0 && !loading && (
+            {blocks.length === 0 && !loading && (
               <div className="empty-state">
                 <svg
                   className="empty-icon"
@@ -634,8 +640,8 @@ const AdminSubjectCombination: React.FC = () => {
                     d="m21 21-4.35-4.35"
                   />
                 </svg>
-                <h3>Không tìm thấy tổ hợp môn</h3>
-                <p>Thử thêm tổ hợp môn mới</p>
+                <h3>Không tìm thấy khối</h3>
+                <p>Thử thêm khối mới</p>
               </div>
             )}
           </div>
@@ -689,7 +695,7 @@ const AdminSubjectCombination: React.FC = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="admin-text-xl admin-font-semibold">
-                {isEditing ? "Chỉnh sửa tổ hợp môn" : "Thêm tổ hợp môn mới"}
+                {isEditing ? "Chỉnh sửa khối" : "Thêm khối mới"}
               </h2>
               <button className="modal-close" onClick={closeModal}>
                 <svg
@@ -707,14 +713,15 @@ const AdminSubjectCombination: React.FC = () => {
               <div className="form-grid">
                 <div className="form-group full-width">
                   <label className="admin-label">
-                    Tên tổ hợp môn <span className="required">*</span>
+                    Tên khối <span className="required">*</span>
                   </label>
                   <input
                     className="admin-input"
                     name="name"
                     value={form.name}
                     onChange={handleInputChange}
-                    placeholder="Ví dụ: A00, A01, B00"
+                    placeholder="Ví dụ: Khối A, Khối D"
+                    maxLength={50}
                     required
                   />
                 </div>
@@ -725,25 +732,24 @@ const AdminSubjectCombination: React.FC = () => {
                     name="description"
                     value={form.description}
                     onChange={handleInputChange}
-                    placeholder="Mô tả về tổ hợp môn"
+                    placeholder="Mô tả về khối"
                     rows={3}
                   />
                 </div>
                 <div className="form-group full-width">
-                  <label className="admin-label">
-                    Môn thi <span className="required">*</span>
-                  </label>
-
-                  {/* Selected subjects display */}
-                  {getSelectedSubjects().length > 0 && (
+                  <label className="admin-label">Tổ hợp môn</label>
+                  {/* Selected subject combinations display */}
+                  {getSelectedCombinations().length > 0 && (
                     <div className="selected-subjects">
-                      {getSelectedSubjects().map((subject) => (
-                        <span key={subject.id} className="selected-subject-tag">
-                          {subject.name} ({subject.shortName})
+                      {getSelectedCombinations().map((combo) => (
+                        <span key={combo.id} className="selected-subject-tag">
+                          {combo.name} - {combo.description}
                           <button
                             type="button"
                             className="remove-subject-btn"
-                            onClick={() => handleExamSubjectRemove(subject.id)}
+                            onClick={() =>
+                              handleSubjectCombinationRemove(combo.id)
+                            }
                           >
                             ×
                           </button>
@@ -751,55 +757,57 @@ const AdminSubjectCombination: React.FC = () => {
                       ))}
                     </div>
                   )}
-
                   {/* Searchable dropdown */}
                   <div className="searchable-dropdown">
                     <input
                       type="text"
                       className="admin-input"
-                      placeholder="Tìm kiếm môn thi..."
-                      value={examSubjectSearch}
-                      onChange={(e) => setExamSubjectSearch(e.target.value)}
-                      onFocus={() => setShowExamSubjectDropdown(true)}
+                      placeholder="Tìm kiếm tổ hợp môn..."
+                      value={subjectCombinationSearch}
+                      onChange={(e) =>
+                        setSubjectCombinationSearch(e.target.value)
+                      }
+                      onFocus={() => setShowSubjectCombinationDropdown(true)}
                       onBlur={() =>
-                        setTimeout(() => setShowExamSubjectDropdown(false), 200)
+                        setTimeout(
+                          () => setShowSubjectCombinationDropdown(false),
+                          200
+                        )
                       }
                     />
-
-                    {showExamSubjectDropdown && (
+                    {showSubjectCombinationDropdown && (
                       <div className="dropdown-options">
-                        {filteredExamSubjects.length > 0 ? (
-                          filteredExamSubjects.map((subject) => (
+                        {filteredSubjectCombinations.length > 0 ? (
+                          filteredSubjectCombinations.map((combo) => (
                             <div
-                              key={subject.id}
+                              key={combo.id}
                               className={`dropdown-option ${
-                                form.examSubjectIds.includes(subject.id)
+                                form.subjectCombinationIds.includes(combo.id)
                                   ? "selected"
                                   : ""
                               }`}
                               onClick={() =>
-                                handleExamSubjectToggle(subject.id)
+                                handleSubjectCombinationToggle(combo.id)
                               }
                             >
                               <span className="option-text">
-                                {subject.name} ({subject.shortName})
+                                {combo.name} - {combo.description}
                               </span>
-                              {form.examSubjectIds.includes(subject.id) && (
-                                <span className="checkmark">✓</span>
-                              )}
+                              {form.subjectCombinationIds.includes(
+                                combo.id
+                              ) && <span className="checkmark">✓</span>}
                             </div>
                           ))
                         ) : (
                           <div className="dropdown-option no-results">
-                            Không tìm thấy môn thi
+                            Không tìm thấy tổ hợp môn
                           </div>
                         )}
                       </div>
                     )}
                   </div>
-
                   <small className="form-help">
-                    Gõ để tìm kiếm và click để chọn/bỏ chọn môn thi
+                    Gõ để tìm kiếm và click để chọn/bỏ chọn tổ hợp môn
                   </small>
                 </div>
                 {isEditing && (
@@ -812,6 +820,7 @@ const AdminSubjectCombination: React.FC = () => {
                       onChange={handleInputChange}
                     >
                       <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
                       <option value="DELETED">DELETED</option>
                     </select>
                   </div>
@@ -856,7 +865,7 @@ const AdminSubjectCombination: React.FC = () => {
           >
             <div className="modal-header">
               <h2 className="admin-text-xl admin-font-semibold">
-                Chi tiết tổ hợp môn
+                Chi tiết khối
               </h2>
               <button
                 className="modal-close"
@@ -906,11 +915,11 @@ const AdminSubjectCombination: React.FC = () => {
                   <span>{viewDetail.description || "Chưa có mô tả"}</span>
                 </div>
                 <div className="detail-item full-width">
-                  <label>Môn thi:</label>
+                  <label>Tổ hợp môn:</label>
                   <div className="subject-tags">
-                    {viewDetail.examSubjects.map((subject) => (
-                      <span key={subject.id} className="subject-tag">
-                        {subject.name} ({subject.shortName})
+                    {viewDetail.subjectCombinations.map((combo) => (
+                      <span key={combo.id} className="subject-tag">
+                        {combo.name} - {combo.description}
                       </span>
                     ))}
                   </div>
@@ -924,4 +933,4 @@ const AdminSubjectCombination: React.FC = () => {
   );
 };
 
-export default AdminSubjectCombination;
+export default AdminBlock;
