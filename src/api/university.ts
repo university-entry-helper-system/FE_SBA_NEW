@@ -1,0 +1,36 @@
+import axios from "./axios";
+import type {
+  UniversityListResponse,
+  UniversityDetailResponse,
+  UniversityCreateRequest,
+} from "../types/university";
+
+const BASE_URL = "/universities";
+
+export const getUniversities = (params?: {
+  page?: number;
+  size?: number;
+  search?: string;
+}) => {
+  return axios.get<UniversityListResponse>(BASE_URL, { params });
+};
+
+export const getUniversityDetail = (id: number) => {
+  return axios.get<UniversityDetailResponse>(`${BASE_URL}/${id}`);
+};
+
+export const createUniversity = (data: UniversityCreateRequest) => {
+  return axios.post(BASE_URL, data);
+};
+
+export const updateUniversity = (id: number, data: UniversityCreateRequest) => {
+  return axios.put(`${BASE_URL}/${id}`, data);
+};
+
+export const deleteUniversity = (id: number) => {
+  return axios.delete(`${BASE_URL}/${id}`);
+};
+
+export const getProvinces = () => {
+  return axios.get("/provinces");
+};
