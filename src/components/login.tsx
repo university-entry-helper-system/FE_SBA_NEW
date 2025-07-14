@@ -5,9 +5,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   TextField,
   Button,
-  Box,
   Typography,
-  Container,
   Alert,
   InputAdornment,
   IconButton,
@@ -17,6 +15,8 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import * as authApi from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
+import "../css/Login.css";
+import GoogleLogo from "../assets/google-logo.png";
 
 const loginSchema = Yup.object().shape({
   username: Yup.string().required("Username is required"),
@@ -30,7 +30,6 @@ const Login = () => {
   const location = useLocation();
   const { login } = useAuth();
 
-  // Get the redirect location from state or default to home
   const from =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
     "/home";
@@ -44,7 +43,6 @@ const Login = () => {
       if (response.code === 1000) {
         const { accessToken, refreshToken } = response.result;
         login(accessToken, refreshToken);
-        // Decode token to get roleName
         const decoded = JSON.parse(atob(accessToken.split(".")[1]));
         if (decoded.roleName === "ROLE_ADMIN") {
           navigate("/admin");
@@ -62,21 +60,19 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          Sign in
-        </Typography>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-header">
+          <Typography component="h1" className="login-title">
+            Đăng nhập
+          </Typography>
+          <Typography className="login-subtitle">
+            Chào mừng bạn trở lại với EduPath
+          </Typography>
+        </div>
 
         {error && (
-          <Alert severity="error" sx={{ mt: 2, width: "100%" }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
@@ -87,12 +83,12 @@ const Login = () => {
           onSubmit={handleSubmit}
         >
           {({ errors, touched, handleChange }) => (
-            <Form style={{ width: "100%", marginTop: "1rem" }}>
+            <Form>
               <TextField
                 fullWidth
                 id="username"
                 name="username"
-                label="Username"
+                label="Tên đăng nhập"
                 margin="normal"
                 onChange={handleChange}
                 error={touched.username && Boolean(errors.username)}
@@ -102,7 +98,7 @@ const Login = () => {
                 fullWidth
                 id="password"
                 name="password"
-                label="Password"
+                label="Mật khẩu"
                 type={showPassword ? "text" : "password"}
                 margin="normal"
                 onChange={handleChange}
@@ -122,14 +118,8 @@ const Login = () => {
                   ),
                 }}
               />
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mt: 1,
-                }}
-              >
+
+              <div className="login-actions">
                 <Button
                   variant="text"
                   size="small"
@@ -142,33 +132,50 @@ const Login = () => {
                     Đăng ký
                   </Button>
                 </Link>
-              </Box>
-              <Tooltip title="Tính năng đang được cập nhật" arrow>
-                <span>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    color="primary"
-                    sx={{ mt: 2, mb: 1 }}
-                    disabled
-                  >
-                    Đăng nhập với Google
-                  </Button>
-                </span>
-              </Tooltip>
+              </div>
+
+              {/* Main Login Button - Now first */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 sx={{ mt: 1, mb: 2 }}
               >
-                Sign In
+                Đăng nhập
               </Button>
+
+              {/* Separator */}
+              <div className="login-separator">
+                <span className="login-separator-text">
+                  hoặc đăng nhập bằng
+                </span>
+              </div>
+
+              {/* Google Login Button - Now second */}
+              <Tooltip title="Tính năng đang được cập nhật" arrow>
+                <span>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    className="google-login-btn"
+                    disabled
+                    startIcon={
+                      <img
+                        src={GoogleLogo}
+                        alt="Google logo"
+                        style={{ width: 28, height: 28 }}
+                      />
+                    }
+                  >
+                    Đăng nhập với Google
+                  </Button>
+                </span>
+              </Tooltip>
             </Form>
           )}
         </Formik>
-      </Box>
-    </Container>
+      </div>
+    </div>
   );
 };
 
