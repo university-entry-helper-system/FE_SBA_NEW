@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Navbar from "../src/components/Navbar";
 import Footer from "../src/components/Footer";
 import HomePage from "../src/components/Home";
+import Question from "../src/components/question";
 import Login from "../src/components/Login";
 import Register from "../src/components/Register";
 import ProtectedRoute from "../src/components/ProtectedRoute";
@@ -74,6 +75,7 @@ const AppRouter = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/universities" element={<UniversityPage />} />
           <Route path="/universities/:id" element={<UniversityDetail />} />
+          <Route path="/questions" element={<Question />} />
           {/* Other user routes */}
         </Route>
       </Routes>

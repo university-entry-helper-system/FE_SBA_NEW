@@ -82,6 +82,14 @@ const Navbar = () => {
             </li>
             <li>
               <Link
+                to="/questions"
+                className={`navbar-menu-link ${isLinkActive("/questions")}`}
+              >
+                Câu hỏi thường gặp
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/about"
                 className={`navbar-menu-link ${isLinkActive("/about")}`}
               >
@@ -189,6 +197,15 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Thông tin thi
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/questions"
+                className={`navbar-mobile-link ${isLinkActive("/questions")}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Câu hỏi thường gặp
               </Link>
             </li>
             <li>
