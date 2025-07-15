@@ -24,6 +24,7 @@ export interface University {
   name: string;
   shortName: string;
   logoUrl: string;
+  fanpage?: string;
   foundingYear: number;
   province: Province;
   address: string;
@@ -45,6 +46,7 @@ export interface UniversityListItem {
   name: string;
   shortName: string;
   logoUrl: string;
+  fanpage?: string;
   foundingYear: number;
   province: Province;
   address: string;
@@ -81,7 +83,7 @@ export interface UniversityCreateRequest {
   categoryId: number;
   name: string;
   shortName: string;
-  logoUrl: string;
+  fanpage?: string;
   foundingYear: number;
   provinceId: number;
   type: string;

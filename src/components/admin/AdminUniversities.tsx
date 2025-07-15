@@ -17,10 +17,11 @@ const defaultForm: UniversityCreateRequest = {
   categoryId: 0,
   name: "",
   shortName: "",
-  logoUrl: "",
+  // logoUrl: "", // bỏ
+  fanpage: "",
   foundingYear: new Date().getFullYear(),
   provinceId: 0,
-  type: "public", // Keep this for API compatibility
+  type: "public",
   address: "",
   email: "",
   phone: "",
@@ -46,6 +47,10 @@ const AdminUniversities: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [showFormModal, setShowFormModal] = useState(false);
   const [viewDetail, setViewDetail] = useState<University | null>(null);
+  // 1. State bổ sung cho file logo và fanpage
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  // Thêm state cho lỗi validate phía FE
+  const [formError, setFormError] = useState<string>("");
 
   // Pagination, search, sort, filter
   const [page, setPage] = useState(0);
@@ -190,9 +195,19 @@ const AdminUniversities: React.FC = () => {
     }));
   };
 
+  // Xử lý chọn file logo
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    } else {
+      setLogoFile(null);
+    }
+  };
+
   // CRUD operations
   const handleAdd = () => {
     setForm(defaultForm);
+    setLogoFile(null);
     setIsEditing(false);
     setShowFormModal(true);
     setSelectedUniversity(null);
@@ -204,15 +219,17 @@ const AdminUniversities: React.FC = () => {
       const res = await universityApi.getUniversityDetail(id);
       const university = res.data.result;
       setSelectedUniversity(university);
+      setLogoFile(null); // reset file khi edit
 
       const formData = {
         categoryId: university.categoryId,
         name: university.name,
         shortName: university.shortName,
-        logoUrl: university.logoUrl || "",
+        // logoUrl: university.logoUrl || "", // bỏ
+        fanpage: university.fanpage || "",
         foundingYear: university.foundingYear,
         provinceId: university.province.id,
-        type: "public", // Keep default for API compatibility
+        type: "public",
         address: university.address || "",
         email: university.email || "",
         phone: university.phone || "",
@@ -248,19 +265,102 @@ const AdminUniversities: React.FC = () => {
     }
   };
 
+  const validateForm = () => {
+    if (!form.name || form.name.length > 255) {
+      return "Tên trường là bắt buộc, tối đa 255 ký tự.";
+    }
+    if (form.shortName && form.shortName.length > 50) {
+      return "Tên viết tắt tối đa 50 ký tự.";
+    }
+    if (form.fanpage && form.fanpage.length > 255) {
+      return "Fanpage tối đa 255 ký tự.";
+    }
+    if (form.email && form.email.length > 255) {
+      return "Email tối đa 255 ký tự.";
+    }
+    if (form.website && form.website.length > 255) {
+      return "Website tối đa 255 ký tự.";
+    }
+    if (form.phone && form.phone.length > 20) {
+      return "Số điện thoại tối đa 20 ký tự.";
+    }
+    if (!form.foundingYear || String(form.foundingYear).length !== 4) {
+      return "Năm thành lập là bắt buộc, gồm 4 số.";
+    }
+    if (!form.provinceId) {
+      return "Tỉnh/thành là bắt buộc.";
+    }
+    if (!form.categoryId) {
+      return "Loại trường là bắt buộc.";
+    }
+    if (logoFile) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(logoFile.type)) {
+        return "Chỉ nhận file ảnh jpg, png, webp.";
+      }
+      if (logoFile.size > 5 * 1024 * 1024) {
+        return "File logo tối đa 5MB.";
+      }
+    }
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    // Validate FE trước khi gửi
+    const err = validateForm();
+    if (err) {
+      setFormError(err);
+      return;
+    }
     setLoading(true);
     try {
+      let submitData: unknown;
+      const isMultipart = !!logoFile;
+      if (isMultipart) {
+        submitData = new FormData();
+        Object.entries(form).forEach(([key, value]) => {
+          // Không append trường rỗng hoặc undefined
+          if (
+            value === undefined ||
+            value === null ||
+            (typeof value === "string" && value.trim() === "")
+          ) {
+            return;
+          }
+          if (key === "admissionMethodIds") {
+            (value as number[]).forEach((id) =>
+              (submitData as FormData).append("admissionMethodIds", String(id))
+            );
+          } else {
+            (submitData as FormData).append(key, value as string | Blob);
+          }
+        });
+        (submitData as FormData).append("logoFile", logoFile);
+      } else {
+        // Bỏ trường rỗng khỏi object
+        submitData = Object.fromEntries(
+          Object.entries(form).filter(
+            ([, value]) =>
+              value !== undefined &&
+              value !== null &&
+              !(typeof value === "string" && value.trim() === "")
+          )
+        );
+      }
       if (isEditing && selectedUniversity) {
-        await universityApi.updateUniversity(selectedUniversity.id, form);
+        await universityApi.updateUniversity(
+          selectedUniversity.id,
+          submitData,
+          isMultipart
+        );
         setSuccess("Cập nhật trường thành công");
       } else {
-        await universityApi.createUniversity(form);
+        await universityApi.createUniversity(submitData, isMultipart);
         setSuccess("Thêm trường mới thành công");
       }
-
       setForm(defaultForm);
+      setLogoFile(null);
       setIsEditing(false);
       setSelectedUniversity(null);
       setShowFormModal(false);
@@ -345,6 +445,18 @@ const AdminUniversities: React.FC = () => {
         return method ? method.name : "N/A";
       })
       .join(", ");
+  };
+
+  // Helper lấy URL logo đầy đủ từ Minio
+  const getLogoUrl = (logoUrl?: string) => {
+    if (!logoUrl) return "/placeholder-logo.png";
+    // Nếu là URL có query (presigned), cắt ? và thay minio thành localhost
+    if (logoUrl.startsWith("http")) {
+      let url = logoUrl.split("?")[0];
+      url = url.replace("minio:9000", "localhost:9000");
+      return url;
+    }
+    return `http://localhost:9000/mybucket/${logoUrl}`;
   };
 
   return (
@@ -510,14 +622,11 @@ const AdminUniversities: React.FC = () => {
                   <th>
                     <button
                       className="sort-header"
-                      onClick={() => handleSort("id")}
+                      // Xóa sự kiện sắp xếp cho STT, không cần sort theo STT
+                      type="button"
+                      disabled
                     >
-                      ID
-                      {sortField === "id" && (
-                        <span className="sort-indicator">
-                          {sortOrder === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
+                      STT
                     </button>
                   </th>
                   <th>Logo</th>
@@ -568,14 +677,16 @@ const AdminUniversities: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {universities.map((university) => (
+                {universities.map((university, idx) => (
                   <tr key={university.id} className="table-row">
-                    <td className="admin-font-medium">{university.id}</td>
+                    <td className="admin-font-medium">
+                      {page * size + idx + 1}
+                    </td>
                     <td>
                       <div className="logo-cell">
                         {university.logoUrl ? (
                           <img
-                            src={university.logoUrl}
+                            src={getLogoUrl(university.logoUrl)}
                             alt={`Logo ${university.shortName}`}
                             className="university-logo"
                             onError={(e) => {
@@ -795,6 +906,22 @@ const AdminUniversities: React.FC = () => {
             </div>
 
             <form className="modal-form" onSubmit={handleSubmit}>
+              {formError && (
+                <div className="alert alert-error">
+                  <svg
+                    className="alert-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  {formError}
+                </div>
+              )}
               <div className="form-grid">
                 <div className="form-group">
                   <label className="admin-label">
@@ -882,13 +1009,27 @@ const AdminUniversities: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="admin-label">URL Logo</label>
+                  <label className="admin-label">Logo trường</label>
                   <input
                     className="admin-input"
-                    name="logoUrl"
-                    value={form.logoUrl || ""}
+                    name="logoFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoFileChange}
+                  />
+                  {isEditing && form.shortName && (
+                    <small>Để trống nếu không muốn đổi ảnh logo.</small>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="admin-label">Fanpage Facebook</label>
+                  <input
+                    className="admin-input"
+                    name="fanpage"
+                    value={form.fanpage || ""}
                     onChange={handleInputChange}
-                    placeholder="https://example.com/logo.png"
+                    placeholder="https://facebook.com/ten-truong"
                   />
                 </div>
 
@@ -1050,7 +1191,7 @@ const AdminUniversities: React.FC = () => {
               <div className="detail-header">
                 {viewDetail.logoUrl && (
                   <img
-                    src={viewDetail.logoUrl}
+                    src={getLogoUrl(viewDetail.logoUrl)}
                     alt={`Logo ${viewDetail.shortName}`}
                     className="detail-logo"
                   />
@@ -1171,6 +1312,19 @@ const AdminUniversities: React.FC = () => {
                         <span>Chưa cập nhật</span>
                       )}
                     </div>
+                    {viewDetail.fanpage && (
+                      <div className="detail-item full-width">
+                        <label>Fanpage:</label>
+                        <a
+                          href={viewDetail.fanpage}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link"
+                        >
+                          {viewDetail.fanpage}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
