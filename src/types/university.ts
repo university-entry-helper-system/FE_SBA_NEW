@@ -16,6 +16,16 @@ export interface Category {
   updatedBy: string;
 }
 
+export interface UniversityAddress {
+  address: string;
+  addressType: string; // "main", "branch", etc.
+  description?: string;
+  isPrimary: boolean;
+  phone?: string;
+  email?: string;
+  website?: string;
+}
+
 export interface University {
   id: number;
   categoryId: number;
@@ -28,6 +38,7 @@ export interface University {
   foundingYear: number;
   province: Province;
   address: string;
+  addresses?: UniversityAddress[];
   email: string;
   phone: string;
   website: string;
@@ -50,6 +61,7 @@ export interface UniversityListItem {
   foundingYear: number;
   province: Province;
   address: string;
+  addresses?: UniversityAddress[];
   email: string;
   phone: string;
   website: string;
@@ -88,6 +100,7 @@ export interface UniversityCreateRequest {
   provinceId: number;
   type: string;
   address: string;
+  addresses?: UniversityAddress[];
   email: string;
   phone: string;
   website: string;

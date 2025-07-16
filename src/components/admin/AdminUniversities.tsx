@@ -8,6 +8,7 @@ import type {
   UniversityListItem,
   University,
   UniversityCreateRequest,
+  UniversityAddress,
 } from "../../types/university";
 import type { Province as ProvinceType } from "../../types/province";
 import type { UniversityCategory } from "../../types/universityCategory";
@@ -17,17 +18,27 @@ const defaultForm: UniversityCreateRequest = {
   categoryId: 0,
   name: "",
   shortName: "",
-  // logoUrl: "", // bỏ
   fanpage: "",
   foundingYear: new Date().getFullYear(),
   provinceId: 0,
   type: "public",
   address: "",
+  addresses: [],
   email: "",
   phone: "",
   website: "",
   description: "",
   admissionMethodIds: [],
+};
+
+const defaultAddress: UniversityAddress = {
+  address: "",
+  addressType: "main",
+  description: "",
+  isPrimary: false,
+  phone: "",
+  email: "",
+  website: "",
 };
 
 const AdminUniversities: React.FC = () => {
@@ -51,6 +62,9 @@ const AdminUniversities: React.FC = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   // Thêm state cho lỗi validate phía FE
   const [formError, setFormError] = useState<string>("");
+
+  // State bổ sung cho quản lý danh sách địa chỉ
+  const [addresses, setAddresses] = useState<UniversityAddress[]>([]);
 
   // Pagination, search, sort, filter
   const [page, setPage] = useState(0);
@@ -182,8 +196,8 @@ const AdminUniversities: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
+    const newForm = {
+      ...form,
       [name]:
         name === "categoryId" ||
         name === "provinceId" ||
@@ -192,7 +206,10 @@ const AdminUniversities: React.FC = () => {
             ? 0
             : parseInt(value, 10)
           : value,
-    }));
+    };
+    setForm(newForm);
+    // Auto-save form vào localStorage
+    saveFormToStorage();
   };
 
   // Xử lý chọn file logo
@@ -206,8 +223,11 @@ const AdminUniversities: React.FC = () => {
 
   // CRUD operations
   const handleAdd = () => {
-    setForm(defaultForm);
-    setLogoFile(null);
+    // Load dữ liệu đã lưu từ localStorage
+    loadFormFromStorage();
+    setLogoFile(null); // File logo sẽ mất khi reload, user cần chọn lại
+    setAddresses([]); // Reset addresses
+    setFormError("");
     setIsEditing(false);
     setShowFormModal(true);
     setSelectedUniversity(null);
@@ -225,12 +245,12 @@ const AdminUniversities: React.FC = () => {
         categoryId: university.categoryId,
         name: university.name,
         shortName: university.shortName,
-        // logoUrl: university.logoUrl || "", // bỏ
         fanpage: university.fanpage || "",
         foundingYear: university.foundingYear,
         provinceId: university.province.id,
         type: "public",
         address: university.address || "",
+        addresses: university.addresses || [],
         email: university.email || "",
         phone: university.phone || "",
         website: university.website || "",
@@ -239,8 +259,11 @@ const AdminUniversities: React.FC = () => {
       };
 
       setForm(formData);
+      setAddresses(university.addresses || []);
       setIsEditing(true);
       setShowFormModal(true);
+      // Auto-save form edit vào localStorage
+      setTimeout(() => saveFormToStorage(), 0);
     } catch (err) {
       setError("Không thể lấy chi tiết trường");
       console.error(err);
@@ -316,8 +339,10 @@ const AdminUniversities: React.FC = () => {
     setLoading(true);
     try {
       let submitData: unknown;
-      const isMultipart = !!logoFile;
-      if (isMultipart) {
+      let isMultipart = false;
+
+      if (isEditing) {
+        // UPDATE: Luôn dùng FormData (multipart/form-data)
         submitData = new FormData();
         Object.entries(form).forEach(([key, value]) => {
           // Không append trường rỗng hoặc undefined
@@ -332,22 +357,151 @@ const AdminUniversities: React.FC = () => {
             (value as number[]).forEach((id) =>
               (submitData as FormData).append("admissionMethodIds", String(id))
             );
+          } else if (key === "addresses") {
+            // Bỏ qua addresses ở đây, sẽ xử lý riêng
+            return;
           } else {
             (submitData as FormData).append(key, value as string | Blob);
           }
         });
-        (submitData as FormData).append("logoFile", logoFile);
+
+        // Thêm danh sách địa chỉ
+        if (addresses && addresses.length > 0) {
+          addresses.forEach((address, index) => {
+            (submitData as FormData).append(
+              `addresses[${index}].address`,
+              address.address
+            );
+            (submitData as FormData).append(
+              `addresses[${index}].addressType`,
+              address.addressType
+            );
+            (submitData as FormData).append(
+              `addresses[${index}].isPrimary`,
+              String(address.isPrimary)
+            );
+            if (address.description) {
+              (submitData as FormData).append(
+                `addresses[${index}].description`,
+                address.description
+              );
+            }
+            if (address.phone) {
+              (submitData as FormData).append(
+                `addresses[${index}].phone`,
+                address.phone
+              );
+            }
+            if (address.email) {
+              (submitData as FormData).append(
+                `addresses[${index}].email`,
+                address.email
+              );
+            }
+            if (address.website) {
+              (submitData as FormData).append(
+                `addresses[${index}].website`,
+                address.website
+              );
+            }
+          });
+        }
+
+        // Chỉ append logoFile nếu có chọn file mới
+        if (logoFile) {
+          (submitData as FormData).append("logoFile", logoFile);
+        }
+        isMultipart = true;
       } else {
-        // Bỏ trường rỗng khỏi object
-        submitData = Object.fromEntries(
-          Object.entries(form).filter(
-            ([, value]) =>
-              value !== undefined &&
-              value !== null &&
-              !(typeof value === "string" && value.trim() === "")
-          )
-        );
+        // CREATE: Gửi FormData nếu có file, JSON nếu không có
+        isMultipart = !!logoFile;
+        if (isMultipart) {
+          submitData = new FormData();
+          Object.entries(form).forEach(([key, value]) => {
+            // Không append trường rỗng hoặc undefined
+            if (
+              value === undefined ||
+              value === null ||
+              (typeof value === "string" && value.trim() === "")
+            ) {
+              return;
+            }
+            if (key === "admissionMethodIds") {
+              (value as number[]).forEach((id) =>
+                (submitData as FormData).append(
+                  "admissionMethodIds",
+                  String(id)
+                )
+              );
+            } else if (key === "addresses") {
+              // Bỏ qua addresses ở đây, sẽ xử lý riêng
+              return;
+            } else {
+              (submitData as FormData).append(key, value as string | Blob);
+            }
+          });
+          // Thêm danh sách địa chỉ
+          if (addresses && addresses.length > 0) {
+            addresses.forEach((address, index) => {
+              (submitData as FormData).append(
+                `addresses[${index}].address`,
+                address.address
+              );
+              (submitData as FormData).append(
+                `addresses[${index}].addressType`,
+                address.addressType
+              );
+              (submitData as FormData).append(
+                `addresses[${index}].isPrimary`,
+                String(address.isPrimary)
+              );
+              if (address.description) {
+                (submitData as FormData).append(
+                  `addresses[${index}].description`,
+                  address.description
+                );
+              }
+              if (address.phone) {
+                (submitData as FormData).append(
+                  `addresses[${index}].phone`,
+                  address.phone
+                );
+              }
+              if (address.email) {
+                (submitData as FormData).append(
+                  `addresses[${index}].email`,
+                  address.email
+                );
+              }
+              if (address.website) {
+                (submitData as FormData).append(
+                  `addresses[${index}].website`,
+                  address.website
+                );
+              }
+            });
+          }
+          // Chỉ append logoFile nếu có chọn file mới
+          if (logoFile) {
+            (submitData as FormData).append("logoFile", logoFile);
+          }
+        } else {
+          // Bỏ trường rỗng khỏi object
+          submitData = Object.fromEntries(
+            Object.entries(form).filter(
+              ([, value]) =>
+                value !== undefined &&
+                value !== null &&
+                !(typeof value === "string" && value.trim() === "")
+            )
+          );
+          // Thêm addresses vào JSON
+          if (addresses && addresses.length > 0) {
+            (submitData as UniversityCreateRequest).addresses = addresses;
+          }
+        }
       }
+
       if (isEditing && selectedUniversity) {
         await universityApi.updateUniversity(
           selectedUniversity.id,
@@ -359,8 +513,11 @@ const AdminUniversities: React.FC = () => {
         await universityApi.createUniversity(submitData, isMultipart);
         setSuccess("Thêm trường mới thành công");
       }
+      // Clear form và localStorage khi submit thành công
       setForm(defaultForm);
       setLogoFile(null);
+      setAddresses([]);
+      clearFormStorage();
       setIsEditing(false);
       setSelectedUniversity(null);
       setShowFormModal(false);
@@ -388,9 +545,10 @@ const AdminUniversities: React.FC = () => {
 
   const closeModal = () => {
     setShowFormModal(false);
-    setForm(defaultForm);
+    // Không clear form khi đóng modal để giữ dữ liệu
     setIsEditing(false);
     setSelectedUniversity(null);
+    setFormError("");
   };
 
   // Search and filter handlers
@@ -457,6 +615,80 @@ const AdminUniversities: React.FC = () => {
       return url;
     }
     return `http://localhost:9000/mybucket/${logoUrl}`;
+  };
+
+  // Helper lưu form vào localStorage
+  const saveFormToStorage = () => {
+    const key = isEditing ? "universityFormEdit" : "universityForm";
+    localStorage.setItem(key, JSON.stringify(form));
+  };
+
+  // Helper load form từ localStorage
+  const loadFormFromStorage = () => {
+    const key = isEditing ? "universityFormEdit" : "universityForm";
+    const savedForm = localStorage.getItem(key);
+    if (savedForm) {
+      try {
+        const parsedForm = JSON.parse(savedForm);
+        setForm(parsedForm);
+      } catch (error) {
+        console.error("Error parsing saved form:", error);
+        localStorage.removeItem(key);
+      }
+    }
+  };
+
+  // Helper xóa form khỏi localStorage
+  const clearFormStorage = () => {
+    localStorage.removeItem("universityForm");
+    localStorage.removeItem("universityFormEdit");
+  };
+
+  // Helper thêm địa chỉ mới
+  const addAddress = () => {
+    const newAddress = { ...defaultAddress };
+    if (addresses.length === 0) {
+      newAddress.isPrimary = true;
+    }
+    setAddresses([...addresses, newAddress]);
+  };
+
+  // Helper xóa địa chỉ
+  const removeAddress = (index: number) => {
+    const newAddresses = addresses.filter((_, i) => i !== index);
+    // Nếu xóa địa chỉ primary, đặt địa chỉ đầu tiên làm primary
+    if (addresses[index].isPrimary && newAddresses.length > 0) {
+      newAddresses[0].isPrimary = true;
+    }
+    setAddresses(newAddresses);
+  };
+
+  // Helper cập nhật địa chỉ
+  const updateAddress = (
+    index: number,
+    field: keyof UniversityAddress,
+    value: unknown
+  ) => {
+    const newAddresses = [...addresses];
+    newAddresses[index] = { ...newAddresses[index], [field]: value };
+
+    // Nếu đặt địa chỉ này làm primary, bỏ primary của các địa chỉ khác
+    if (field === "isPrimary" && value === true) {
+      newAddresses.forEach((addr, i) => {
+        if (i !== index) addr.isPrimary = false;
+      });
+    }
+
+    setAddresses(newAddresses);
+  };
+
+  // Helper đặt địa chỉ làm primary
+  const setPrimaryAddress = (index: number) => {
+    const newAddresses = addresses.map((addr, i) => ({
+      ...addr,
+      isPrimary: i === index,
+    }));
+    setAddresses(newAddresses);
   };
 
   return (
@@ -1034,7 +1266,7 @@ const AdminUniversities: React.FC = () => {
                 </div>
 
                 <div className="form-group full-width">
-                  <label className="admin-label">Địa chỉ</label>
+                  <label className="admin-label">Địa chỉ chính</label>
                   <input
                     className="admin-input"
                     name="address"
@@ -1044,38 +1276,149 @@ const AdminUniversities: React.FC = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="admin-label">Email</label>
-                  <input
-                    className="admin-input"
-                    name="email"
-                    type="email"
-                    value={form.email || ""}
-                    onChange={handleInputChange}
-                    placeholder="contact@university.edu.vn"
-                  />
-                </div>
+                <div className="form-group full-width">
+                  <label className="admin-label">
+                    Danh sách địa chỉ chi tiết
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary small ml-2"
+                      onClick={addAddress}
+                    >
+                      + Thêm địa chỉ
+                    </button>
+                  </label>
 
-                <div className="form-group">
-                  <label className="admin-label">Số điện thoại</label>
-                  <input
-                    className="admin-input"
-                    name="phone"
-                    value={form.phone || ""}
-                    onChange={handleInputChange}
-                    placeholder="024.3869.2008"
-                  />
-                </div>
+                  {addresses.length === 0 && (
+                    <p className="admin-text-sm admin-text-gray-500">
+                      Chưa có địa chỉ nào. Nhấn "Thêm địa chỉ" để thêm.
+                    </p>
+                  )}
 
-                <div className="form-group">
-                  <label className="admin-label">Website</label>
-                  <input
-                    className="admin-input"
-                    name="website"
-                    value={form.website || ""}
-                    onChange={handleInputChange}
-                    placeholder="https://university.edu.vn"
-                  />
+                  {addresses.map((address, index) => (
+                    <div
+                      key={index}
+                      className="address-item border rounded p-3 mb-3"
+                    >
+                      <div className="address-header flex justify-between items-center mb-2">
+                        <span className="admin-font-medium">
+                          Địa chỉ {index + 1}
+                          {address.isPrimary && (
+                            <span className="admin-badge admin-badge-primary ml-2">
+                              Chính
+                            </span>
+                          )}
+                        </span>
+                        <div className="address-actions">
+                          {!address.isPrimary && (
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn-secondary small mr-2"
+                              onClick={() => setPrimaryAddress(index)}
+                            >
+                              Đặt làm chính
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn-danger small"
+                            onClick={() => removeAddress(index)}
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="address-fields grid grid-cols-2 gap-3">
+                        <div className="form-group">
+                          <label className="admin-label">Địa chỉ *</label>
+                          <input
+                            className="admin-input"
+                            value={address.address}
+                            onChange={(e) =>
+                              updateAddress(index, "address", e.target.value)
+                            }
+                            placeholder="Nhập địa chỉ đầy đủ"
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="admin-label">Loại địa chỉ *</label>
+                          <select
+                            className="admin-input"
+                            value={address.addressType}
+                            onChange={(e) =>
+                              updateAddress(
+                                index,
+                                "addressType",
+                                e.target.value
+                              )
+                            }
+                            required
+                          >
+                            <option value="main">Trụ sở chính</option>
+                            <option value="branch">Chi nhánh</option>
+                            <option value="campus">Cơ sở</option>
+                            <option value="office">Văn phòng</option>
+                            <option value="office">Đào tạo</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="admin-label">Mô tả</label>
+                          <input
+                            className="admin-input"
+                            value={address.description || ""}
+                            onChange={(e) =>
+                              updateAddress(
+                                index,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Mô tả thêm về địa chỉ"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="admin-label">Số điện thoại</label>
+                          <input
+                            className="admin-input"
+                            value={address.phone || ""}
+                            onChange={(e) =>
+                              updateAddress(index, "phone", e.target.value)
+                            }
+                            placeholder="Số điện thoại liên hệ"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="admin-label">Email</label>
+                          <input
+                            className="admin-input"
+                            type="email"
+                            value={address.email || ""}
+                            onChange={(e) =>
+                              updateAddress(index, "email", e.target.value)
+                            }
+                            placeholder="Email liên hệ"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="admin-label">Website</label>
+                          <input
+                            className="admin-input"
+                            value={address.website || ""}
+                            onChange={(e) =>
+                              updateAddress(index, "website", e.target.value)
+                            }
+                            placeholder="Website của cơ sở"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="form-group full-width">

@@ -226,6 +226,26 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                   <span className="admin-nav-text">Quản lý PTTS</span>
                 </NavLink>
               </li>
+              <li className="admin-nav-item">
+                <NavLink
+                  to="/admin/campus-types"
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M7 7h10v10H7z" />
+                  </svg>
+                  <span className="admin-nav-text">Quản lý loại cơ sở</span>
+                </NavLink>
+              </li>
             </>
           )}
 
