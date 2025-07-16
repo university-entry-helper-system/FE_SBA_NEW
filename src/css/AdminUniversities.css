@@ -1284,3 +1284,24 @@
   background: linear-gradient(135deg, #a855f7, #3b82f6);
   color: #fff;
 }
+
+.separator {
+  margin: 0 8px;
+  color: #888;
+}
+
+.detail-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .detail-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
