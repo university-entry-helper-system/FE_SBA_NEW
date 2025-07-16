@@ -883,8 +883,11 @@
 
 .admin-layout .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.form-group.full-width {
+  grid-column: 1 / span 2;
 }
 
 .admin-layout .form-group {

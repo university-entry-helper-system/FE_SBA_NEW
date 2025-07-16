@@ -1,178 +1,105 @@
 import React, { useEffect, useState } from "react";
 import "../../css/AdminUniversities.css";
 import * as universityApi from "../../api/university";
-import * as provinceApi from "../../api/province";
-import * as universityCategoryApi from "../../api/universityCategory";
-import * as admissionMethodApi from "../../api/admissionMethod";
-import type {
-  UniversityListItem,
-  University,
-  UniversityCreateRequest,
-  UniversityAddress,
-} from "../../types/university";
-import type { Province as ProvinceType } from "../../types/province";
-import type { UniversityCategory } from "../../types/universityCategory";
-import type { AdmissionMethod } from "../../types/admissionMethod";
+import type { UniversityListItem, University } from "../../types/university";
+import Select from "react-select";
+import type { MultiValue } from "react-select";
 
-const defaultForm: UniversityCreateRequest = {
-  categoryId: 0,
+const defaultForm = {
+  universityCode: "",
   name: "",
+  nameEn: "",
   shortName: "",
   fanpage: "",
-  foundingYear: new Date().getFullYear(),
-  provinceId: 0,
-  type: "public",
-  address: "",
-  addresses: [],
+  foundingYear: undefined as number | undefined,
   email: "",
   phone: "",
   website: "",
   description: "",
-  admissionMethodIds: [],
-};
-
-const defaultAddress: UniversityAddress = {
-  address: "",
-  addressType: "main",
-  description: "",
-  isPrimary: false,
-  phone: "",
-  email: "",
-  website: "",
+  categoryId: undefined as number | undefined,
+  admissionMethodIds: [] as number[],
 };
 
 const AdminUniversities: React.FC = () => {
-  // State management
   const [universities, setUniversities] = useState<UniversityListItem[]>([]);
-  const [categories, setCategories] = useState<UniversityCategory[]>([]);
-  const [provinces, setProvinces] = useState<ProvinceType[]>([]);
-  const [admissionMethods, setAdmissionMethods] = useState<AdmissionMethod[]>(
-    []
-  );
   const [selectedUniversity, setSelectedUniversity] =
     useState<University | null>(null);
-  const [form, setForm] = useState<UniversityCreateRequest>(defaultForm);
+  const [form, setForm] = useState(defaultForm);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showFormModal, setShowFormModal] = useState(false);
   const [viewDetail, setViewDetail] = useState<University | null>(null);
-  // 1. State bổ sung cho file logo và fanpage
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  // Thêm state cho lỗi validate phía FE
-  const [formError, setFormError] = useState<string>("");
-
-  // State bổ sung cho quản lý danh sách địa chỉ
-  const [addresses, setAddresses] = useState<UniversityAddress[]>([]);
-
-  // Pagination, search, sort, filter
+  // Pagination, search, sort
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [provinceFilter, setProvinceFilter] = useState("");
   const [sortField, setSortField] = useState<
-    "id" | "name" | "shortName" | "foundingYear"
+    "id" | "name" | "code" | "abbreviation"
   >("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortOrder] = useState<"asc" | "desc">("asc");
+  // 1. Thêm state cho file logo
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  // State cho danh sách phương thức tuyển sinh và loại trường
+  const [admissionMethods, setAdmissionMethods] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    []
+  );
+
+  // Key lưu localStorage
+  const FORM_STORAGE_KEY = "adminUniversityForm";
+
+  // Form handlers
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    } else {
+      setLogoFile(null);
+    }
+  };
 
   // Fetch universities
   const fetchUniversities = async () => {
     setLoading(true);
-    setError("");
     try {
-      const params: {
-        page: number;
-        size: number;
-        sort: string;
-        search?: string;
-        categoryId?: number;
-        provinceId?: number;
-      } = {
+      const res = await universityApi.searchUniversities({
+        search,
         page,
         size,
         sort: `${sortField},${sortOrder}`,
-      };
-
-      if (search) params.search = search;
-      if (provinceFilter) params.provinceId = parseInt(provinceFilter);
-
-      const res = await universityApi.getUniversities(params);
+      });
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items
         : [];
       setUniversities(items);
       setTotalPages(res.data.result.totalPages ?? 1);
       setTotalElements(res.data.result.totalElements ?? 0);
-    } catch (err) {
+    } catch {
       setError("Không thể tải danh sách trường đại học");
       setUniversities([]);
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch categories for dropdown
-  const fetchCategories = async () => {
-    try {
-      const res = await universityCategoryApi.getUniversityCategoriesPaginated({
-        size: 100, // Get all categories
-      });
-      const items = Array.isArray(res.data?.result?.items)
-        ? res.data.result.items
-        : [];
-      // Sort by name A-Z
-      const sortedItems = items.sort((a, b) =>
-        a.name.localeCompare(b.name, "vi", { sensitivity: "base" })
-      );
-      setCategories(sortedItems);
-    } catch (err) {
-      console.error("Không thể tải danh sách loại trường:", err);
-    }
-  };
-
-  // Fetch provinces for dropdown
-  const fetchProvinces = async () => {
-    try {
-      const res = await provinceApi.getProvinces({
-        size: 100, // Get all provinces
-        sort: "name,asc", // Sort by name A-Z
-      });
-      const items = Array.isArray(res.data?.result?.items)
-        ? res.data.result.items
-        : [];
-      setProvinces(items);
-    } catch (err) {
-      console.error("Không thể tải danh sách tỉnh/thành:", err);
-    }
-  };
-
-  // Fetch admission methods for dropdown
-  const fetchAdmissionMethods = async () => {
-    try {
-      const res = await admissionMethodApi.getAdmissionMethods({
-        size: 100, // Get all admission methods
-        sort: "name,asc", // Sort by name A-Z
-      });
-      const items = Array.isArray(res.data?.result?.items)
-        ? res.data.result.items
-        : [];
-      setAdmissionMethods(items);
-    } catch (err) {
-      console.error("Không thể tải danh sách phương thức tuyển sinh:", err);
-    }
-  };
-
   useEffect(() => {
     fetchUniversities();
-    fetchCategories();
-    fetchProvinces();
-    fetchAdmissionMethods();
-  }, [page, search, sortField, sortOrder, provinceFilter]);
+  }, [page, search, sortField, sortOrder]);
 
   // Auto clear messages
   useEffect(() => {
@@ -189,84 +116,73 @@ const AdminUniversities: React.FC = () => {
     }
   }, [error]);
 
-  // Form handlers
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    const newForm = {
-      ...form,
-      [name]:
-        name === "categoryId" ||
-        name === "provinceId" ||
-        name === "foundingYear"
-          ? value === ""
-            ? 0
-            : parseInt(value, 10)
-          : value,
-    };
-    setForm(newForm);
-    // Auto-save form vào localStorage
-    saveFormToStorage();
-  };
-
-  // Xử lý chọn file logo
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setLogoFile(e.target.files[0]);
-    } else {
-      setLogoFile(null);
+  // Khi form thay đổi, lưu vào localStorage (trừ file)
+  useEffect(() => {
+    if (showFormModal) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(form));
     }
-  };
+  }, [form, showFormModal]);
 
-  // CRUD operations
+  // Fetch admission methods & categories khi mở form
+  useEffect(() => {
+    if (showFormModal) {
+      // Lấy phương thức tuyển sinh
+      import("../../api/admissionMethod").then((api) => {
+        api.getAdmissionMethods({ page: 0, size: 100 }).then((res) => {
+          setAdmissionMethods(res.data.result.items || []);
+        });
+      });
+      // Lấy loại trường
+      import("../../api/universityCategory").then((api) => {
+        api
+          .getUniversityCategoriesPaginated({ page: 0, size: 100 })
+          .then((res) => {
+            setCategories(res.data.result.items || []);
+          });
+      });
+    }
+  }, [showFormModal]);
+
+  // Khi mở form (thêm/sửa), nếu có dữ liệu localStorage thì load vào state
   const handleAdd = () => {
-    // Load dữ liệu đã lưu từ localStorage
-    loadFormFromStorage();
-    setLogoFile(null); // File logo sẽ mất khi reload, user cần chọn lại
-    setAddresses([]); // Reset addresses
-    setFormError("");
+    const saved = localStorage.getItem(FORM_STORAGE_KEY);
+    if (saved) {
+      setForm({ ...defaultForm, ...JSON.parse(saved) });
+    } else {
+      setForm(defaultForm);
+    }
     setIsEditing(false);
     setShowFormModal(true);
     setSelectedUniversity(null);
+    setLogoFile(null);
   };
 
   const handleEdit = async (id: number) => {
     setLoading(true);
     try {
-      const res = await universityApi.getUniversityDetail(id);
+      const res = await universityApi.getUniversityById(id);
       const university = res.data.result;
       setSelectedUniversity(university);
-      setLogoFile(null); // reset file khi edit
-
-      const formData = {
-        categoryId: university.categoryId,
-        name: university.name,
-        shortName: university.shortName,
+      setForm({
+        universityCode: university.universityCode || "",
+        name: university.name || "",
+        nameEn: university.nameEn || "",
+        shortName: university.shortName || "",
         fanpage: university.fanpage || "",
-        foundingYear: university.foundingYear,
-        provinceId: university.province.id,
-        type: "public",
-        address: university.address || "",
-        addresses: university.addresses || [],
+        foundingYear: university.foundingYear || undefined,
         email: university.email || "",
         phone: university.phone || "",
         website: university.website || "",
         description: university.description || "",
+        categoryId: university.categoryId || undefined,
         admissionMethodIds: university.admissionMethodIds || [],
-      };
-
-      setForm(formData);
-      setAddresses(university.addresses || []);
+      });
+      setLogoFile(null); // reset file khi edit
       setIsEditing(true);
       setShowFormModal(true);
-      // Auto-save form edit vào localStorage
-      setTimeout(() => saveFormToStorage(), 0);
-    } catch (err) {
+      // Không load localStorage khi edit, chỉ khi add
+    } catch {
       setError("Không thể lấy chi tiết trường");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -274,257 +190,82 @@ const AdminUniversities: React.FC = () => {
 
   const handleDelete = async (id: number, name: string) => {
     if (!window.confirm(`Bạn có chắc muốn xóa trường "${name}"?`)) return;
-
     setLoading(true);
     try {
       await universityApi.deleteUniversity(id);
       setSuccess("Xóa trường thành công");
       fetchUniversities();
-    } catch (err) {
+    } catch {
       setError("Xóa trường thất bại");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const validateForm = () => {
-    if (!form.name || form.name.length > 255) {
-      return "Tên trường là bắt buộc, tối đa 255 ký tự.";
-    }
-    if (form.shortName && form.shortName.length > 50) {
-      return "Tên viết tắt tối đa 50 ký tự.";
-    }
-    if (form.fanpage && form.fanpage.length > 255) {
-      return "Fanpage tối đa 255 ký tự.";
-    }
-    if (form.email && form.email.length > 255) {
-      return "Email tối đa 255 ký tự.";
-    }
-    if (form.website && form.website.length > 255) {
-      return "Website tối đa 255 ký tự.";
-    }
-    if (form.phone && form.phone.length > 20) {
-      return "Số điện thoại tối đa 20 ký tự.";
-    }
-    if (!form.foundingYear || String(form.foundingYear).length !== 4) {
-      return "Năm thành lập là bắt buộc, gồm 4 số.";
-    }
-    if (!form.provinceId) {
-      return "Tỉnh/thành là bắt buộc.";
-    }
-    if (!form.categoryId) {
-      return "Loại trường là bắt buộc.";
-    }
-    if (logoFile) {
-      if (!["image/jpeg", "image/png", "image/webp"].includes(logoFile.type)) {
-        return "Chỉ nhận file ảnh jpg, png, webp.";
-      }
-      if (logoFile.size > 5 * 1024 * 1024) {
-        return "File logo tối đa 5MB.";
-      }
-    }
-    return "";
-  };
-
+  // 6. Cập nhật handleSubmit:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError("");
-    // Validate FE trước khi gửi
-    const err = validateForm();
-    if (err) {
-      setFormError(err);
+    if (!form.categoryId) {
+      setError("Vui lòng chọn loại trường đại học!");
       return;
     }
     setLoading(true);
     try {
-      let submitData: unknown;
-      let isMultipart = false;
-
-      if (isEditing) {
-        // UPDATE: Luôn dùng FormData (multipart/form-data)
-        submitData = new FormData();
+      if (isEditing && selectedUniversity) {
+        // UPDATE: luôn gửi multipart/form-data
+        const fd = new FormData();
         Object.entries(form).forEach(([key, value]) => {
-          // Không append trường rỗng hoặc undefined
-          if (
-            value === undefined ||
-            value === null ||
-            (typeof value === "string" && value.trim() === "")
-          ) {
-            return;
-          }
-          if (key === "admissionMethodIds") {
-            (value as number[]).forEach((id) =>
-              (submitData as FormData).append("admissionMethodIds", String(id))
+          if (Array.isArray(value)) {
+            value.forEach((v) =>
+              fd.append(key, v !== undefined && v !== null ? v.toString() : "")
             );
-          } else if (key === "addresses") {
-            // Bỏ qua addresses ở đây, sẽ xử lý riêng
-            return;
           } else {
-            (submitData as FormData).append(key, value as string | Blob);
+            fd.append(
+              key,
+              value !== undefined && value !== null ? value.toString() : ""
+            );
           }
         });
-
-        // Thêm danh sách địa chỉ
-        if (addresses && addresses.length > 0) {
-          addresses.forEach((address, index) => {
-            (submitData as FormData).append(
-              `addresses[${index}].address`,
-              address.address
-            );
-            (submitData as FormData).append(
-              `addresses[${index}].addressType`,
-              address.addressType
-            );
-            (submitData as FormData).append(
-              `addresses[${index}].isPrimary`,
-              String(address.isPrimary)
-            );
-            if (address.description) {
-              (submitData as FormData).append(
-                `addresses[${index}].description`,
-                address.description
-              );
-            }
-            if (address.phone) {
-              (submitData as FormData).append(
-                `addresses[${index}].phone`,
-                address.phone
-              );
-            }
-            if (address.email) {
-              (submitData as FormData).append(
-                `addresses[${index}].email`,
-                address.email
-              );
-            }
-            if (address.website) {
-              (submitData as FormData).append(
-                `addresses[${index}].website`,
-                address.website
-              );
-            }
-          });
-        }
-
-        // Chỉ append logoFile nếu có chọn file mới
         if (logoFile) {
-          (submitData as FormData).append("logoFile", logoFile);
+          fd.append("logoFile", logoFile);
         }
-        isMultipart = true;
-      } else {
-        // CREATE: Gửi FormData nếu có file, JSON nếu không có
-        isMultipart = !!logoFile;
-        if (isMultipart) {
-          submitData = new FormData();
-          Object.entries(form).forEach(([key, value]) => {
-            // Không append trường rỗng hoặc undefined
-            if (
-              value === undefined ||
-              value === null ||
-              (typeof value === "string" && value.trim() === "")
-            ) {
-              return;
-            }
-            if (key === "admissionMethodIds") {
-              (value as number[]).forEach((id) =>
-                (submitData as FormData).append(
-                  "admissionMethodIds",
-                  String(id)
-                )
-              );
-            } else if (key === "addresses") {
-              // Bỏ qua addresses ở đây, sẽ xử lý riêng
-              return;
-            } else {
-              (submitData as FormData).append(key, value as string | Blob);
-            }
-          });
-          // Thêm danh sách địa chỉ
-          if (addresses && addresses.length > 0) {
-            addresses.forEach((address, index) => {
-              (submitData as FormData).append(
-                `addresses[${index}].address`,
-                address.address
-              );
-              (submitData as FormData).append(
-                `addresses[${index}].addressType`,
-                address.addressType
-              );
-              (submitData as FormData).append(
-                `addresses[${index}].isPrimary`,
-                String(address.isPrimary)
-              );
-              if (address.description) {
-                (submitData as FormData).append(
-                  `addresses[${index}].description`,
-                  address.description
-                );
-              }
-              if (address.phone) {
-                (submitData as FormData).append(
-                  `addresses[${index}].phone`,
-                  address.phone
-                );
-              }
-              if (address.email) {
-                (submitData as FormData).append(
-                  `addresses[${index}].email`,
-                  address.email
-                );
-              }
-              if (address.website) {
-                (submitData as FormData).append(
-                  `addresses[${index}].website`,
-                  address.website
-                );
-              }
-            });
-          }
-          // Chỉ append logoFile nếu có chọn file mới
-          if (logoFile) {
-            (submitData as FormData).append("logoFile", logoFile);
-          }
-        } else {
-          // Bỏ trường rỗng khỏi object
-          submitData = Object.fromEntries(
-            Object.entries(form).filter(
-              ([, value]) =>
-                value !== undefined &&
-                value !== null &&
-                !(typeof value === "string" && value.trim() === "")
-            )
-          );
-          // Thêm addresses vào JSON
-          if (addresses && addresses.length > 0) {
-            (submitData as UniversityCreateRequest).addresses = addresses;
-          }
-        }
-      }
-
-      if (isEditing && selectedUniversity) {
-        await universityApi.updateUniversity(
-          selectedUniversity.id,
-          submitData,
-          isMultipart
-        );
+        await universityApi.updateUniversity(selectedUniversity.id, fd, true);
         setSuccess("Cập nhật trường thành công");
       } else {
-        await universityApi.createUniversity(submitData, isMultipart);
+        // CREATE: nếu có file thì gửi multipart, không thì gửi JSON
+        if (logoFile) {
+          const fd = new FormData();
+          Object.entries(form).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              value.forEach((v) =>
+                fd.append(
+                  key,
+                  v !== undefined && v !== null ? v.toString() : ""
+                )
+              );
+            } else {
+              fd.append(
+                key,
+                value !== undefined && value !== null ? value.toString() : ""
+              );
+            }
+          });
+          fd.append("logoFile", logoFile);
+          await universityApi.createUniversity(fd, true);
+        } else {
+          await universityApi.createUniversity(form, false);
+        }
         setSuccess("Thêm trường mới thành công");
       }
-      // Clear form và localStorage khi submit thành công
       setForm(defaultForm);
-      setLogoFile(null);
-      setAddresses([]);
-      clearFormStorage();
       setIsEditing(false);
       setSelectedUniversity(null);
       setShowFormModal(false);
+      setLogoFile(null);
+      localStorage.removeItem(FORM_STORAGE_KEY);
       fetchUniversities();
-    } catch (err) {
+    } catch {
       setError(isEditing ? "Cập nhật trường thất bại" : "Thêm trường thất bại");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -533,11 +274,10 @@ const AdminUniversities: React.FC = () => {
   const handleViewDetail = async (id: number) => {
     setLoading(true);
     try {
-      const res = await universityApi.getUniversityDetail(id);
+      const res = await universityApi.getUniversityById(id);
       setViewDetail(res.data.result);
-    } catch (err) {
+    } catch {
       setError("Không thể lấy chi tiết trường");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -545,70 +285,23 @@ const AdminUniversities: React.FC = () => {
 
   const closeModal = () => {
     setShowFormModal(false);
-    // Không clear form khi đóng modal để giữ dữ liệu
     setIsEditing(false);
     setSelectedUniversity(null);
-    setFormError("");
+    localStorage.removeItem(FORM_STORAGE_KEY);
   };
 
-  // Search and filter handlers
+  // Search handlers
   const handleSearch = () => {
     setSearch(searchInput);
     setPage(0);
   };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
-
-  const handleFilterChange = (filterType: string, value: string) => {
-    if (filterType === "province") {
-      setProvinceFilter(value);
-    }
-    setPage(0);
-  };
-
-  const handleSort = (field: "id" | "name" | "shortName" | "foundingYear") => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-    setPage(0);
-  };
-
-  const getStatusText = (status: string) => {
-    return status === "active" ? "Hoạt động" : "Đã xóa";
-  };
-
-  const getRegionText = (region: string) => {
-    return region === "BAC"
-      ? "Miền Bắc"
-      : region === "TRUNG"
-      ? "Miền Trung"
-      : region === "NAM"
-      ? "Miền Nam"
-      : "N/A";
-  };
-
-  const getAdmissionMethodNames = (admissionMethodIds: number[]) => {
-    if (!admissionMethodIds || admissionMethodIds.length === 0)
-      return "Chưa có";
-    return admissionMethodIds
-      .map((id) => {
-        const method = admissionMethods.find((m) => m.id === id);
-        return method ? method.name : "N/A";
-      })
-      .join(", ");
+    if (e.key === "Enter") handleSearch();
   };
 
   // Helper lấy URL logo đầy đủ từ Minio
   const getLogoUrl = (logoUrl?: string) => {
     if (!logoUrl) return "/placeholder-logo.png";
-    // Nếu là URL có query (presigned), cắt ? và thay minio thành localhost
     if (logoUrl.startsWith("http")) {
       let url = logoUrl.split("?")[0];
       url = url.replace("minio:9000", "localhost:9000");
@@ -617,83 +310,8 @@ const AdminUniversities: React.FC = () => {
     return `http://localhost:9000/mybucket/${logoUrl}`;
   };
 
-  // Helper lưu form vào localStorage
-  const saveFormToStorage = () => {
-    const key = isEditing ? "universityFormEdit" : "universityForm";
-    localStorage.setItem(key, JSON.stringify(form));
-  };
-
-  // Helper load form từ localStorage
-  const loadFormFromStorage = () => {
-    const key = isEditing ? "universityFormEdit" : "universityForm";
-    const savedForm = localStorage.getItem(key);
-    if (savedForm) {
-      try {
-        const parsedForm = JSON.parse(savedForm);
-        setForm(parsedForm);
-      } catch (error) {
-        console.error("Error parsing saved form:", error);
-        localStorage.removeItem(key);
-      }
-    }
-  };
-
-  // Helper xóa form khỏi localStorage
-  const clearFormStorage = () => {
-    localStorage.removeItem("universityForm");
-    localStorage.removeItem("universityFormEdit");
-  };
-
-  // Helper thêm địa chỉ mới
-  const addAddress = () => {
-    const newAddress = { ...defaultAddress };
-    if (addresses.length === 0) {
-      newAddress.isPrimary = true;
-    }
-    setAddresses([...addresses, newAddress]);
-  };
-
-  // Helper xóa địa chỉ
-  const removeAddress = (index: number) => {
-    const newAddresses = addresses.filter((_, i) => i !== index);
-    // Nếu xóa địa chỉ primary, đặt địa chỉ đầu tiên làm primary
-    if (addresses[index].isPrimary && newAddresses.length > 0) {
-      newAddresses[0].isPrimary = true;
-    }
-    setAddresses(newAddresses);
-  };
-
-  // Helper cập nhật địa chỉ
-  const updateAddress = (
-    index: number,
-    field: keyof UniversityAddress,
-    value: unknown
-  ) => {
-    const newAddresses = [...addresses];
-    newAddresses[index] = { ...newAddresses[index], [field]: value };
-
-    // Nếu đặt địa chỉ này làm primary, bỏ primary của các địa chỉ khác
-    if (field === "isPrimary" && value === true) {
-      newAddresses.forEach((addr, i) => {
-        if (i !== index) addr.isPrimary = false;
-      });
-    }
-
-    setAddresses(newAddresses);
-  };
-
-  // Helper đặt địa chỉ làm primary
-  const setPrimaryAddress = (index: number) => {
-    const newAddresses = addresses.map((addr, i) => ({
-      ...addr,
-      isPrimary: i === index,
-    }));
-    setAddresses(newAddresses);
-  };
-
   return (
     <div className="admin-universities">
-      {/* Header */}
       <div className="universities-header">
         <div className="header-content">
           <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
@@ -765,7 +383,6 @@ const AdminUniversities: React.FC = () => {
           {error}
         </div>
       )}
-
       {success && (
         <div className="alert alert-success">
           <svg
@@ -805,7 +422,7 @@ const AdminUniversities: React.FC = () => {
             </svg>
             <input
               className="search-input"
-              placeholder="Tìm kiếm theo tên trường..."
+              placeholder="Tìm kiếm theo tên, mã trường, viết tắt..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -815,23 +432,6 @@ const AdminUniversities: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <div className="filter-controls">
-          <select
-            className="filter-select"
-            value={provinceFilter}
-            onChange={(e) => handleFilterChange("province", e.target.value)}
-          >
-            <option value="">Tất cả tỉnh/thành</option>
-            {provinces.map((province) => (
-              <option key={province.id} value={province.id}>
-                {province.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Pagination Info */}
         <div className="pagination-info">
           <span className="admin-text-sm admin-text-gray-600">
             Hiển thị {universities.length} trên tổng số {totalElements} trường
@@ -851,21 +451,12 @@ const AdminUniversities: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>
-                    <button
-                      className="sort-header"
-                      // Xóa sự kiện sắp xếp cho STT, không cần sort theo STT
-                      type="button"
-                      disabled
-                    >
-                      STT
-                    </button>
-                  </th>
+                  <th>STT</th>
                   <th>Logo</th>
                   <th>
                     <button
                       className="sort-header"
-                      onClick={() => handleSort("name")}
+                      onClick={() => setSortField("name")}
                     >
                       Tên trường
                       {sortField === "name" && (
@@ -878,10 +469,10 @@ const AdminUniversities: React.FC = () => {
                   <th>
                     <button
                       className="sort-header"
-                      onClick={() => handleSort("shortName")}
+                      onClick={() => setSortField("code")}
                     >
-                      Tên viết tắt
-                      {sortField === "shortName" && (
+                      Mã trường
+                      {sortField === "code" && (
                         <span className="sort-indicator">
                           {sortOrder === "asc" ? "↑" : "↓"}
                         </span>
@@ -891,19 +482,17 @@ const AdminUniversities: React.FC = () => {
                   <th>
                     <button
                       className="sort-header"
-                      onClick={() => handleSort("foundingYear")}
+                      onClick={() => setSortField("abbreviation")}
                     >
-                      Năm thành lập
-                      {sortField === "foundingYear" && (
+                      Viết tắt
+                      {sortField === "abbreviation" && (
                         <span className="sort-indicator">
                           {sortOrder === "asc" ? "↑" : "↓"}
                         </span>
                       )}
                     </button>
                   </th>
-
-                  <th>Tỉnh/Thành</th>
-                  <th>Vùng miền</th>
+                  <th>Website</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -911,9 +500,7 @@ const AdminUniversities: React.FC = () => {
               <tbody>
                 {universities.map((university, idx) => (
                   <tr key={university.id} className="table-row">
-                    <td className="admin-font-medium">
-                      {page * size + idx + 1}
-                    </td>
+                    <td>{page * size + idx + 1}</td>
                     <td>
                       <div className="logo-cell">
                         {university.logoUrl ? (
@@ -948,32 +535,25 @@ const AdminUniversities: React.FC = () => {
                         )}
                       </div>
                     </td>
+                    <td>{university.name}</td>
+                    <td>{university.universityCode}</td>
+                    <td>{university.shortName}</td>
                     <td>
-                      <div className="university-name">
-                        <span className="name">{university.name}</span>
-                      </div>
-                    </td>
-                    <td className="admin-font-medium">
-                      {university.shortName}
-                    </td>
-                    <td>{university.foundingYear}</td>
-
-                    <td>
-                      <span className="admin-badge admin-badge-info">
-                        {university.province?.name || "N/A"}
-                      </span>
+                      {university.website ? (
+                        <a
+                          href={university.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {university.website}
+                        </a>
+                      ) : (
+                        <span>Chưa cập nhật</span>
+                      )}
                     </td>
                     <td>
-                      <span className="admin-badge admin-badge-secondary">
-                        {getRegionText(university.province?.region || "")}
-                      </span>
-                    </td>
-
-                    <td>
-                      <span
-                        className={`status-badge ${university.status?.toLowerCase()}`}
-                      >
-                        {getStatusText(university.status || "active")}
+                      <span className={`status-badge ${university.status}`}>
+                        {university.status}
                       </span>
                     </td>
                     <td>
@@ -1048,7 +628,6 @@ const AdminUniversities: React.FC = () => {
                 ))}
               </tbody>
             </table>
-
             {universities.length === 0 && !loading && (
               <div className="empty-state">
                 <svg
@@ -1091,13 +670,11 @@ const AdminUniversities: React.FC = () => {
             </svg>
             Trước
           </button>
-
           <div className="pagination-info">
             <span>
               Trang {page + 1} / {totalPages}
             </span>
           </div>
-
           <button
             className="pagination-btn"
             disabled={page + 1 >= totalPages}
@@ -1136,24 +713,7 @@ const AdminUniversities: React.FC = () => {
                 </svg>
               </button>
             </div>
-
             <form className="modal-form" onSubmit={handleSubmit}>
-              {formError && (
-                <div className="alert alert-error">
-                  <svg
-                    className="alert-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
-                  </svg>
-                  {formError}
-                </div>
-              )}
               <div className="form-grid">
                 <div className="form-group">
                   <label className="admin-label">
@@ -1162,317 +722,170 @@ const AdminUniversities: React.FC = () => {
                   <input
                     className="admin-input"
                     name="name"
-                    value={form.name || ""}
+                    value={form.name}
                     onChange={handleInputChange}
                     placeholder="Ví dụ: Đại học Bách khoa Hà Nội"
                     required
                   />
                 </div>
-
+                <div className="form-group">
+                  <label className="admin-label">Tên tiếng Anh</label>
+                  <input
+                    className="admin-input"
+                    name="nameEn"
+                    value={form.nameEn}
+                    onChange={handleInputChange}
+                    placeholder="Ví dụ: Hanoi University of Science and Technology"
+                  />
+                </div>
                 <div className="form-group">
                   <label className="admin-label">
-                    Tên viết tắt <span className="required">*</span>
+                    Mã trường <span className="required">*</span>
+                  </label>
+                  <input
+                    className="admin-input"
+                    name="universityCode"
+                    value={form.universityCode}
+                    onChange={handleInputChange}
+                    placeholder="Ví dụ: HUST, FPTU, ..."
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="admin-label">
+                    Viết tắt <span className="required">*</span>
                   </label>
                   <input
                     className="admin-input"
                     name="shortName"
-                    value={form.shortName || ""}
+                    value={form.shortName}
                     onChange={handleInputChange}
-                    placeholder="Ví dụ: HUST"
+                    placeholder="Ví dụ: HUST, FPT, ..."
                     required
                   />
                 </div>
-
                 <div className="form-group">
-                  <label className="admin-label">
-                    Loại trường <span className="required">*</span>
-                  </label>
-                  <select
+                  <label className="admin-label">Logo (tải lên file)</label>
+                  <input
                     className="admin-input"
-                    name="categoryId"
-                    value={String(form.categoryId || "")}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Chọn loại trường</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  {logoFile && <span>Đã chọn: {logoFile.name}</span>}
                 </div>
-
                 <div className="form-group">
-                  <label className="admin-label">
-                    Tỉnh/Thành <span className="required">*</span>
-                  </label>
-                  <select
+                  <label className="admin-label">Website</label>
+                  <input
                     className="admin-input"
-                    name="provinceId"
-                    value={String(form.provinceId || "")}
+                    name="website"
+                    value={form.website}
                     onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Chọn tỉnh/thành</option>
-                    {provinces.map((province) => (
-                      <option key={province.id} value={String(province.id)}>
-                        {province.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="https://..."
+                  />
                 </div>
-
                 <div className="form-group">
-                  <label className="admin-label">
-                    Năm thành lập <span className="required">*</span>
-                  </label>
+                  <label className="admin-label">Email</label>
+                  <input
+                    className="admin-input"
+                    name="email"
+                    value={form.email}
+                    onChange={handleInputChange}
+                    placeholder="Ví dụ: info@hust.edu.vn"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="admin-label">Số điện thoại</label>
+                  <input
+                    className="admin-input"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleInputChange}
+                    placeholder="Ví dụ: 024.3868.1000"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="admin-label">Năm thành lập</label>
                   <input
                     className="admin-input"
                     name="foundingYear"
                     type="number"
                     value={form.foundingYear || ""}
                     onChange={handleInputChange}
-                    placeholder="Ví dụ: 1956"
-                    min="1900"
-                    max={new Date().getFullYear()}
-                    required
+                    placeholder="Ví dụ: 1976"
                   />
                 </div>
-
                 <div className="form-group">
-                  <label className="admin-label">Logo trường</label>
-                  <input
-                    className="admin-input"
-                    name="logoFile"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoFileChange}
-                  />
-                  {isEditing && form.shortName && (
-                    <small>Để trống nếu không muốn đổi ảnh logo.</small>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="admin-label">Fanpage Facebook</label>
+                  <label className="admin-label">Trang fanpage</label>
                   <input
                     className="admin-input"
                     name="fanpage"
-                    value={form.fanpage || ""}
+                    value={form.fanpage}
                     onChange={handleInputChange}
-                    placeholder="https://facebook.com/ten-truong"
+                    placeholder="https://www.facebook.com/hust.edu.vn"
                   />
                 </div>
-
-                <div className="form-group full-width">
-                  <label className="admin-label">Địa chỉ chính</label>
-                  <input
-                    className="admin-input"
-                    name="address"
-                    value={form.address || ""}
-                    onChange={handleInputChange}
-                    placeholder="Địa chỉ đầy đủ của trường"
-                  />
-                </div>
-
-                <div className="form-group full-width">
+                <div className="form-group">
                   <label className="admin-label">
-                    Danh sách địa chỉ chi tiết
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn-secondary small ml-2"
-                      onClick={addAddress}
-                    >
-                      + Thêm địa chỉ
-                    </button>
+                    Loại trường đại học <span className="required">*</span>
                   </label>
-
-                  {addresses.length === 0 && (
-                    <p className="admin-text-sm admin-text-gray-500">
-                      Chưa có địa chỉ nào. Nhấn "Thêm địa chỉ" để thêm.
-                    </p>
-                  )}
-
-                  {addresses.map((address, index) => (
-                    <div
-                      key={index}
-                      className="address-item border rounded p-3 mb-3"
-                    >
-                      <div className="address-header flex justify-between items-center mb-2">
-                        <span className="admin-font-medium">
-                          Địa chỉ {index + 1}
-                          {address.isPrimary && (
-                            <span className="admin-badge admin-badge-primary ml-2">
-                              Chính
-                            </span>
-                          )}
-                        </span>
-                        <div className="address-actions">
-                          {!address.isPrimary && (
-                            <button
-                              type="button"
-                              className="admin-btn admin-btn-secondary small mr-2"
-                              onClick={() => setPrimaryAddress(index)}
-                            >
-                              Đặt làm chính
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="admin-btn admin-btn-danger small"
-                            onClick={() => removeAddress(index)}
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="address-fields grid grid-cols-2 gap-3">
-                        <div className="form-group">
-                          <label className="admin-label">Địa chỉ *</label>
-                          <input
-                            className="admin-input"
-                            value={address.address}
-                            onChange={(e) =>
-                              updateAddress(index, "address", e.target.value)
-                            }
-                            placeholder="Nhập địa chỉ đầy đủ"
-                            required
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="admin-label">Loại địa chỉ *</label>
-                          <select
-                            className="admin-input"
-                            value={address.addressType}
-                            onChange={(e) =>
-                              updateAddress(
-                                index,
-                                "addressType",
-                                e.target.value
-                              )
-                            }
-                            required
-                          >
-                            <option value="main">Trụ sở chính</option>
-                            <option value="branch">Chi nhánh</option>
-                            <option value="campus">Cơ sở</option>
-                            <option value="office">Văn phòng</option>
-                            <option value="office">Đào tạo</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label className="admin-label">Mô tả</label>
-                          <input
-                            className="admin-input"
-                            value={address.description || ""}
-                            onChange={(e) =>
-                              updateAddress(
-                                index,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Mô tả thêm về địa chỉ"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="admin-label">Số điện thoại</label>
-                          <input
-                            className="admin-input"
-                            value={address.phone || ""}
-                            onChange={(e) =>
-                              updateAddress(index, "phone", e.target.value)
-                            }
-                            placeholder="Số điện thoại liên hệ"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="admin-label">Email</label>
-                          <input
-                            className="admin-input"
-                            type="email"
-                            value={address.email || ""}
-                            onChange={(e) =>
-                              updateAddress(index, "email", e.target.value)
-                            }
-                            placeholder="Email liên hệ"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="admin-label">Website</label>
-                          <input
-                            className="admin-input"
-                            value={address.website || ""}
-                            onChange={(e) =>
-                              updateAddress(index, "website", e.target.value)
-                            }
-                            placeholder="Website của cơ sở"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <select
+                    className="admin-input"
+                    name="categoryId"
+                    value={form.categoryId || ""}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">-- Chọn loại trường --</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
+                <div className="form-group">
+                  <label className="admin-label">Phương thức tuyển sinh</label>
+                  <Select
+                    isMulti
+                    isSearchable
+                    name="admissionMethodIds"
+                    classNamePrefix="react-select"
+                    options={admissionMethods.map((m) => ({
+                      value: m.id,
+                      label: m.name,
+                    }))}
+                    value={admissionMethods
+                      .filter((m) => form.admissionMethodIds.includes(m.id))
+                      .map((m) => ({ value: m.id, label: m.name }))}
+                    onChange={(
+                      selected: MultiValue<{ value: number; label: string }>
+                    ) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        admissionMethodIds: (
+                          selected as MultiValue<{
+                            value: number;
+                            label: string;
+                          }>
+                        ).map((opt) => opt.value),
+                      }));
+                    }}
+                    placeholder="Chọn phương thức tuyển sinh..."
+                  />
+                </div>
                 <div className="form-group full-width">
                   <label className="admin-label">Mô tả</label>
                   <textarea
                     className="admin-input"
                     name="description"
-                    value={form.description || ""}
+                    value={form.description}
                     onChange={handleInputChange}
                     placeholder="Mô tả về trường đại học..."
                     rows={3}
                   />
                 </div>
-
-                <div className="form-group full-width">
-                  <label className="admin-label">Phương thức tuyển sinh</label>
-                  <div className="checkbox-group">
-                    {admissionMethods.map((method) => (
-                      <label key={method.id} className="checkbox-item">
-                        <input
-                          type="checkbox"
-                          checked={form.admissionMethodIds.includes(method.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setForm((prev) => ({
-                                ...prev,
-                                admissionMethodIds: [
-                                  ...prev.admissionMethodIds,
-                                  method.id,
-                                ],
-                              }));
-                            } else {
-                              setForm((prev) => ({
-                                ...prev,
-                                admissionMethodIds:
-                                  prev.admissionMethodIds.filter(
-                                    (id) => id !== method.id
-                                  ),
-                              }));
-                            }
-                          }}
-                        />
-                        <span className="checkbox-label">{method.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {admissionMethods.length === 0 && (
-                    <p className="admin-text-sm admin-text-gray-500">
-                      Không có phương thức tuyển sinh nào
-                    </p>
-                  )}
-                </div>
               </div>
-
               <div className="modal-footer">
                 <button
                   type="button"
@@ -1529,7 +942,6 @@ const AdminUniversities: React.FC = () => {
                 </svg>
               </button>
             </div>
-
             <div className="detail-content">
               <div className="detail-header">
                 {viewDetail.logoUrl && (
@@ -1544,22 +956,19 @@ const AdminUniversities: React.FC = () => {
                     {viewDetail.name}
                   </h3>
                   <p className="admin-text-sm admin-text-gray-600">
-                    {viewDetail.shortName}
+                    {viewDetail.nameEn || "Chưa có tên tiếng Anh"}
                   </p>
                   <div className="detail-badges">
                     <span className="admin-badge admin-badge-info">
-                      {viewDetail.category?.name ||
-                        `ID: ${viewDetail.categoryId}`}
+                      {viewDetail.universityCode}
                     </span>
-                    <span className="admin-badge admin-badge-secondary">
-                      {getRegionText(viewDetail.province?.region || "")}
+                    <span className="admin-badge admin-badge-info">
+                      {viewDetail.shortName}
                     </span>
                   </div>
                 </div>
               </div>
-
               <div className="detail-grid">
-                {/* Thông tin cơ bản */}
                 <div className="detail-section">
                   <h4 className="detail-section-title">Thông tin cơ bản</h4>
                   <div className="detail-section-content">
@@ -1568,86 +977,22 @@ const AdminUniversities: React.FC = () => {
                       <span>{viewDetail.id}</span>
                     </div>
                     <div className="detail-item">
-                      <label>Năm thành lập:</label>
-                      <span>{viewDetail.foundingYear}</span>
-                    </div>
-                    <div className="detail-item">
                       <label>Trạng thái:</label>
-                      <span
-                        className={`status-badge ${viewDetail.status?.toLowerCase()}`}
-                      >
-                        {getStatusText(viewDetail.status || "active")}
+                      <span className={`status-badge ${viewDetail.status}`}>
+                        {viewDetail.status}
                       </span>
                     </div>
                     <div className="detail-item full-width">
                       <label>Mô tả:</label>
                       <span>{viewDetail.description || "Chưa có mô tả"}</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Thông tin phân loại */}
-                <div className="detail-section">
-                  <h4 className="detail-section-title">Phân loại</h4>
-                  <div className="detail-section-content">
                     <div className="detail-item">
-                      <label>Loại trường:</label>
-                      <span>
-                        {viewDetail.category?.name ||
-                          `ID: ${viewDetail.categoryId}`}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Tỉnh/Thành:</label>
-                      <span>{viewDetail.province?.name}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Vùng miền:</label>
-                      <span>
-                        {getRegionText(viewDetail.province?.region || "")}
-                      </span>
-                    </div>
-                    <div className="detail-item full-width">
-                      <label>Phương thức tuyển sinh:</label>
-                      <span>
-                        {getAdmissionMethodNames(
-                          viewDetail.admissionMethodIds || []
-                        )}
-                      </span>
-                    </div>
-                    {viewDetail.province?.description && (
-                      <div className="detail-item full-width">
-                        <label>Mô tả tỉnh/thành:</label>
-                        <span>{viewDetail.province.description}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Thông tin liên hệ */}
-                <div className="detail-section">
-                  <h4 className="detail-section-title">Thông tin liên hệ</h4>
-                  <div className="detail-section-content">
-                    <div className="detail-item full-width">
-                      <label>Địa chỉ:</label>
-                      <span>{viewDetail.address || "Chưa cập nhật"}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Email:</label>
-                      <span>{viewDetail.email || "Chưa cập nhật"}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Điện thoại:</label>
-                      <span>{viewDetail.phone || "Chưa cập nhật"}</span>
-                    </div>
-                    <div className="detail-item full-width">
                       <label>Website:</label>
                       {viewDetail.website ? (
                         <a
                           href={viewDetail.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="link"
                         >
                           {viewDetail.website}
                         </a>
@@ -1655,23 +1000,36 @@ const AdminUniversities: React.FC = () => {
                         <span>Chưa cập nhật</span>
                       )}
                     </div>
-                    {viewDetail.fanpage && (
-                      <div className="detail-item full-width">
-                        <label>Fanpage:</label>
+                    <div className="detail-item">
+                      <label>Email:</label>
+                      <span>{viewDetail.email || "Chưa có email"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Số điện thoại:</label>
+                      <span>{viewDetail.phone || "Chưa có số điện thoại"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Năm thành lập:</label>
+                      <span>
+                        {viewDetail.foundingYear || "Chưa có năm thành lập"}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Trang fanpage:</label>
+                      {viewDetail.fanpage ? (
                         <a
                           href={viewDetail.fanpage}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="link"
                         >
                           {viewDetail.fanpage}
                         </a>
-                      </div>
-                    )}
+                      ) : (
+                        <span>Chưa có trang fanpage</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                {/* Thông tin hệ thống */}
                 <div className="detail-section">
                   <h4 className="detail-section-title">Thông tin hệ thống</h4>
                   <div className="detail-section-content">
@@ -1702,6 +1060,15 @@ const AdminUniversities: React.FC = () => {
                             )
                           : "N/A"}
                       </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="detail-section">
+                  <h4 className="detail-section-title">Thông tin viết tắt</h4>
+                  <div className="detail-section-content">
+                    <div className="detail-item">
+                      <label>Viết tắt:</label>
+                      <span>{viewDetail.shortName || "Chưa cập nhật"}</span>
                     </div>
                   </div>
                 </div>
