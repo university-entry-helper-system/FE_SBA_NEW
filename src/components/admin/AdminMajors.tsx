@@ -325,7 +325,7 @@ const AdminMajors: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      ID
+                      STT
                       <button
                         className="sort-th-btn"
                         style={{
@@ -532,9 +532,9 @@ const AdminMajors: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {majors.map((m) => (
+                {majors.map((m, idx) => (
                   <tr key={m.id} className="table-row">
-                    <td>{m.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{m.name}</td>
                     <td>{m.code}</td>
                     <td>

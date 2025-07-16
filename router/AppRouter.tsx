@@ -22,6 +22,7 @@ import UniversityDetail from "../src/components/UniversityDetail";
 import ForgotPassword from "../src/components/ForgotPassword";
 import AdminBlock from "../src/components/admin/AdminBlock";
 import AdminCampusType from "../src/components/admin/AdminCampusType";
+import AdminCampuses from "../src/components/admin/AdminCampuses";
 
 const UserLayout = () => {
   return (
@@ -66,6 +67,7 @@ const AppRouter = () => {
           <Route path="accounts" element={<AdminAccount />} />
           <Route path="blocks" element={<AdminBlock />} />
           <Route path="campus-types" element={<AdminCampusType />} />
+          <Route path="campuses" element={<AdminCampuses />} />
         </Route>
 
         {/* User Routes with UserLayout (Navbar + Footer) */}

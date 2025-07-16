@@ -416,7 +416,7 @@ const AdminSubjectCombination: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      ID
+                      STT
                       <button
                         className="sort-th-btn"
                         style={{
@@ -556,9 +556,9 @@ const AdminSubjectCombination: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {combinations.map((c) => (
+                {combinations.map((c, idx) => (
                   <tr key={c.id} className="table-row">
-                    <td>{c.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{c.name}</td>
                     <td>{c.description}</td>
                     <td>

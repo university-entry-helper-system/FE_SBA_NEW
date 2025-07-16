@@ -350,7 +350,7 @@ const AdminProvince: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      ID
+                      STT
                       <button
                         className="sort-th-btn"
                         style={{
@@ -557,9 +557,9 @@ const AdminProvince: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {provinces.map((p) => (
+                {provinces.map((p, idx) => (
                   <tr key={p.id} className="table-row">
-                    <td>{p.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{p.name}</td>
                     <td>{enumToRegion[p.region]}</td>
                     <td>

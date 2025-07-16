@@ -48,11 +48,13 @@ const HomePage = () => {
   return (
     <div className="homepage-modern">
       <ImageCarousel />
-      
+
       <section className="hero">
         <div className="hero-content">
-         
-          <h1 className="hero-title"><span className="name-hero-title">EDUPATH</span> - Sổ tay tuyển sinh đại học</h1>
+          <h1 className="hero-title">
+            <span className="name-hero-title">EDUPATH</span> - Sổ tay tuyển sinh
+            đại học
+          </h1>
           <p className="hero-desc">
             Tra cứu thông tin các trường đại học, ngành học, phương thức tuyển
             sinh và tin tức mới nhất!

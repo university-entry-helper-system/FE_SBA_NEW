@@ -325,76 +325,7 @@ const AdminAdmissionMethod: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      ID
-                      <button
-                        className="sort-th-btn"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          marginLeft: 2,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                        }}
-                        onClick={() => {
-                          if (sortField === "id") {
-                            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                          } else {
-                            setSortField("id");
-                            setSortOrder("asc");
-                          }
-                        }}
-                        title="Sắp xếp theo ID"
-                      >
-                        {sortField === "id" ? (
-                          sortOrder === "asc" ? (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M6 15l6-6 6 6" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M18 9l-6 6-6-6" />
-                            </svg>
-                          )
-                        ) : (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{ opacity: 0.3 }}
-                          >
-                            <path d="M6 15l6-6 6 6" />
-                          </svg>
-                        )}
-                      </button>
-                    </span>
-                  </th>
+                  <th>STT</th>
                   <th>
                     <span
                       style={{
@@ -471,9 +402,9 @@ const AdminAdmissionMethod: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {methods.map((m) => (
+                {methods.map((m, idx) => (
                   <tr key={m.id} className="table-row">
-                    <td>{m.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{m.name}</td>
                     <td>{m.description}</td>
                     <td>

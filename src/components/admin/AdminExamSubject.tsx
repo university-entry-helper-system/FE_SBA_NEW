@@ -330,7 +330,7 @@ const AdminExamSubject: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      ID
+                      STT
                       <button
                         className="sort-th-btn"
                         style={{
@@ -537,9 +537,9 @@ const AdminExamSubject: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {subjects.map((s) => (
+                {subjects.map((s, idx) => (
                   <tr key={s.id} className="table-row">
-                    <td>{s.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{s.name}</td>
                     <td>{s.shortName}</td>
                     <td>
