@@ -26,17 +26,17 @@ export const ImageCarousel = ({
   const defaultImages: Image[] = [
     {
       id: 1,
-      url: "banner1.jpg",
+      url: "https://scontent.fsgn2-6.fna.fbcdn.net/v/t39.30808-6/487772981_1056576349836827_5370816887319958777_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=127cfc&_nc_ohc=i92TapDbrfEQ7kNvwGFeTmR&_nc_oc=AdmjeCvtJv-C2ROyZMgdBUOlc1khdxc_ebwM5GuA2jCePGkLPI0I5qDj4_s5edw0ZSg&_nc_zt=23&_nc_ht=scontent.fsgn2-6.fna&_nc_gid=mbvZjsXzICeHY0Yp_Iis8g&oh=00_AfQK3aaJL6qTS2ja6ztRcl6l-_tfO7eB4CaA-RtkH54Cwg&oe=687CF2B7",
       alt: "University entrance exam preparation",
     },
     {
       id: 2,
-      url: "banner2.jpg",
+      url: "https://daihoc.fpt.edu.vn/wp-content/uploads/2021/09/Banner-web-FPTU-2021-tracuu-loctuyen-ccologo.png",
       alt: "Study tips and guidance",
     },
     {
       id: 3,
-      url: "banner3.jpg",
+      url: "https://dhhp.edu.vn/admissions/admission-banner.jpg",
       alt: "Success stories",
     },
   ];
@@ -95,7 +95,11 @@ export const ImageCarousel = ({
                 </div>
               </div>
             )}
-            {slide.type === "countdown" && <CountdownBanner />}
+            {slide.type === "countdown" && (
+              <div className="carousel-countdown-top">
+                <CountdownBanner />
+              </div>
+            )}
           </div>
         ))}
       </div>

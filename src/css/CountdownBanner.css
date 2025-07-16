@@ -2,7 +2,7 @@
   position: relative;
   width: 100%;
   padding: 3rem 0;
-  background: linear-gradient(to right, #0369a1, #0284c7, #fbbf24);
+  background: linear-gradient(90deg, #38d9a9 0%, #60a5fa 100%);
   overflow: hidden;
 }
 
@@ -14,7 +14,7 @@
 
 @media (min-width: 768px) {
   .countdown-banner {
-    padding: 5rem 0;
+    padding:5rem 0;
   }
 }
 
@@ -26,38 +26,7 @@
   user-select: none;
 }
 
-.bg-element {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(24px);
-}
 
-.bg-element-1 {
-  top: -2rem;
-  left: -2rem;
-  width: 8rem;
-  height: 8rem;
-  background-color: rgba(56, 189, 248, 0.3);
-  animation: float-slow 6s ease-in-out infinite;
-}
-
-.bg-element-2 {
-  top: 50%;
-  right: -3rem;
-  width: 10rem;
-  height: 10rem;
-  background-color: rgba(252, 211, 77, 0.3);
-  animation: float-medium 4s ease-in-out infinite;
-}
-
-.bg-element-3 {
-  bottom: -2rem;
-  left: 33.333%;
-  width: 7rem;
-  height: 7rem;
-  background-color: rgba(125, 211, 252, 0.3);
-  animation: float-fast 3s ease-in-out infinite;
-}
 
 @media (min-width: 640px) {
   .bg-element-1 {
