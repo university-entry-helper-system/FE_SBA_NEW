@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../css/CountdownBanner.css"; // Import CSS file
 
 interface TimeLeft {
@@ -15,10 +15,17 @@ export const CountdownBanner = () => {
     minutes: 0,
     seconds: 0,
   });
+  const targetDateRef = useRef<Date>(new Date());
 
   useEffect(() => {
-    const currentYear = new Date().getFullYear();
-    const targetDate = new Date(`${currentYear}-06-25T00:00:00`);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let targetDate = new Date(`${currentYear}-06-25T00:00:00`);
+    // If today is after June 25, set target to next year
+    if (now > targetDate) {
+      targetDate = new Date(`${currentYear + 1}-06-25T00:00:00`);
+    }
+    targetDateRef.current = targetDate;
 
     const calculateTimeLeft = () => {
       const now = new Date();
@@ -43,20 +50,16 @@ export const CountdownBanner = () => {
   return (
     <div className="countdown-banner">
       {/* Animated background elements */}
-      <div className="background-elements">
-        <div className="bg-element bg-element-1"></div>
-        <div className="bg-element bg-element-2"></div>
-        <div className="bg-element bg-element-3"></div>
-      </div>
+
 
       <div className="countdown-container">
         <div className="countdown-content">
           <div className="countdown-text">
             <h2 className="countdown-heading">
-              Đếm ngược ngày thi đại học {new Date().getFullYear()}
+              Đếm ngược ngày thi đại học {targetDateRef.current.getFullYear()}
             </h2>
             <p className="countdown-subheading">
-              Kỳ thi dự kiến bắt đầu ngày 25/06/{new Date().getFullYear()}
+              Kỳ thi dự kiến bắt đầu ngày 25/06/{targetDateRef.current.getFullYear()}
             </p>
           </div>
 
