@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import "../css/Home.css";
+import { ImageCarousel } from "./ImageCarousel";
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
@@ -46,9 +47,12 @@ const HomePage = () => {
 
   return (
     <div className="homepage-modern">
+      <ImageCarousel />
+      
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title">Sổ tay tuyển sinh đại học 2025</h1>
+         
+          <h1 className="hero-title"><span className="name-hero-title">EDUPATH</span> - Sổ tay tuyển sinh đại học</h1>
           <p className="hero-desc">
             Tra cứu thông tin các trường đại học, ngành học, phương thức tuyển
             sinh và tin tức mới nhất!

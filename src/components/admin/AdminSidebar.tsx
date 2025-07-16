@@ -22,6 +22,50 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
     <aside className={`admin-sidebar ${isOpen ? "open" : "closed"}`}>
       <nav className="admin-nav">
         <ul className="admin-nav-list">
+        <li
+            className="admin-nav-group-title"
+            onClick={() => toggleGroup("other")}
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span>TỔNG QUAN</span>
+            <span style={{ marginLeft: 4 }}>
+              {openGroups.other ? "▼" : "►"}
+            </span>
+          </li>
+          {openGroups.other && (
+            <>
+              <li className="admin-nav-item">
+                <NavLink
+                  to="/admin"
+                  end
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h2a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3"
+                    />
+                  </svg>
+                  <span className="admin-nav-text">Dashboard</span>
+                </NavLink>
+              </li>
+            </>
+          )}
           <li
             className="admin-nav-group-title"
             onClick={() => toggleGroup("category")}
@@ -339,50 +383,6 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
             </>
           )}
 
-          <li
-            className="admin-nav-group-title"
-            onClick={() => toggleGroup("other")}
-            style={{
-              cursor: "pointer",
-              userSelect: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <span>Khác</span>
-            <span style={{ marginLeft: 4 }}>
-              {openGroups.other ? "▼" : "►"}
-            </span>
-          </li>
-          {openGroups.other && (
-            <>
-              <li className="admin-nav-item">
-                <NavLink
-                  to="/admin"
-                  end
-                  className={({ isActive }) =>
-                    isActive ? "admin-nav-link active" : "admin-nav-link"
-                  }
-                >
-                  <svg
-                    className="admin-nav-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h2a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3"
-                    />
-                  </svg>
-                  <span className="admin-nav-text">Dashboard</span>
-                </NavLink>
-              </li>
-            </>
-          )}
         </ul>
       </nav>
     </aside>
