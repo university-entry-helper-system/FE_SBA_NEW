@@ -1,41 +1,98 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "../css/Question.css";
-
-const questions = [
-  {
-    question: "Làm thế nào để đăng ký tài khoản?",
-    answer:
-      "Bạn nhấn vào nút Đăng ký trên thanh điều hướng và điền đầy đủ thông tin theo yêu cầu.",
-  },
-  {
-    question: "Tôi quên mật khẩu, phải làm sao?",
-    answer:
-      "Bạn chọn chức năng Quên mật khẩu ở trang đăng nhập để nhận hướng dẫn lấy lại mật khẩu qua email.",
-  },
-  {
-    question: "Làm sao để xem thông tin các trường đại học?",
-    answer:
-      "Bạn vào mục Các trường trên thanh điều hướng để xem danh sách và chi tiết từng trường.",
-  },
-  {
-    question: "Tôi có thể liên hệ tư vấn tuyển sinh ở đâu?",
-    answer:
-      "Bạn vào mục Tư vấn tuyển sinh hoặc Liên hệ để gửi câu hỏi cho đội ngũ tư vấn viên.",
-  },
-];
+import { getActiveFaqs } from "../api/faq";
+import type { FaqItem } from "../api/faq";
 
 const Question: React.FC = () => {
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getActiveFaqs()
+      .then((data) => {
+        setFaqs(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Không thể tải dữ liệu câu hỏi thường gặp.");
+        setLoading(false);
+      });
+  }, []);
+
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  // Chia thành 2 cột
+  const col1 = faqs.filter((_, i) => i % 2 === 0);
+  const col2 = faqs.filter((_, i) => i % 2 === 1);
+
   return (
     <div className="question-page">
       <h2 className="question-title">Các câu hỏi thường gặp</h2>
-      <div className="question-list">
-        {questions.map((q, idx) => (
-          <div key={idx} className="question-item">
-            <div className="question-q">{q.question}</div>
-            <div className="question-a">{q.answer}</div>
+      {loading ? (
+        <div>Đang tải...</div>
+      ) : error ? (
+        <div style={{ color: "red" }}>{error}</div>
+      ) : (
+        <div className="question-list-2col">
+          <div className="question-col">
+            {col1.map((q, idx) => {
+              const realIdx = idx * 2;
+              return (
+                <div key={q.id} className="question-item">
+                  <div
+                    className={
+                      "question-q" +
+                      (openIdx === realIdx ? " question-q-active" : "")
+                    }
+                    onClick={() =>
+                      setOpenIdx(openIdx === realIdx ? null : realIdx)
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    {q.question}
+                  </div>
+                  <div
+                    className="question-a"
+                    aria-hidden={openIdx !== realIdx}
+                    style={openIdx === realIdx ? {} : { pointerEvents: "none" }}
+                  >
+                    {q.answer}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+          <div className="question-col">
+            {col2.map((q, idx) => {
+              const realIdx = idx * 2 + 1;
+              return (
+                <div key={q.id} className="question-item">
+                  <div
+                    className={
+                      "question-q" +
+                      (openIdx === realIdx ? " question-q-active" : "")
+                    }
+                    onClick={() =>
+                      setOpenIdx(openIdx === realIdx ? null : realIdx)
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    {q.question}
+                  </div>
+                  <div
+                    className="question-a"
+                    aria-hidden={openIdx !== realIdx}
+                    style={openIdx === realIdx ? {} : { pointerEvents: "none" }}
+                  >
+                    {q.answer}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
