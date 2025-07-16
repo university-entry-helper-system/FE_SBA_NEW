@@ -7,9 +7,14 @@
   margin: 0 auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .carousel-container {
-    height: 250px;
+    height: 350px;
+  }
+}
+@media (max-width: 600px) {
+  .carousel-container {
+    height: 200px;
   }
 }
 
@@ -38,6 +43,16 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+@media (max-width: 1024px) {
+  .carousel-image-container {
+    height: 350px;
+  }
+}
+@media (max-width: 600px) {
+  .carousel-image-container {
+    height: 200px;
+  }
 }
 
 .carousel-image {
