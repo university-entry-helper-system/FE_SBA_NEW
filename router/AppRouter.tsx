@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Navbar from "../src/components/Navbar";
 import Footer from "../src/components/Footer";
-import HomePage from "../src/components/Home";
+import HomePage from "../src/components/home";
 import Question from "../src/components/question";
-import Login from "../src/components/Login";
-import Register from "../src/components/Register";
+import Login from "../src/components/login";
+import Register from "../src/components/register";
 import ProtectedRoute from "../src/components/ProtectedRoute";
 import AdminLayout from "../src/components/admin/AdminLayout";
 import AdminDashboard from "../src/components/admin/AdminDashboard";
@@ -23,6 +23,9 @@ import ForgotPassword from "../src/components/ForgotPassword";
 import AdminBlock from "../src/components/admin/AdminBlock";
 import AdminCampusType from "../src/components/admin/AdminCampusType";
 import AdminCampuses from "../src/components/admin/AdminCampuses";
+import NewsList from "../src/components/NewsList";
+import NewsDetail from "../src/components/NewsDetail";
+import AdminNews from "../src/components/admin/AdminNews";
 
 const UserLayout = () => {
   return (
@@ -68,6 +71,7 @@ const AppRouter = () => {
           <Route path="blocks" element={<AdminBlock />} />
           <Route path="campus-types" element={<AdminCampusType />} />
           <Route path="campuses" element={<AdminCampuses />} />
+          <Route path="news" element={<AdminNews />} />
         </Route>
 
         {/* User Routes with UserLayout (Navbar + Footer) */}
@@ -80,6 +84,8 @@ const AppRouter = () => {
           <Route path="/universities" element={<UniversityPage />} />
           <Route path="/universities/:id" element={<UniversityDetail />} />
           <Route path="/questions" element={<Question />} />
+          <Route path="/news" element={<NewsList />} />
+          <Route path="/news/:id" element={<NewsDetail />} />
           {/* Other user routes */}
         </Route>
       </Routes>
