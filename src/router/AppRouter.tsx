@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import HomePage from "../components/Home";
+import HomePage from "../components/home";
 import Question from "../components/question";
-import Login from "../components/Login";
-import Register from "../components/Register";
+import Login from "../components/login";
+import Register from "../components/register";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../components/admin/AdminLayout";
 import AdminDashboard from "../components/admin/AdminDashboard";
@@ -26,6 +26,7 @@ import AdminCampuses from "../components/admin/AdminCampuses";
 import NewsList from "../components/NewsList";
 import NewsDetail from "../components/NewsDetail";
 import AdminNews from "../components/admin/AdminNews";
+import GraduationScoreCalculator from "../components/GraduationScoreCalculator";
 
 const UserLayout = () => {
   return (
@@ -86,6 +87,7 @@ const AppRouter = () => {
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/graduation-score" element={<GraduationScoreCalculator />} />
           {/* Other user routes */}
         </Route>
       </Routes>
