@@ -1,3 +1,20 @@
+.faq-group-title {
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 48px auto 28px auto;
+  padding: 18px 36px 16px 36px;
+  background: linear-gradient(90deg, #22d3ee 0%, #34d399 60%, #38bdf8 100%);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px 0 rgba(52, 211, 153, 0.13);
+  border: none;
+  letter-spacing: 1px;
+  display: block;
+  text-align: center;
+  width: fit-content;
+  min-width: 320px;
+  max-width: 100%;
+}
 .question-q-active {
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -58,7 +75,8 @@
   line-height: 1.5;
 }
 .question-page {
-  max-width: 700px;
+  max-width: 80vw;
+  width: 80vw;
   margin: 32px auto;
   background: #fff;
   border-radius: 16px;

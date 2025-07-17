@@ -4,7 +4,7 @@ export interface FaqItem {
   id: number;
   question: string;
   answer: string;
-  group: string; // tên nhóm hoặc category
+  faqType: string; // enum type
 }
 
 export const getActiveFaqs = async (): Promise<FaqItem[]> => {
