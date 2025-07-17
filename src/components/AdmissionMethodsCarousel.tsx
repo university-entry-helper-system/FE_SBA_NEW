@@ -1,5 +1,6 @@
 // ... existing code ...
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../css/AdmissionMethodsCarousel.css';
 
 
@@ -109,6 +110,9 @@ const AdmissionMethodsCarousel = ({
     touchStart.current = null;
   };
 
+  // Add useNavigate hook
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <section className="admission-methods-section">
@@ -156,13 +160,11 @@ const AdmissionMethodsCarousel = ({
         >
           {admissionMethods.map((method, index) => (
             <div
-              className="admission-method-card"
+              className="admission-method-card clickable"
               key={method.id}
-              style={{
-                flex: `0 0 ${100 / itemsPerPage}%`,
-              }}
+              onClick={() => navigate(`/admission-methods/${method.id}`)}
             >
-              <div className="admission-method-icon" style={{ fontSize: '3rem', marginBottom: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '64px' }}>
+              <div className="admission-method-icon">
                 {(() => {
                   const icons = ['📄', '🎓', '🧪', '🌐', '📝', '🏫', '📊', '🗂️', '🧠', '💡', '📚', '🧑‍🎓'];
                   return icons[index % icons.length];

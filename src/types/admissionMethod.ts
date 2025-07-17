@@ -34,3 +34,8 @@ export interface ApiResponse<T> {
   message: string;
   result: T;
 }
+
+export interface UniversityAdmissionMethodResult {
+  universityName: string;
+  note: string;
+}

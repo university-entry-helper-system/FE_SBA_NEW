@@ -60,14 +60,29 @@
     position: relative;
     overflow: hidden;
     min-width: 0;
-    flex: 0 0 25%; /* Each card takes up 25% of the container */
+    flex: 0 0 25%;
     max-width: 25%;
     box-sizing: border-box;
   }
-  
-  .admission-method-card:hover {
-    transform: translateY(-4px);
+
+  .admission-method-card.clickable {
+    cursor: pointer;
+    transition: box-shadow 0.2s, border 0.2s, transform 0.2s;
+  }
+
+  .admission-method-card.clickable:hover {
+    transform: translateY(-4px) scale(1.03);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: #3498db;
+  }
+
+  .admission-method-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 64px;
   }
   
   /* Different colors for each card type */

@@ -27,6 +27,7 @@ import NewsList from "../components/NewsList";
 import NewsDetail from "../components/NewsDetail";
 import AdminNews from "../components/admin/AdminNews";
 import GraduationScoreCalculator from "../components/GraduationScoreCalculator";
+import AdmissionMethodUniversitiesPage from "../components/AdmissionMethodUniversitiesPage";
 
 const UserLayout = () => {
   return (
@@ -88,6 +89,7 @@ const AppRouter = () => {
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/graduation-score" element={<GraduationScoreCalculator />} />
+          <Route path="/admission-methods/:id" element={<AdmissionMethodUniversitiesPage />} />
           {/* Other user routes */}
         </Route>
       </Routes>
