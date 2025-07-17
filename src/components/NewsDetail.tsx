@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getNewsById } from "../api/news";
 import type { NewsResponse } from "../types/news";
 import "../css/home.css";
@@ -44,8 +44,9 @@ const NewsDetail: React.FC = () => {
             src={news.imageUrl || "https://placehold.co/600x300?text=No+Image"}
             alt={news.title}
             className="news-detail-img"
-            onError={e => {
-              (e.target as HTMLImageElement).src = "https://placehold.co/600x300?text=No+Image";
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "https://placehold.co/600x300?text=No+Image";
             }}
           />
         </div>
@@ -56,16 +57,21 @@ const NewsDetail: React.FC = () => {
               {news.university?.shortName || news.university?.name || ""}
             </span>
             <span className="news-detail-date">
-              {news.publishedAt ? new Date(news.publishedAt).toLocaleDateString() : ""}
+              {news.publishedAt
+                ? new Date(news.publishedAt).toLocaleDateString()
+                : ""}
             </span>
             <span className="news-detail-views">👁 {news.viewCount}</span>
           </div>
           <div className="news-detail-summary">{news.summary}</div>
-          <div className="news-detail-body" dangerouslySetInnerHTML={{ __html: news.content }} />
+          <div
+            className="news-detail-body"
+            dangerouslySetInnerHTML={{ __html: news.content }}
+          />
         </div>
       </div>
     </div>
   );
 };
 
-export default NewsDetail; 
+export default NewsDetail;

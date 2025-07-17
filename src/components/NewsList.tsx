@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getNewsPaginated, searchNews } from "../api/news";
-import type { NewsResponse, NewsPage } from "../types/news";
+import type { NewsResponse } from "../types/news";
 import "../css/home.css";
 
 const PAGE_SIZE = 8;
@@ -10,7 +10,6 @@ const NewsList: React.FC = () => {
   const [news, setNews] = useState<NewsResponse[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -23,14 +22,17 @@ const NewsList: React.FC = () => {
     try {
       let res;
       if (searchQuery) {
-        res = await searchNews({ query: searchQuery, page: pageNum, size: PAGE_SIZE });
+        res = await searchNews({
+          query: searchQuery,
+          page: pageNum,
+          size: PAGE_SIZE,
+        });
       } else {
         res = await getNewsPaginated({ page: pageNum, size: PAGE_SIZE });
       }
       setNews(res.data.result.items);
       setTotalPages(res.data.result.totalPages);
-      setTotalElements(res.data.result.totalElements);
-    } catch (err) {
+    } catch {
       setError("Không thể tải danh sách tin tức.");
       setNews([]);
     } finally {
@@ -63,9 +65,11 @@ const NewsList: React.FC = () => {
           className="search-input"
           placeholder="Tìm kiếm tin tức..."
           value={searchInput}
-          onChange={e => setSearchInput(e.target.value)}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
-        <button className="search-btn" type="submit">Tìm kiếm</button>
+        <button className="search-btn" type="submit">
+          Tìm kiếm
+        </button>
       </form>
       {loading ? (
         <div className="news-loading">Đang tải...</div>
@@ -74,15 +78,23 @@ const NewsList: React.FC = () => {
       ) : (
         <>
           <div className="news-list-grid">
-            {news.map(item => (
-              <div className="news-card" key={item.id} onClick={() => navigate(`/news/${item.id}`)}>
+            {news.map((item) => (
+              <div
+                className="news-card"
+                key={item.id}
+                onClick={() => navigate(`/news/${item.id}`)}
+              >
                 <div className="news-card-img-wrap">
                   <img
-                    src={item.imageUrl || "https://placehold.co/300x180?text=No+Image"}
+                    src={
+                      item.imageUrl ||
+                      "https://placehold.co/300x180?text=No+Image"
+                    }
                     alt={item.title}
                     className="news-card-img"
-                    onError={e => {
-                      (e.target as HTMLImageElement).src = "https://placehold.co/300x180?text=No+Image";
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/300x180?text=No+Image";
                     }}
                   />
                 </div>
@@ -90,8 +102,16 @@ const NewsList: React.FC = () => {
                   <h3 className="news-card-title">{item.title}</h3>
                   <div className="news-card-summary">{item.summary}</div>
                   <div className="news-card-meta">
-                    <span className="news-card-university">{item.university?.shortName || item.university?.name || ""}</span>
-                    <span className="news-card-date">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : ""}</span>
+                    <span className="news-card-university">
+                      {item.university?.shortName ||
+                        item.university?.name ||
+                        ""}
+                    </span>
+                    <span className="news-card-date">
+                      {item.publishedAt
+                        ? new Date(item.publishedAt).toLocaleDateString()
+                        : ""}
+                    </span>
                   </div>
                   <div className="news-card-views">👁 {item.viewCount}</div>
                 </div>
@@ -119,4 +139,4 @@ const NewsList: React.FC = () => {
   );
 };
 
-export default NewsList; 
+export default NewsList;
