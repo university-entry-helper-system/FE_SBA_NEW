@@ -1,0 +1,273 @@
+/* Admission Methods Section */
+.admission-methods-section {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+  
+  .features-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .admission-methods-loading,
+  .admission-methods-error {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .admission-methods-error {
+    color: #e74c3c;
+    background-color: #ffeaea;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  
+  .admission-methods-carousel {
+    position: relative;
+    margin-top: 0;
+    overflow: hidden; /* Hide overflow */
+    padding: 0 40px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .admission-methods-list {
+    display: flex;
+    gap: 24px;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    padding: 0 50px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .admission-method-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #e1e8ed;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    flex: 0 0 25%; /* Each card takes up 25% of the container */
+    max-width: 25%;
+    box-sizing: border-box;
+  }
+  
+  .admission-method-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  
+  /* Different colors for each card type */
+  .admission-method-card:nth-child(4n+1) {
+    border-top: 4px solid #3498db;
+  }
+  
+  .admission-method-card:nth-child(4n+1)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3498db, #5dade2);
+  }
+  
+  .admission-method-card:nth-child(4n+2) {
+    border-top: 4px solid #f39c12;
+  }
+  
+  .admission-method-card:nth-child(4n+2)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #f39c12, #f7dc6f);
+  }
+  
+  .admission-method-card:nth-child(4n+3) {
+    border-top: 4px solid #9b59b6;
+  }
+  
+  .admission-method-card:nth-child(4n+3)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #9b59b6, #bb8fce);
+  }
+  
+  .admission-method-card:nth-child(4n+4) {
+    border-top: 4px solid #1abc9c;
+  }
+  
+  .admission-method-card:nth-child(4n+4)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1abc9c, #76d7c4);
+  }
+  
+  .admission-method-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 16px;
+    line-height: 1.3;
+    text-align: center;
+  }
+  
+  .admission-method-desc {
+    font-size: 14px;
+    color: #5a6c7d;
+    line-height: 1.6;
+    text-align: justify;
+    margin-bottom: 0;
+  }
+  
+  /* Navigation Buttons */
+.carousel-nav {
+    position: absolute;
+    top:55%;
+    transform: translateY(-50%);
+    background: #f8fbff;
+    border: 1.5px solid #e3eaf5;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    color: #223a7a;
+    box-shadow: 0 2px 8px rgba(34,58,122,0.08);
+  }
+  
+  .carousel-nav:hover:not(.disabled) {
+    background: #eaf2fb;
+    border-color: #3498db;
+    color: #3498db;
+  }
+  
+  .carousel-nav.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .carousel-nav-left {
+    left: 1;
+  }
+  
+  .carousel-nav-right {
+    right: 0;
+  }
+  
+  /* Pagination dots */
+  .carousel-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  
+  .pagination-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #dbe6f7;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    padding: 0;
+  }
+  
+  .pagination-dot.active {
+    background: #3498db;
+  }
+  
+  .pagination-dot:hover {
+    background: #3498db;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 1024px) {
+    .admission-method-card {
+      flex: 0 0 33.3333%;
+      max-width: 33.3333%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .admission-methods-section {
+      padding: 24px 0 0 0;
+    }
+    .features-title {
+      font-size: 22px;
+      margin-bottom: 10px;
+      padding-left: 12px;
+    }
+    .admission-methods-carousel {
+      padding: 0 10px;
+    }
+    .admission-method-card {
+      padding: 14px 6px 10px 6px;
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    .admission-method-title {
+      font-size: 15px;
+      min-height: 36px;
+    }
+    .admission-method-desc {
+      font-size: 12px;
+      min-height: 40px;
+    }
+    .carousel-nav {
+      width: 32px;
+      height: 32px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .admission-methods-section {
+      padding: 12px 0 0 0;
+    }
+    .features-title {
+      font-size: 16px;
+      padding-left: px;
+    }
+    .admission-methods-carousel {
+      padding: 0 10px;
+    }
+    .admission-method-card {
+      padding: 8px 2px 6px 2px;
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    .carousel-nav {
+      width: 28px;
+      height: 28px;
+    }
+  }
