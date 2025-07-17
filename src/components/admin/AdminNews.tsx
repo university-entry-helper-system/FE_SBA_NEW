@@ -34,7 +34,7 @@ const defaultForm: NewsRequest = {
   category: "Tin tức",
   image: null,
   imageUrl: "",
-  newsStatus: "Published",
+  newsStatus: "PUBLISHED",
   publishedAt: "",
 };
 
@@ -377,10 +377,10 @@ const AdminNews: React.FC = () => {
                 label="Trạng thái"
                 error={!!formik.touched.newsStatus && !!formik.errors.newsStatus}
               >
-                <MenuItem value="Published">Published</MenuItem>
-                <MenuItem value="Draft">Draft</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Rejected">Rejected</MenuItem>
+                <MenuItem value="PUBLISHED">PUBLISHED</MenuItem>
+                <MenuItem value="DRAFT">DRAFT</MenuItem>
+                <MenuItem value="PENDING">PENDING</MenuItem>
+                <MenuItem value="REJECTED">REJECTED</MenuItem>
               </Select>
               {formik.touched.newsStatus && formik.errors.newsStatus && (
                 <Typography color="error" variant="caption">{formik.errors.newsStatus}</Typography>
