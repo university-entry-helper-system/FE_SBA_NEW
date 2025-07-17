@@ -1,0 +1,255 @@
+.graduation-score-calculator-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.gsc-title {
+  text-align: center;
+  color: #004aad;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.gsc-formula-block {
+  background-color: #f5f6f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.gsc-formula-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.gsc-formula-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 10px auto;
+}
+
+.gsc-formula-desc {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.gsc-form {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gsc-step {
+  margin-bottom: 30px;
+}
+
+.gsc-step-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #004aad;
+  margin-bottom: 15px;
+  border-left: 4px solid #004aad;
+  padding-left: 10px;
+}
+
+.gsc-row-exam {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.gsc-exam-table {
+  flex: 1;
+  min-width: 300px;
+}
+
+.gsc-exam-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gsc-exam-table th,
+.gsc-exam-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.gsc-exam-table th {
+  background-color: #f5f6f5;
+  font-weight: bold;
+  color: #333;
+}
+
+.gsc-exam-table td input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.gsc-row-select {
+  margin-top: 15px;
+}
+
+.gsc-row-select label {
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gsc-row-select select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.gsc-table-block {
+  margin-top: 15px;
+}
+
+.gsc-table-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.gsc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.gsc-table th,
+.gsc-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.gsc-table th {
+  background-color: #f5f6f5;
+  font-weight: bold;
+  color: #333;
+}
+
+.gsc-table td input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.gsc-note {
+  font-size: 12px;
+  color: #555;
+  font-style: italic;
+}
+
+.gsc-row-priority {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.gsc-row-priority label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+  color: #333;
+}
+
+.gsc-row-priority input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.gsc-submit {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #004aad;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.gsc-submit:hover {
+  background-color: #003580;
+}
+
+.gsc-submit:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.gsc-error {
+  color: #d32f2f;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.gsc-result {
+  background-color: #f5f6f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.gsc-result h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.gsc-row-result {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.gsc-score {
+  font-size: 16px;
+  font-weight: bold;
+  color: #004aad;
+  margin-top: 15px;
+}
+
+.gsc-status {
+  font-size: 14px;
+  font-weight: bold;
+  color: #d32f2f;
+  margin-top: 10px;
+}
+
+.gsc-details-info {
+  font-size: 14px;
+  color: #555;
+  margin-top: 10px;
+}

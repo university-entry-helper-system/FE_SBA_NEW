@@ -90,6 +90,14 @@ const Navbar = () => {
             </li>
             <li>
               <Link
+                to="/graduation-score"
+                className={`navbar-menu-link ${isLinkActive("/graduation-score")}`}
+              >
+                Tính điểm tốt nghiệp
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/about"
                 className={`navbar-menu-link ${isLinkActive("/about")}`}
               >
@@ -206,6 +214,15 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Câu hỏi thường gặp
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/graduation-score"
+                className={`navbar-mobile-link ${isLinkActive("/graduation-score")}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tính điểm tốt nghiệp
               </Link>
             </li>
             <li>
