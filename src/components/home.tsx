@@ -2,11 +2,16 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import "../css/Home.css";
 import { ImageCarousel } from "./ImageCarousel";
+import { getAdmissionMethods } from "../api/admissionMethod";
+import AdmissionMethodsCarousel from "./AdmissionMethodsCarousel"; // Import the new component
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [admissionMethods, setAdmissionMethods] = useState<any[]>([]);
+  const [loadingAdmission, setLoadingAdmission] = useState(false);
+  const [errorAdmission, setErrorAdmission] = useState("");
 
   // Dữ liệu mẫu trường đại học (có thể thay bằng API sau)
   const schools = [
@@ -31,6 +36,17 @@ const HomePage = () => {
       logo: "https://placehold.co/40x40?text=Logo",
     },
   ];
+
+  useEffect(() => {
+    setLoadingAdmission(true);
+    setErrorAdmission("");
+    getAdmissionMethods({ page: 0, size: 8 })
+      .then((res) => {
+        setAdmissionMethods(res.data.result.items || []);
+      })
+      .catch(() => setErrorAdmission("Không thể tải phương thức tuyển sinh"))
+      .finally(() => setLoadingAdmission(false));
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -154,6 +170,13 @@ const HomePage = () => {
           />
         </div>
       </section>
+
+      {/* Replace the old admission methods section with the new carousel component */}
+      <AdmissionMethodsCarousel 
+        admissionMethods={admissionMethods}
+        loading={loadingAdmission}
+        error={errorAdmission}
+      />
 
       <section className="news-section">
         <h2 className="news-title">Tin tức tuyển sinh mới nhất</h2>
