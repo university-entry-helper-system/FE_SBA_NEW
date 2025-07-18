@@ -249,7 +249,7 @@ const UniversityCategoryPage: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>STT</th>
                   <th>Tên loại trường</th>
                   <th>Mô tả</th>
                   <th>Trạng thái</th>
@@ -257,9 +257,9 @@ const UniversityCategoryPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((c) => (
+                {categories.map((c, idx) => (
                   <tr key={c.id} className="table-row">
-                    <td>{c.id}</td>
+                    <td>{page * 10 + idx + 1}</td>
                     <td>{c.name}</td>
                     <td>{c.description}</td>
                     <td>

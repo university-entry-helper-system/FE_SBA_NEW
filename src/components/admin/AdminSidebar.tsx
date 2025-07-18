@@ -22,7 +22,7 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
     <aside className={`admin-sidebar ${isOpen ? "open" : "closed"}`}>
       <nav className="admin-nav">
         <ul className="admin-nav-list">
-        <li
+          <li
             className="admin-nav-group-title"
             onClick={() => toggleGroup("other")}
             style={{
@@ -109,7 +109,7 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               </li>
               <li className="admin-nav-item">
                 <NavLink
-                  to="/admin/majors"
+                  to="/admin/categories"
                   className={({ isActive }) =>
                     isActive ? "admin-nav-link active" : "admin-nav-link"
                   }
@@ -124,10 +124,54 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      d="M8 6h8M8 12h8M8 18h8M4 6h.01M4 12h.01M4 18h.01"
                     />
                   </svg>
-                  <span className="admin-nav-text">Quản lý ngành</span>
+                  <span className="admin-nav-text">Quản lý loại trường</span>
+                </NavLink>
+              </li>
+              <li className="admin-nav-item">
+                <NavLink
+                  to="/admin/campuses"
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5"
+                    />
+                    <circle cx="12" cy="10" r="4" />
+                  </svg>
+                  <span className="admin-nav-text">Quản lý cơ sở</span>
+                </NavLink>
+              </li>
+              <li className="admin-nav-item">
+                <NavLink
+                  to="/admin/campus-types"
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M7 7h10v10H7z" />
+                  </svg>
+                  <span className="admin-nav-text">Quản lý loại cơ sở</span>
                 </NavLink>
               </li>
               <li className="admin-nav-item">
@@ -155,7 +199,7 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               </li>
               <li className="admin-nav-item">
                 <NavLink
-                  to="/admin/categories"
+                  to="/admin/majors"
                   className={({ isActive }) =>
                     isActive ? "admin-nav-link active" : "admin-nav-link"
                   }
@@ -170,12 +214,33 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M8 6h8M8 12h8M8 18h8M4 6h.01M4 12h.01M4 18h.01"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     />
                   </svg>
-                  <span className="admin-nav-text">Quản lý loại trường</span>
+                  <span className="admin-nav-text">Quản lý ngành</span>
                 </NavLink>
               </li>
+              <li className="admin-nav-item">
+                <NavLink
+                  to="/admin/news"
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M7 8h10M7 12h6" />
+                  </svg>
+                  <span className="admin-nav-text">Quản lý tin tức</span>
+                </NavLink>
+              </li>
+
               <li className="admin-nav-item">
                 <NavLink
                   to="/admin/exam-subjects"
@@ -337,32 +402,8 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                   <span className="admin-nav-text">Quản lý vai trò</span>
                 </NavLink>
               </li>
-              <li className="admin-nav-item">
-                <NavLink
-                  to="/admin/users"
-                  className={({ isActive }) =>
-                    isActive ? "admin-nav-link active" : "admin-nav-link"
-                  }
-                >
-                  <svg
-                    className="admin-nav-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
-                  <span className="admin-nav-text">Quản lý người dùng</span>
-                </NavLink>
-              </li>
             </>
           )}
-
         </ul>
       </nav>
     </aside>

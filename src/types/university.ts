@@ -5,7 +5,7 @@ export interface Province {
   region: string;
 }
 
-export interface Category {
+export interface UniversityCategory {
   id: number;
   name: string;
   description: string;
@@ -15,51 +15,43 @@ export interface Category {
   updatedAt: string;
   updatedBy: string;
 }
+
+export interface UniversityCampus {
+  // Định nghĩa trường cần thiết cho campus nếu dùng
+  id: number;
+  name: string;
+  address: string;
+  // ... các trường khác nếu có
+}
+
+export type UniversityStatus = "active" | "inactive" | "deleted";
 
 export interface University {
   id: number;
-  categoryId: number;
-  category: Category;
-  admissionMethodIds: number[];
+  universityCode: string;
   name: string;
+  nameEn: string;
   shortName: string;
-  logoUrl: string;
+  logoUrl?: string;
   fanpage?: string;
-  foundingYear: number;
-  province: Province;
-  address: string;
-  email: string;
-  phone: string;
-  website: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
+  foundingYear?: number;
+  email?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
+  status: UniversityStatus;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+  categoryId?: number;
+  category?: UniversityCategory;
+  admissionMethodIds?: number[];
+  campusCount?: number;
+  campuses?: UniversityCampus[];
 }
 
-export interface UniversityListItem {
-  id: number;
-  categoryId: number;
-  admissionMethodIds: number[];
-  name: string;
-  shortName: string;
-  logoUrl: string;
-  fanpage?: string;
-  foundingYear: number;
-  province: Province;
-  address: string;
-  email: string;
-  phone: string;
-  website: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
-}
+export type UniversityListItem = University;
 
 export interface UniversityListResponse {
   code: number;
@@ -80,21 +72,26 @@ export interface UniversityDetailResponse {
 }
 
 export interface UniversityCreateRequest {
-  categoryId: number;
+  universityCode: string;
   name: string;
+  nameEn: string;
   shortName: string;
+  logoUrl?: string;
   fanpage?: string;
-  foundingYear: number;
-  provinceId: number;
-  type: string;
-  address: string;
-  email: string;
-  phone: string;
-  website: string;
-  description: string;
-  admissionMethodIds: number[];
+  foundingYear?: number;
+  email?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
+  categoryId?: number;
 }
 
-export interface UniversityStatusUpdateRequest {
-  status: string;
+export type UniversityUpdateRequest = UniversityCreateRequest;
+
+export interface UniversityPage {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  items: University[];
 }

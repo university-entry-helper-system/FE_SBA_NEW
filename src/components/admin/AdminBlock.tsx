@@ -394,7 +394,7 @@ const AdminBlock: React.FC = () => {
                         gap: 4,
                       }}
                     >
-                      ID
+                      STT
                       <button
                         className="sort-th-btn"
                         style={{
@@ -533,9 +533,9 @@ const AdminBlock: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {blocks.map((b) => (
+                {blocks.map((b, idx) => (
                   <tr key={b.id} className="table-row">
-                    <td>{b.id}</td>
+                    <td>{page * size + idx + 1}</td>
                     <td>{b.name}</td>
                     <td>{b.description}</td>
                     <td>
