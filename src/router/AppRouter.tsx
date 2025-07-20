@@ -27,6 +27,13 @@ import NewsList from "../components/NewsList";
 import NewsDetail from "../components/NewsDetail";
 import AdminNews from "../components/admin/AdminNews";
 import GraduationScoreCalculator from "../components/GraduationScoreCalculator";
+import AdmissionMethodUniversitiesPage from "../components/AdmissionMethodUniversitiesPage";
+import UniversityAdmissionMethodsPage from '../components/UniversityAdmissionMethodsPage';
+import UniversityScoresPage from '../components/UniversityScoresPage';
+import SubjectCombinationUniversitiesPage from '../components/SubjectCombinationUniversitiesPage';
+import UniversitySubjectCombinationPage from '../components/UniversitySubjectCombinationPage';
+import MajorUniversitiesPage from '../components/MajorUniversitiesPage';
+import UniversityMajorPage from '../components/UniversityMajorPage';
 
 const UserLayout = () => {
   return (
@@ -88,6 +95,13 @@ const AppRouter = () => {
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/graduation-score" element={<GraduationScoreCalculator />} />
+          <Route path="/admission-methods/:id" element={<AdmissionMethodUniversitiesPage />} />
+          <Route path="/university-admission-methods/:universityId" element={<UniversityAdmissionMethodsPage />} />
+          <Route path="/university-scores/:universityId" element={<UniversityScoresPage />} />
+          <Route path="/subject-combination-universities/:subjectCombinationId" element={<SubjectCombinationUniversitiesPage />} />
+          <Route path="/university-subject-combination/:universityId/:subjectCombinationId" element={<UniversitySubjectCombinationPage />} />
+          <Route path="/major-universities/:majorId" element={<MajorUniversitiesPage />} />
+          <Route path="/university-major/:universityId/:majorId" element={<UniversityMajorPage />} />
           {/* Other user routes */}
         </Route>
       </Routes>

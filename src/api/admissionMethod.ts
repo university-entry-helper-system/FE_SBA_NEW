@@ -30,3 +30,11 @@ export const updateAdmissionMethodStatus = (
 
 export const deleteAdmissionMethod = (id: number) =>
   instance.delete(`/admission-methods/${id}`);
+
+export const getUniversitiesByAdmissionMethod = async (methodId: string) => {
+  return await instance.get(`/university-admission-methods/methods/${methodId}`);
+};
+
+export const getAdmissionMethodsByUniversity = async (universityId: number) => {
+  return await instance.get(`/university-admission-methods/schools/${universityId}`);
+};
