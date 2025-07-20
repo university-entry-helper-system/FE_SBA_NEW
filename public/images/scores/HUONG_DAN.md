@@ -50,6 +50,20 @@ const subjects = [
 
 ## Lưu ý:
 
-- Tên file phải đúng format: `[tenmon]-[nam].jpg`
+- Tên file phải đúng format: `[tenmon]-[nam].jpg` cho THPT
+- Tên file cho ĐGNL: `dot1-[nam].jpg` và `dot2-[nam].jpg`
 - Sử dụng ảnh local tốt hơn cho hiệu suất và độ tin cậy
 - Kiểm tra kích thước ảnh để tối ưu tải trang
+
+## Cấu trúc file ảnh:
+
+### THPT (13 môn):
+
+- toan-2025.jpg, van-2025.jpg, anh-2025.jpg, ly-2025.jpg, hoa-2025.jpg
+- sinh-2025.jpg, su-2025.jpg, dia-2025.jpg, gdcd-2025.jpg
+- ktpl-2025.jpg, cncn-2025.jpg, cnnn-2025.jpg, tin-2025.jpg
+
+### ĐGNL HCM và ĐGNL Hanoi (2 đợt):
+
+- dot1-2025.jpg (Đợt 1)
+- dot2-2025.jpg (Đợt 2)

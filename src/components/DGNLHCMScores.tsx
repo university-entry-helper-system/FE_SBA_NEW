@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "../css/ScoreDistribution.css";
 
 const DGNLHCMScores = () => {
@@ -7,35 +7,23 @@ const DGNLHCMScores = () => {
     src: string;
     alt: string;
   } | null>(null);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
   const years = ["2025", "2024", "2023", "2022", "2021", "2020"];
 
-  const subjects = [
-    {
-      name: "Toán",
-      image: "/images/scores/dgnl-hcm/toan-" + selectedYear + ".jpg",
-    },
-    {
-      name: "Văn",
-      image: "/images/scores/dgnl-hcm/van-" + selectedYear + ".jpg",
-    },
-    {
-      name: "Tiếng Anh",
-      image: "/images/scores/dgnl-hcm/anh-" + selectedYear + ".jpg",
-    },
-    {
-      name: "Khoa học Tự nhiên",
-      image: "/images/scores/dgnl-hcm/khtn-" + selectedYear + ".jpg",
-    },
-    {
-      name: "Khoa học Xã hội",
-      image: "/images/scores/dgnl-hcm/khxh-" + selectedYear + ".jpg",
-    },
-    {
-      name: "Tổng điểm",
-      image: "/images/scores/dgnl-hcm/tong-" + selectedYear + ".jpg",
-    },
-  ];
+  const subjects = useMemo(
+    () => [
+      {
+        name: "Đợt 1",
+        image: "/images/scores/dgnl-hcm/dot1-" + selectedYear + ".jpg",
+      },
+      {
+        name: "Đợt 2",
+        image: "/images/scores/dgnl-hcm/dot2-" + selectedYear + ".jpg",
+      },
+    ],
+    [selectedYear]
+  );
 
   const openModal = (src: string, alt: string) => {
     setModalImage({ src, alt });
@@ -44,6 +32,38 @@ const DGNLHCMScores = () => {
   const closeModal = () => {
     setModalImage(null);
   };
+
+  // Function to check if image exists
+  const checkImageExists = (imagePath: string, subjectName: string) => {
+    const img = new Image();
+    img.onload = () => {
+      setAvailableSubjects((prev) => [
+        ...prev.filter((s) => s !== subjectName),
+        subjectName,
+      ]);
+    };
+    img.onerror = () => {
+      setAvailableSubjects((prev) => prev.filter((s) => s !== subjectName));
+    };
+    img.src = imagePath;
+  };
+
+  // Check images when component mounts or year changes
+  useEffect(() => {
+    const checkAllImages = () => {
+      setAvailableSubjects([]);
+      subjects.forEach((subject) => {
+        checkImageExists(subject.image, subject.name);
+      });
+    };
+
+    checkAllImages();
+  }, [selectedYear, subjects]);
+
+  // Filter subjects to only show those with available images
+  const filteredSubjects = subjects.filter((subject) =>
+    availableSubjects.includes(subject.name)
+  );
 
   return (
     <div className="score-distribution-container">
@@ -71,13 +91,13 @@ const DGNLHCMScores = () => {
       <div className="exam-info">
         <h2>Kỳ thi Đánh giá Năng lực ĐH Quốc gia TP.HCM năm {selectedYear}</h2>
         <p>
-          Phổ điểm các phần thi trong kỳ thi Đánh giá Năng lực của Đại học Quốc
+          Phổ điểm các đợt thi trong kỳ thi Đánh giá Năng lực của Đại học Quốc
           gia TP. Hồ Chí Minh
         </p>
       </div>
 
       <div className="subjects-grid">
-        {subjects.map((subject, index) => (
+        {filteredSubjects.map((subject, index) => (
           <div key={index} className="subject-card">
             <h3 className="subject-name">{subject.name}</h3>
             <div className="image-container">
@@ -110,7 +130,8 @@ const DGNLHCMScores = () => {
         <h3>Lưu ý:</h3>
         <ul>
           <li>Phổ điểm được cập nhật từ ĐH Quốc gia TP.HCM</li>
-          <li>Kỳ thi gồm 3 phần: Toán, Văn, Tiếng Anh và 2 phần Khoa học</li>
+          <li>Kỳ thi được tổ chức theo 2 đợt trong năm</li>
+          <li>Mỗi đợt có phổ điểm riêng biệt</li>
           <li>Thời gian thi: 150 phút</li>
           <li>Dữ liệu có thể thay đổi theo từng đợt công bố</li>
         </ul>
