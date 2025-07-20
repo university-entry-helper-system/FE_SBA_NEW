@@ -2,9 +2,13 @@ import { useState } from "react";
 import "../css/ScoreDistribution.css";
 
 const DGNLHCMScores = () => {
-  const [selectedYear, setSelectedYear] = useState("2024");
+  const [selectedYear, setSelectedYear] = useState("2025");
+  const [modalImage, setModalImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
 
-  const years = ["2024", "2023", "2022", "2021", "2020"];
+  const years = ["2025", "2024", "2023", "2022", "2021", "2020"];
 
   const subjects = [
     {
@@ -32,6 +36,14 @@ const DGNLHCMScores = () => {
       image: "/images/scores/dgnl-hcm/tong-" + selectedYear + ".jpg",
     },
   ];
+
+  const openModal = (src: string, alt: string) => {
+    setModalImage({ src, alt });
+  };
+
+  const closeModal = () => {
+    setModalImage(null);
+  };
 
   return (
     <div className="score-distribution-container">
@@ -73,6 +85,12 @@ const DGNLHCMScores = () => {
                 src={subject.image}
                 alt={`Phổ điểm ${subject.name} ${selectedYear}`}
                 className="score-image"
+                onClick={() =>
+                  openModal(
+                    subject.image,
+                    `Phổ điểm ${subject.name} ${selectedYear}`
+                  )
+                }
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "/images/scores/placeholder.jpg";
@@ -97,6 +115,29 @@ const DGNLHCMScores = () => {
           <li>Dữ liệu có thể thay đổi theo từng đợt công bố</li>
         </ul>
       </div>
+
+      {/* Image Modal */}
+      {modalImage && (
+        <div
+          className={`image-modal ${modalImage ? "open" : ""}`}
+          onClick={closeModal}
+        >
+          <div
+            className="image-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="image-modal-close" onClick={closeModal}>
+              ×
+            </button>
+            <img
+              src={modalImage.src}
+              alt={modalImage.alt}
+              className="image-modal-image"
+            />
+            <div className="image-modal-info">{modalImage.alt}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
