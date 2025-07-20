@@ -4,6 +4,7 @@ import * as universityApi from "../../api/university";
 import type { NewsResponse, NewsRequest, NewsFormMode } from "../../types/news";
 import type { University } from "../../types/university";
 import TiptapEditor from "./TiptapEditor";
+import { filterNews } from "../../api/news";
 import {
   Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Select, MenuItem, InputLabel, FormControl, Alert,
@@ -54,6 +55,12 @@ const AdminNews: React.FC = () => {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [minViews, setMinViews] = useState("");
+  const [maxViews, setMaxViews] = useState("");
+  const [newsStatus, setNewsStatus] = useState("");
 
   // Fetch universities
   useEffect(() => {
@@ -69,12 +76,17 @@ const AdminNews: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      let res;
-      if (searchQuery) {
-        res = await newsApi.searchNews({ query: searchQuery, page: pageNum, size: PAGE_SIZE });
-      } else {
-        res = await newsApi.getNewsPaginated({ page: pageNum, size: PAGE_SIZE });
-      }
+      const res = await filterNews({
+        category: category || undefined,
+        search: searchQuery || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        minViews: minViews ? Number(minViews) : undefined,
+        maxViews: maxViews ? Number(maxViews) : undefined,
+        newsStatus: newsStatus || undefined,
+        page: pageNum,
+        size: PAGE_SIZE,
+      });
       setNews(res.data.result.items);
       setTotalPages(res.data.result.totalPages);
     } catch {
@@ -177,6 +189,15 @@ const AdminNews: React.FC = () => {
     setPage(0);
     setSearch(searchInput.trim());
   };
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCategory(e.target.value);
+    setPage(0);
+  };
+  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => setFromDate(e.target.value);
+  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => setToDate(e.target.value);
+  const handleMinViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => setMinViews(e.target.value);
+  const handleMaxViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => setMaxViews(e.target.value);
+  const handleNewsStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => setNewsStatus(e.target.value);
   const handleDelete = async (item: NewsResponse) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa tin này?")) return;
     setLoading(true);
@@ -198,16 +219,37 @@ const AdminNews: React.FC = () => {
       <Typography variant="h4" fontWeight={700} mb={2} color="primary">
         Quản lý Tin tức
       </Typography>
-      <Box component="form" onSubmit={handleSearch} mb={2} display="flex" gap={2}>
-        <TextField
-          size="small"
+      <Box component="form" className="admin-news-search-bar" onSubmit={handleSearch} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <input
+          type="text"
+          className="search-input"
           placeholder="Tìm kiếm tin tức..."
           value={searchInput}
-          onChange={e => setSearchInput(e.target.value)}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
-        <Button type="submit" variant="outlined" color="primary">
-          Tìm kiếm
-        </Button>
+        <select className="category-select" value={category} onChange={handleCategoryChange}>
+          <option value="">Tất cả danh mục</option>
+          <option value="ADMISSION_INFO">Thông tin tuyển sinh</option>
+          <option value="EXAM_SCHEDULE">Lịch thi</option>
+          <option value="SCHOLARSHIP">Học bổng</option>
+          <option value="GUIDANCE">Hướng dẫn thủ tục</option>
+          <option value="REGULATION_CHANGE">Thay đổi quy định</option>
+          <option value="EVENT">Sự kiện</option>
+          <option value="RESULT_ANNOUNCEMENT">Công bố kết quả</option>
+          <option value="SYSTEM_NOTIFICATION">Thông báo hệ thống</option>
+          <option value="OTHER">Khác</option>
+        </select>
+        <input type="date" value={fromDate} onChange={handleFromDateChange} placeholder="Từ ngày" />
+        <input type="date" value={toDate} onChange={handleToDateChange} placeholder="Đến ngày" />
+        <input type="number" value={minViews} onChange={handleMinViewsChange} placeholder="Lượt xem từ" min={0} style={{ width: 100 }} />
+        <input type="number" value={maxViews} onChange={handleMaxViewsChange} placeholder="Lượt xem đến" min={0} style={{ width: 100 }} />
+        <select value={newsStatus} onChange={handleNewsStatusChange}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="PUBLISHED">Đã xuất bản</option>
+          <option value="DRAFT">Bản nháp</option>
+          <option value="ARCHIVED">Đã lưu trữ</option>
+        </select>
+        <button className="search-btn" type="submit">Tìm kiếm</button>
         <Button variant="contained" color="primary" onClick={openCreateForm} sx={{ ml: "auto" }}>
           + Thêm tin mới
         </Button>

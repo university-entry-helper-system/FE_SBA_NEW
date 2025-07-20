@@ -10,6 +10,21 @@ export function searchNews({ query, page = 0, size = 10 }: { query: string; page
   return axios.get('/news/search', { params: { query, page, size } });
 }
 
+// Search/filter news (guest & admin)
+export function filterNews(params: {
+  category?: string;
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+  minViews?: number;
+  maxViews?: number;
+  newsStatus?: string;
+  page?: number;
+  size?: number;
+}) {
+  return axios.get('/api/news', { params });
+}
+
 // Get news by ID
 export function getNewsById(id: number) {
   return axios.get(`/news/${id}`);

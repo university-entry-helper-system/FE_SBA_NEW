@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNewsPaginated, searchNews } from "../api/news";
+import { getNewsPaginated, searchNews, filterNews } from "../api/news";
 import type { NewsResponse } from "../types/news";
 import "../css/home.css";
 
@@ -14,22 +14,19 @@ const NewsList: React.FC = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [category, setCategory] = useState("");
   const navigate = useNavigate();
 
-  const fetchNews = async (pageNum = 0, searchQuery = "") => {
+  const fetchNews = async (pageNum = 0, searchQuery = "", categoryValue = "") => {
     setLoading(true);
     setError("");
     try {
-      let res;
-      if (searchQuery) {
-        res = await searchNews({
-          query: searchQuery,
-          page: pageNum,
-          size: PAGE_SIZE,
-        });
-      } else {
-        res = await getNewsPaginated({ page: pageNum, size: PAGE_SIZE });
-      }
+      const res = await filterNews({
+        category: categoryValue || undefined,
+        search: searchQuery || undefined,
+        page: pageNum,
+        size: PAGE_SIZE,
+      });
       setNews(res.data.result.items);
       setTotalPages(res.data.result.totalPages);
     } catch {
@@ -41,14 +38,19 @@ const NewsList: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchNews(page, search);
+    fetchNews(page, search, category);
     // eslint-disable-next-line
-  }, [page, search]);
+  }, [page, search, category]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(0);
     setSearch(searchInput.trim());
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCategory(e.target.value);
+    setPage(0);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -67,6 +69,18 @@ const NewsList: React.FC = () => {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
+        <select className="category-select" value={category} onChange={handleCategoryChange}>
+          <option value="">Tất cả danh mục</option>
+          <option value="ADMISSION_INFO">Thông tin tuyển sinh</option>
+          <option value="EXAM_SCHEDULE">Lịch thi</option>
+          <option value="SCHOLARSHIP">Học bổng</option>
+          <option value="GUIDANCE">Hướng dẫn thủ tục</option>
+          <option value="REGULATION_CHANGE">Thay đổi quy định</option>
+          <option value="EVENT">Sự kiện</option>
+          <option value="RESULT_ANNOUNCEMENT">Công bố kết quả</option>
+          <option value="SYSTEM_NOTIFICATION">Thông báo hệ thống</option>
+          <option value="OTHER">Khác</option>
+        </select>
         <button className="search-btn" type="submit">
           Tìm kiếm
         </button>
