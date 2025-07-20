@@ -48,60 +48,162 @@ const Navbar = () => {
                 Trang chủ
               </Link>
             </li>
-            <li>
-              <Link
-                to="/universities"
-                className={`navbar-menu-link ${isLinkActive("/universities")}`}
+            <li className="navbar-dropdown">
+              <span
+                className={`navbar-menu-link dropdown-toggle ${
+                  isLinkActive("/universities") || isLinkActive("/majors")
+                    ? "active"
+                    : ""
+                }`}
               >
-                Các trường
-              </Link>
+                Trường & Ngành
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="dropdown-arrow"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </span>
+              <div className="dropdown-menu">
+                <Link
+                  to="/universities"
+                  className={`dropdown-item ${isLinkActive("/universities")}`}
+                >
+                  Các trường
+                </Link>
+                <Link
+                  to="/majors"
+                  className={`dropdown-item ${isLinkActive("/majors")}`}
+                >
+                  Ngành học
+                </Link>
+              </div>
             </li>
-            <li>
-              <Link
-                to="/majors"
-                className={`navbar-menu-link ${isLinkActive("/majors")}`}
+            <li className="navbar-dropdown">
+              <span
+                className={`navbar-menu-link dropdown-toggle ${
+                  isLinkActive("/news") || isLinkActive("/contact")
+                    ? "active"
+                    : ""
+                }`}
               >
-                Ngành học
-              </Link>
+                Tin tức & Liên hệ
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="dropdown-arrow"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </span>
+              <div className="dropdown-menu">
+                <Link
+                  to="/news"
+                  className={`dropdown-item ${isLinkActive("/news")}`}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  to="/contact"
+                  className={`dropdown-item ${isLinkActive("/contact")}`}
+                >
+                  Liên hệ
+                </Link>
+              </div>
             </li>
-            <li>
-              <Link
-                to="/news"
-                className={`navbar-menu-link ${isLinkActive("/news")}`}
+            <li className="navbar-dropdown">
+              <span
+                className={`navbar-menu-link dropdown-toggle ${
+                  isLinkActive("/questions") || isLinkActive("/about")
+                    ? "active"
+                    : ""
+                }`}
               >
-                Tin Tức
-              </Link>
+                Tư vấn
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="dropdown-arrow"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </span>
+              <div className="dropdown-menu">
+                <Link
+                  to="/questions"
+                  className={`dropdown-item ${isLinkActive("/questions")}`}
+                >
+                  Câu hỏi thường gặp
+                </Link>
+                <Link
+                  to="/about"
+                  className={`dropdown-item ${isLinkActive("/about")}`}
+                >
+                  Tư vấn tuyển sinh
+                </Link>
+              </div>
             </li>
-            <li>
-              <Link
-                to="/contact"
-                className={`navbar-menu-link ${isLinkActive("/contact")}`}
+            <li className="navbar-dropdown">
+              <span
+                className={`navbar-menu-link dropdown-toggle ${
+                  isLinkActive("/thpt-scores") ||
+                  isLinkActive("/dgnl-hcm-scores") ||
+                  isLinkActive("/dgnl-hanoi-scores")
+                    ? "active"
+                    : ""
+                }`}
               >
-                Liên hệ
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/questions"
-                className={`navbar-menu-link ${isLinkActive("/questions")}`}
-              >
-                Câu hỏi thường gặp
-              </Link>
+                Phổ điểm
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="dropdown-arrow"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </span>
+              <div className="dropdown-menu">
+                <Link
+                  to="/thpt-scores"
+                  className={`dropdown-item ${isLinkActive("/thpt-scores")}`}
+                >
+                  Phổ điểm THPT
+                </Link>
+                <Link
+                  to="/dgnl-hcm-scores"
+                  className={`dropdown-item ${isLinkActive(
+                    "/dgnl-hcm-scores"
+                  )}`}
+                >
+                  Phổ điểm ĐGNL HCM
+                </Link>
+                <Link
+                  to="/dgnl-hanoi-scores"
+                  className={`dropdown-item ${isLinkActive(
+                    "/dgnl-hanoi-scores"
+                  )}`}
+                >
+                  Phổ điểm đánh giá HN
+                </Link>
+              </div>
             </li>
             <li>
               <Link
                 to="/graduation-score"
-                className={`navbar-menu-link ${isLinkActive("/graduation-score")}`}
+                className={`navbar-menu-link ${isLinkActive(
+                  "/graduation-score"
+                )}`}
               >
                 Tính điểm tốt nghiệp
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/about"
-                className={`navbar-menu-link ${isLinkActive("/about")}`}
-              >
-                Tư vấn tuyển sinh
               </Link>
             </li>
             {/* Role-based links */}
@@ -219,7 +321,9 @@ const Navbar = () => {
             <li>
               <Link
                 to="/graduation-score"
-                className={`navbar-mobile-link ${isLinkActive("/graduation-score")}`}
+                className={`navbar-mobile-link ${isLinkActive(
+                  "/graduation-score"
+                )}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Tính điểm tốt nghiệp
