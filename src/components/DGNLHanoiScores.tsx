@@ -3,27 +3,33 @@ import "../css/ScoreDistribution.css";
 
 const DGNLHanoiScores = () => {
   const [selectedYear, setSelectedYear] = useState("2025");
+  const [isStatisticsMode, setIsStatisticsMode] = useState(false);
   const [modalImage, setModalImage] = useState<{
     src: string;
     alt: string;
   } | null>(null);
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
-  const years = ["2025", "2024", "2023", "2022", "2021", "2020"];
+  const years = ["2025", "2024", "2023"];
 
-  const subjects = useMemo(
-    () => [
+  const subjects = useMemo(() => {
+    if (isStatisticsMode) {
+      // Hiển thị thống kê tổng hợp
+      return [
+        {
+          name: "Thống kê tổng hợp DGNL Hà Nội (2023-2025)",
+          image: "/images/scores/dgnl-hanoi/thongke-tong.jpg",
+        },
+      ];
+    }
+
+    return [
       {
-        name: "Đợt 1",
-        image: "/images/scores/dgnl-hanoi/dot1-" + selectedYear + ".jpg",
+        name: "Phổ điểm ĐGNL Hà Nội",
+        image: "/images/scores/dgnl-hanoi/dgnl-hanoi-" + selectedYear + ".jpg",
       },
-      {
-        name: "Đợt 2",
-        image: "/images/scores/dgnl-hanoi/dot2-" + selectedYear + ".jpg",
-      },
-    ],
-    [selectedYear]
-  );
+    ];
+  }, [selectedYear, isStatisticsMode]);
 
   const openModal = (src: string, alt: string) => {
     setModalImage({ src, alt });
@@ -58,7 +64,7 @@ const DGNLHanoiScores = () => {
     };
 
     checkAllImages();
-  }, [selectedYear, subjects]);
+  }, [selectedYear, isStatisticsMode, subjects]);
 
   // Filter subjects to only show those with available images
   const filteredSubjects = subjects.filter((subject) =>
@@ -71,28 +77,42 @@ const DGNLHanoiScores = () => {
         <h1 className="score-title">
           Phổ Điểm Đánh Giá Năng Lực ĐH Quốc Gia Hà Nội
         </h1>
-        <div className="year-selector">
-          <label htmlFor="year-select">Năm thi:</label>
-          <select
-            id="year-select"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="year-dropdown"
+        <div className="header-controls">
+          <div className="year-selector">
+            <label htmlFor="year-select">Năm thi:</label>
+            <select
+              id="year-select"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="year-dropdown"
+              disabled={isStatisticsMode}
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className={`statistics-btn ${isStatisticsMode ? "active" : ""}`}
+            onClick={() => setIsStatisticsMode(!isStatisticsMode)}
           >
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+            {isStatisticsMode ? "Xem theo năm" : "Xem thống kê"}
+          </button>
         </div>
       </div>
 
       <div className="exam-info">
-        <h2>Kỳ thi Đánh giá Năng lực ĐH Quốc gia Hà Nội năm {selectedYear}</h2>
+        <h2>
+          {isStatisticsMode
+            ? "Thống kê phổ điểm ĐGNL ĐH Quốc gia Hà Nội (2023-2025)"
+            : `Kỳ thi Đánh giá Năng lực ĐH Quốc gia Hà Nội năm ${selectedYear}`}
+        </h2>
         <p>
-          Phổ điểm các đợt thi trong kỳ thi Đánh giá Năng lực của Đại học Quốc
-          gia Hà Nội
+          {isStatisticsMode
+            ? "Tổng hợp và so sánh phổ điểm trong 3 năm gần đây của kỳ thi Đánh giá Năng lực"
+            : "Phổ điểm kỳ thi Đánh giá Năng lực của Đại học Quốc gia Hà Nội"}
         </p>
       </div>
 
@@ -119,7 +139,9 @@ const DGNLHanoiScores = () => {
             </div>
             <div className="score-info">
               <p>
-                Phổ điểm {subject.name} - Năm {selectedYear}
+                {isStatisticsMode
+                  ? `${subject.name}`
+                  : `Phổ điểm ${subject.name} - Năm ${selectedYear}`}
               </p>
             </div>
           </div>
@@ -130,10 +152,15 @@ const DGNLHanoiScores = () => {
         <h3>Lưu ý:</h3>
         <ul>
           <li>Phổ điểm được cập nhật từ ĐH Quốc gia Hà Nội</li>
-          <li>Kỳ thi được tổ chức theo 2 đợt trong năm</li>
-          <li>Mỗi đợt có phổ điểm riêng biệt</li>
+          <li>Kỳ thi được tổ chức 1 lần trong năm</li>
           <li>Thời gian thi: 150 phút</li>
-          <li>Dữ liệu có thể thay đổi theo từng đợt công bố</li>
+          {isStatisticsMode && (
+            <>
+              <li>Thống kê tổng hợp từ năm 2023 đến 2025</li>
+              <li>Dữ liệu so sánh xu hướng qua các năm</li>
+            </>
+          )}
+          <li>Dữ liệu có thể thay đổi theo từng lần công bố</li>
         </ul>
       </div>
 

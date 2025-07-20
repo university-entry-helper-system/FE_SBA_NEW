@@ -63,7 +63,27 @@ const subjects = [
 - sinh-2025.jpg, su-2025.jpg, dia-2025.jpg, gdcd-2025.jpg
 - ktpl-2025.jpg, cncn-2025.jpg, cnnn-2025.jpg, tin-2025.jpg
 
-### ĐGNL HCM và ĐGNL Hanoi (2 đợt):
+### ĐGNL HCM (2 đợt + thống kê):
+
+**Ảnh theo năm:**
 
 - dot1-2025.jpg (Đợt 1)
 - dot2-2025.jpg (Đợt 2)
+
+**Ảnh thống kê (cho nút "Xem thống kê"):**
+
+- thongke-tong.jpg (Thống kê tổng hợp toàn bộ DGNL qua 3 năm 2023-2025)
+
+### ĐGNL Hà Nội (1 đợt + thống kê):
+
+**Ảnh theo năm:**
+
+- dgnl-hanoi-2025.jpg (Phổ điểm ĐGNL Hà Nội)
+
+**Ảnh thống kê (cho nút "Xem thống kê"):**
+
+- thongke-tong.jpg (Thống kê tổng hợp toàn bộ DGNL qua 3 năm 2023-2025)
+
+### Cách tạo ảnh thống kê:
+
+- **thongke-tong.jpg**: Biểu đồ tổng hợp phổ điểm của toàn bộ kỳ thi DGNL qua 3 năm
