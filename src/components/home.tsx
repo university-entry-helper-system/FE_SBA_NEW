@@ -1,41 +1,33 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import "../css/Home.css";
 import { ImageCarousel } from "./ImageCarousel";
 import { getAdmissionMethods } from "../api/admissionMethod";
 import AdmissionMethodsCarousel from "./AdmissionMethodsCarousel"; // Import the new component
+import { getAllUniversities, searchUniversities } from "../api/university";
+import { getMajors } from "../api/major";
+import { getSubjectCombinations } from "../api/subjectCombination";
+import type { University } from "../types/university";
+import type { Major } from "../types/major";
+import type { SubjectCombination } from "../types/subjectCombination";
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [admissionMethods, setAdmissionMethods] = useState<any[]>([]);
   const [loadingAdmission, setLoadingAdmission] = useState(false);
   const [errorAdmission, setErrorAdmission] = useState("");
 
-  // Dữ liệu mẫu trường đại học (có thể thay bằng API sau)
-  const schools = [
-    {
-      id: 1,
-      name: "ĐH Bách Khoa Hà Nội",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/f/f0/HCMCUT.svg",
-    },
-    {
-      id: 2,
-      name: "ĐH FPT",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/b/b9/FPTUCT.png",
-    },
-    {
-      id: 3,
-      name: "ĐH Khoa học Tự nhiên",
-      logo: "https://placehold.co/40x40?text=Logo",
-    },
-    {
-      id: 4,
-      name: "ĐH Y Dược Hà Nội",
-      logo: "https://placehold.co/40x40?text=Logo",
-    },
-  ];
+  // API data states
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [subjectCombinations, setSubjectCombinations] = useState<SubjectCombination[]>([]);
+  const [loadingSearchData, setLoadingSearchData] = useState(false);
+  const [errorSearchData, setErrorSearchData] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoadingAdmission(true);
@@ -46,6 +38,27 @@ const HomePage = () => {
       })
       .catch(() => setErrorAdmission("Không thể tải phương thức tuyển sinh"))
       .finally(() => setLoadingAdmission(false));
+  }, []);
+
+  // Fetch search data (universities, majors, combinations)
+  useEffect(() => {
+    setLoadingSearchData(true);
+    setErrorSearchData("");
+    Promise.all([
+      searchUniversities({ page: 0, size: 50 }),
+      getMajors({ page: 0, size: 50, sort: "name,asc" }),
+      getSubjectCombinations({ page: 0, size: 50, sort: "name,asc" })
+    ])
+      .then(([uniRes, majorRes, comboRes]) => {
+        setUniversities(uniRes.data.result.items || []);
+        setMajors(majorRes.data.result.items || []);
+        setSubjectCombinations(comboRes.data.result.items || []);
+      })
+      .catch((error) => {
+        console.error("API ERROR:", error);
+        setErrorSearchData("Không thể tải dữ liệu tìm kiếm");
+      })
+      .finally(() => setLoadingSearchData(false));
   }, []);
 
   useEffect(() => {
@@ -60,6 +73,59 @@ const HomePage = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Filtered suggestions based on tab and input
+  let suggestions: any[] = [];
+  if (activeTab === "de-an" || activeTab === "diem-chuan") {
+    if (searchInput.trim()) {
+      suggestions = universities.filter((school) =>
+        school.name.toLowerCase().includes(searchInput.toLowerCase())
+      ).slice(0, 4);
+    } else if (showDropdown) {
+      suggestions = universities.slice(0, 4);
+    }
+  } else if (activeTab === "khoi-mon") {
+    if (searchInput.trim()) {
+      suggestions = subjectCombinations.filter((combo) =>
+        combo.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+        (Array.isArray(combo.examSubjects) && combo.examSubjects.some(subj =>
+          subj.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+          subj.shortName.toLowerCase().includes(searchInput.toLowerCase())
+        ))
+      ).slice(0, 4);
+    } else if (showDropdown) {
+      suggestions = subjectCombinations.slice(0, 4);
+    }
+  } else if (activeTab === "nganh") {
+    if (searchInput.trim()) {
+      suggestions = majors.filter((major) =>
+        major.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+        major.code.toLowerCase().includes(searchInput.toLowerCase())
+      ).slice(0, 4);
+    } else if (showDropdown) {
+      suggestions = majors.slice(0, 4);
+    }
+  }
+
+
+  // Placeholder for navigation on suggestion click
+  const handleSuggestionClick = (item: any) => {
+    setShowDropdown(false);
+    setSearchInput("");
+    if (activeTab === "de-an") {
+      navigate(`/university-admission-methods/${item.id}`);
+    } else if (activeTab === "diem-chuan") {
+      navigate(`/university-scores/${item.id}`);
+    } else if (activeTab === "khoi-mon") {
+      navigate(`/subject-combination-universities/${item.id}`);
+    } else if (activeTab === "nganh") {
+      navigate(`/major-universities/${item.id}`);
+    } else {
+      // TODO: Implement navigation for other tabs if needed
+    }
+  };
+
+
 
   return (
     <div className="homepage-modern">
@@ -79,33 +145,70 @@ const HomePage = () => {
             <input
               type="text"
               className="search-input"
-              placeholder="Tìm trường, ngành, mã trường..."
-              onFocus={() => setShowDropdown(true)}
+              placeholder={
+                activeTab === "de-an" || activeTab === "diem-chuan"
+                  ? "Tìm trường, ngành, mã trường..."
+                  : activeTab === "khoi-mon"
+                  ? "Tìm tổ hợp môn..."
+                  : "Tìm ngành, mã ngành..."
+              }
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => {
+                setShowDropdown(true);
+              }}
+              autoComplete="off"
             />
             <button className="search-btn">
               <SearchIcon />
             </button>
             {showDropdown && (
               <div className="search-dropdown">
-                {schools.map((school) => (
-                  <Link
-                    key={school.id}
-                    to={`/universities/${school.id}`}
-                    className="search-dropdown-item"
-                    onClick={() => setShowDropdown(false)}
-                  >
-                    <img
-                      src={school.logo}
-                      alt={school.name}
-                      className="search-dropdown-logo"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "https://placehold.co/40x40?text=Logo";
-                      }}
-                    />
-                    <span className="search-dropdown-name">{school.name}</span>
-                  </Link>
-                ))}
+                {loadingSearchData ? (
+                  <div className="search-dropdown-item">Đang tải...</div>
+                ) : suggestions.length > 0 ? (
+                  suggestions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="search-dropdown-item"
+                      onClick={() => handleSuggestionClick(item)}
+                    >
+                      {activeTab === "de-an" || activeTab === "diem-chuan" ? (
+                        <>
+                          <img
+                            src={item.logoUrl || "https://placehold.co/40x40?text=Logo"}
+                            alt={item.name}
+                            className="search-dropdown-logo"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://placehold.co/40x40?text=Logo";
+                            }}
+                          />
+                          <span className="search-dropdown-name">{item.name}</span>
+                        </>
+                      ) : activeTab === "khoi-mon" ? (
+                        <>
+                          <span className="search-dropdown-name">{item.name}</span>
+                          <span className="search-dropdown-desc">
+                            {Array.isArray(item.examSubjects)
+                              ? item.examSubjects.map((subj: any) => subj.shortName || subj.name).join(', ')
+                              : ''}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="search-dropdown-name">{item.name}</span>
+                          <span className="search-dropdown-desc">{item.code}</span>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="search-dropdown-item">Không có dữ liệu</div>
+                )}
               </div>
             )}
           </div>

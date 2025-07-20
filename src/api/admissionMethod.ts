@@ -34,3 +34,7 @@ export const deleteAdmissionMethod = (id: number) =>
 export const getUniversitiesByAdmissionMethod = async (methodId: string) => {
   return await instance.get(`/university-admission-methods/methods/${methodId}`);
 };
+
+export const getAdmissionMethodsByUniversity = async (universityId: number) => {
+  return await instance.get(`/university-admission-methods/schools/${universityId}`);
+};
