@@ -28,12 +28,15 @@ import NewsDetail from "../components/NewsDetail";
 import AdminNews from "../components/admin/AdminNews";
 import GraduationScoreCalculator from "../components/GraduationScoreCalculator";
 import AdmissionMethodUniversitiesPage from "../components/AdmissionMethodUniversitiesPage";
-import UniversityAdmissionMethodsPage from '../components/UniversityAdmissionMethodsPage';
-import UniversityScoresPage from '../components/UniversityScoresPage';
-import SubjectCombinationUniversitiesPage from '../components/SubjectCombinationUniversitiesPage';
-import UniversitySubjectCombinationPage from '../components/UniversitySubjectCombinationPage';
-import MajorUniversitiesPage from '../components/MajorUniversitiesPage';
-import UniversityMajorPage from '../components/UniversityMajorPage';
+import UniversityAdmissionMethodsPage from "../components/UniversityAdmissionMethodsPage";
+import UniversityScoresPage from "../components/UniversityScoresPage";
+import SubjectCombinationUniversitiesPage from "../components/SubjectCombinationUniversitiesPage";
+import UniversitySubjectCombinationPage from "../components/UniversitySubjectCombinationPage";
+import MajorUniversitiesPage from "../components/MajorUniversitiesPage";
+import UniversityMajorPage from "../components/UniversityMajorPage";
+import THPTScores from "../components/THPTScores";
+import DGNLHCMScores from "../components/DGNLHCMScores";
+import DGNLHanoiScores from "../components/DGNLHanoiScores";
 
 const UserLayout = () => {
   return (
@@ -94,14 +97,41 @@ const AppRouter = () => {
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
-          <Route path="/graduation-score" element={<GraduationScoreCalculator />} />
-          <Route path="/admission-methods/:id" element={<AdmissionMethodUniversitiesPage />} />
-          <Route path="/university-admission-methods/:universityId" element={<UniversityAdmissionMethodsPage />} />
-          <Route path="/university-scores/:universityId" element={<UniversityScoresPage />} />
-          <Route path="/subject-combination-universities/:subjectCombinationId" element={<SubjectCombinationUniversitiesPage />} />
-          <Route path="/university-subject-combination/:universityId/:subjectCombinationId" element={<UniversitySubjectCombinationPage />} />
-          <Route path="/major-universities/:majorId" element={<MajorUniversitiesPage />} />
-          <Route path="/university-major/:universityId/:majorId" element={<UniversityMajorPage />} />
+          <Route
+            path="/graduation-score"
+            element={<GraduationScoreCalculator />}
+          />
+          <Route
+            path="/admission-methods/:id"
+            element={<AdmissionMethodUniversitiesPage />}
+          />
+          <Route
+            path="/university-admission-methods/:universityId"
+            element={<UniversityAdmissionMethodsPage />}
+          />
+          <Route
+            path="/university-scores/:universityId"
+            element={<UniversityScoresPage />}
+          />
+          <Route
+            path="/subject-combination-universities/:subjectCombinationId"
+            element={<SubjectCombinationUniversitiesPage />}
+          />
+          <Route
+            path="/university-subject-combination/:universityId/:subjectCombinationId"
+            element={<UniversitySubjectCombinationPage />}
+          />
+          <Route
+            path="/major-universities/:majorId"
+            element={<MajorUniversitiesPage />}
+          />
+          <Route
+            path="/university-major/:universityId/:majorId"
+            element={<UniversityMajorPage />}
+          />
+          <Route path="/thpt-scores" element={<THPTScores />} />
+          <Route path="/dgnl-hcm-scores" element={<DGNLHCMScores />} />
+          <Route path="/dgnl-hanoi-scores" element={<DGNLHanoiScores />} />
           {/* Other user routes */}
         </Route>
       </Routes>
