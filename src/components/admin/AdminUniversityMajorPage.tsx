@@ -116,7 +116,7 @@ const AdminUniversityMajorPage: React.FC = () => {
       setForm({
         universityId: data.universityId,
         majorId: data.majorId,
-        universityMajorName: data.universityMajorName || data.uniMajorName || "",
+        universityMajorName:  data.uniMajorName || "",
         quota: data.quota,
         notes: data.notes,
         year: data.year,
@@ -126,7 +126,7 @@ const AdminUniversityMajorPage: React.FC = () => {
         subjectCombinationIds: Array.isArray((data as any).subjectCombinations)
           ? (data as any).subjectCombinations.map((sc: any) => sc.id)
           : data.subjectCombinationIds || [],
-        scores: data.scores || data.score || 0,
+        scores:  data.score || 0,
       });
       setIsEditing(true);
       setShowFormModal(true);
@@ -277,6 +277,7 @@ const AdminUniversityMajorPage: React.FC = () => {
                 <th>Năm</th>
                 <th>Ghi chú</th>
                 <th>Tổ hợp môn</th>
+                <th>Phương thức tuyển sinh</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
@@ -294,6 +295,16 @@ const AdminUniversityMajorPage: React.FC = () => {
                     {major.subjectCombinations && major.subjectCombinations.length > 0
                       ? major.subjectCombinations.map((sc) => sc.name).join(", ")
                       : "-"}
+                  </td>
+                  <td>
+                    {major.admissionMethods && major.admissionMethods.length > 0
+                      ? major.admissionMethods.map((am) => am.name).join(", ")
+                      : (major.admissionMethodIds && major.admissionMethodIds.length > 0
+                          ? major.admissionMethodIds.map((id) => {
+                              const found = allAdmissionMethods.find((m) => m.id === id);
+                              return found ? found.name : id;
+                            }).join(", ")
+                          : "-")}
                   </td>
                   <td>
                     <div className="action-buttons">
