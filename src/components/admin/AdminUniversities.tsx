@@ -4,6 +4,7 @@ import * as universityApi from "../../api/university";
 import type { UniversityListItem, University } from "../../types/university";
 import Select from "react-select";
 import type { MultiValue } from "react-select";
+import {getTopUniversityOnDate} from "../../api/stats.ts";
 import { useNavigate } from "react-router-dom";
 
 const defaultForm = {
@@ -32,6 +33,11 @@ const AdminUniversities: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [showFormModal, setShowFormModal] = useState(false);
   const [viewDetail, setViewDetail] = useState<University | null>(null);
+  const [topUniversity, setTopUniversity] = useState<{
+    universityId: number;
+    universityName: string;
+    totalSearches: number;
+  } | null>(null);
   // Pagination, search, sort
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -89,6 +95,9 @@ const AdminUniversities: React.FC = () => {
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items
         : [];
+      const today = new Date().toISOString().split("T")[0]; // "2025-07-21"
+      const hotsearch = await getTopUniversityOnDate({ date: today });
+      setTopUniversity(hotsearch.data.result);
       setUniversities(items);
       setTotalPages(res.data.result.totalPages ?? 1);
       setTotalElements(res.data.result.totalElements ?? 0);
@@ -406,41 +415,69 @@ const AdminUniversities: React.FC = () => {
       )}
 
       {/* Search and Filters */}
-      <div className="search-section">
-        <div className="search-controls">
-          <div className="search-input-group">
-            <svg
-              className="search-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m21 21-4.35-4.35"
+      <div className="search-section" style={{ display: "flex", gap: "2rem" }}>
+        {/* LEFT: Search */}
+        <div style={{ flex: 1 }}>
+          <div className="search-controls">
+            <div className="search-input-group">
+              <svg
+                  className="search-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                  className="search-input"
+                  placeholder="Tìm kiếm theo tên, mã trường, viết tắt..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
               />
-            </svg>
-            <input
-              className="search-input"
-              placeholder="Tìm kiếm theo tên, mã trường, viết tắt..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            <button className="search-btn" onClick={handleSearch}>
-              Tìm kiếm
-            </button>
+              <button className="search-btn" onClick={handleSearch}>
+                Tìm kiếm
+              </button>
+            </div>
+          </div>
+          <div className="pagination-info">
+      <span className="admin-text-sm admin-text-gray-600">
+        Hiển thị {universities.length} trên tổng số {totalElements} trường
+      </span>
           </div>
         </div>
-        <div className="pagination-info">
-          <span className="admin-text-sm admin-text-gray-600">
-            Hiển thị {universities.length} trên tổng số {totalElements} trường
-          </span>
+
+        {/* RIGHT: Top searched universities */}
+        <div style={{ width: "280px" }}>
+          <div className="stat-card universities-card"
+                onClick={() => navigate("/admin/search-charts")}
+               style={{ cursor: "pointer" }}>
+            <div className="stat-icon">
+              <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+              >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+            <div className="stat-content">
+              <h3 className="stat-title">Trường đại học được tìm kiếm nhiều nhất </h3>
+              {topUniversity && (
+                  <p className="stat-number">{topUniversity.universityName}</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
 
       {/* Data Table */}
       <div className="table-container">

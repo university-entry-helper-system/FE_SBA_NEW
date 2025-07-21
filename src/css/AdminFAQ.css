@@ -1,0 +1,160 @@
+
+/* Giao diện đẹp, hiện đại cho trang quản lý FAQ */
+.faq-container {
+    width: 60vw;
+    min-width: 320px;
+    max-width: 900px;
+    margin: 32px auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    padding: 32px 24px 40px 24px;
+}
+.faq-title {
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #2d3a4a;
+}
+.faq-error {
+    color: #fff;
+    background: #e74c3c;
+    padding: 10px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.faq-form {
+    margin-bottom: 24px;
+    background: #f7fafd;
+    border-radius: 10px;
+    padding: 20px 16px 10px 16px;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+}
+.faq-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.faq-input,
+.faq-textarea {
+    flex: 1 1 180px;
+    padding: 10px 12px;
+    border: 1px solid #dbe2ef;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border 0.2s;
+}
+.faq-input:focus,
+.faq-textarea:focus {
+    border: 1.5px solid #3f72af;
+    outline: none;
+}
+.faq-textarea {
+    min-height: 40px;
+    max-height: 120px;
+    resize: vertical;
+}
+.faq-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+.faq-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.faq-btn-submit {
+    background: #3f72af;
+    color: #fff;
+}
+.faq-btn-submit:hover {
+    background: #2d3a4a;
+}
+.faq-btn-cancel {
+    background: #e0e5ec;
+    color: #2d3a4a;
+}
+.faq-btn-cancel:hover {
+    background: #bfc9d9;
+}
+.faq-btn-edit {
+    background: #f7ca18;
+    color: #2d3a4a;
+    margin-right: 6px;
+}
+.faq-btn-edit:hover {
+    background: #f5b041;
+}
+.faq-btn-delete {
+    background: #e74c3c;
+    color: #fff;
+}
+.faq-btn-delete:hover {
+    background: #c0392b;
+}
+.faq-divider {
+    margin: 24px 0 16px 0;
+    border: none;
+    border-top: 1.5px solid #e0e5ec;
+}
+.faq-table-wrapper {
+    overflow-x: auto;
+}
+.faq-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+}
+.faq-table th,
+.faq-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e0e5ec;
+}
+.faq-table th {
+    background: #f0f4fa;
+    font-weight: 600;
+    color: #3f72af;
+}
+.faq-row:hover {
+    background: #f7fafd;
+}
+.faq-loading {
+    text-align: center;
+    color: #3f72af;
+    font-size: 1.1rem;
+    margin: 24px 0;
+}
+
+/* Badge trạng thái */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background-color: #e0f7e9;
+    color: #2e7d32;
+}
+
+.status-badge.deleted {
+    background-color: #fdecea;
+    color: #c62828;
+}
+

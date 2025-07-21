@@ -40,12 +40,12 @@ const AdminMajors: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await majorApi.getMajors({
-        search,
-        page,
-        size,
-        sort: `${sortField},${sortOrder}`,
-      });
+        const res = await majorApi.getMajors({
+          search,
+          page,
+          size,
+          sort: `${sortField},${sortOrder}`,
+        });
       // Defensive: ensure items is always an array
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items

@@ -3,8 +3,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import HomePage from "../components/home";
 import Question from "../components/question";
-import Login from "../components/Login";
-import Register from "../components/Register";
+import Login from "../components/login";
+import Register from "../components/register";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../components/admin/AdminLayout";
 import AdminDashboard from "../components/admin/AdminDashboard";
@@ -42,6 +42,9 @@ import AdminUniversityAdmissionMethodPage from "../components/admin/AdminUnivers
 import Majors from "../components/Majors";
 import Contact from "../components/Contact";
 
+import VisitChart from "../components/admin/VisitChart.tsx";
+import SearchChart from "../components/admin/SearchChart.tsx";
+import FAQs from "../components/admin/AdminFAQs.tsx";
 const UserLayout = () => {
   return (
     <>
@@ -69,6 +72,8 @@ const AppRouter = () => {
         >
           <Route index element={<AdminDashboard />} />
           {/* Nested admin routes */}
+          <Route path="visit-chart" element={<VisitChart />} />
+          <Route path="search-charts" element={<SearchChart />} />
           <Route path="universities" element={<AdminUniversities />} />
           <Route path="universities/:universityId/majors" element={<AdminUniversityMajorPage />} />
           <Route path="universities/:universityId/admission-methods" element={<AdminUniversityAdmissionMethodPage />} />
@@ -76,6 +81,7 @@ const AppRouter = () => {
           <Route path="provinces" element={<AdminProvince />} />
           <Route path="categories" element={<UniversityCategoryPage />} />
           <Route path="exam-subjects" element={<AdminExamSubject />} />
+          <Route path="faqs" element={<FAQs />} />
           <Route path="admission-methods" element={<AdminAdmissionMethod />} />
           <Route
             path="subject-combinations"
