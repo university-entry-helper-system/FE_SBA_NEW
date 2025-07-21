@@ -22,7 +22,18 @@ export function filterNews(params: {
   page?: number;
   size?: number;
 }) {
-  return axios.get('/api/news', { params });
+  const { category, search, fromDate, toDate, minViews, maxViews, newsStatus, page, size } = params;
+  const hasFilter = category || search || fromDate || toDate || minViews || maxViews || newsStatus;
+  if (!hasFilter) {
+    // Gọi paginated nếu không có filter nâng cao
+    return getNewsPaginated({ page, size });
+  }
+  // Nếu search là chuỗi rỗng hoặc chỉ có khoảng trắng, không truyền lên BE
+  const cleanParams = { ...params };
+  if (!cleanParams.search || cleanParams.search.trim() === "") {
+    delete cleanParams.search;
+  }
+  return axios.get('/news', { params: cleanParams });
 }
 
 // Get news by ID
@@ -67,4 +78,9 @@ export function updateNews(id: number, data: Record<string, any>) {
 // Delete news
 export function deleteNews(id: number) {
   return axios.delete(`/news/${id}`);
+}
+
+// Get top 5 hot news
+export function getTopHotNews() {
+  return axios.get('/news/hot');
 } 

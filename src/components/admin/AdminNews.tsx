@@ -32,7 +32,7 @@ const defaultForm: NewsRequest = {
   title: "",
   summary: "",
   content: "",
-  category: "Tin tức",
+  category: "ADMISSION_INFO", // Sửa thành enum name
   image: null,
   imageUrl: "",
   newsStatus: "PUBLISHED",
@@ -97,10 +97,11 @@ const AdminNews: React.FC = () => {
     }
   };
 
+  // useEffect gọi fetchNews mỗi khi filter thay đổi
   useEffect(() => {
-    fetchNews(page, search);
+    fetchNews(page, searchInput);
     // eslint-disable-next-line
-  }, [page, search]);
+  }, [page, searchInput, category, fromDate, toDate, minViews, maxViews, newsStatus]);
 
   // Formik for form
   const formik = useFormik<NewsRequest>({
@@ -193,11 +194,30 @@ const AdminNews: React.FC = () => {
     setCategory(e.target.value);
     setPage(0);
   };
-  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => setFromDate(e.target.value);
-  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => setToDate(e.target.value);
-  const handleMinViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => setMinViews(e.target.value);
-  const handleMaxViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => setMaxViews(e.target.value);
-  const handleNewsStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => setNewsStatus(e.target.value);
+  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFromDate(e.target.value);
+    setPage(0);
+  };
+  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setToDate(e.target.value);
+    setPage(0);
+  };
+  const handleMinViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinViews(e.target.value);
+    setPage(0);
+  };
+  const handleMaxViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMaxViews(e.target.value);
+    setPage(0);
+  };
+  const handleNewsStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewsStatus(e.target.value);
+    setPage(0);
+  };
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(e.target.value);
+    setPage(0);
+  };
   const handleDelete = async (item: NewsResponse) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa tin này?")) return;
     setLoading(true);
@@ -225,7 +245,7 @@ const AdminNews: React.FC = () => {
           className="search-input"
           placeholder="Tìm kiếm tin tức..."
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={handleSearchInputChange}
         />
         <select className="category-select" value={category} onChange={handleCategoryChange}>
           <option value="">Tất cả danh mục</option>
@@ -249,7 +269,6 @@ const AdminNews: React.FC = () => {
           <option value="DRAFT">Bản nháp</option>
           <option value="ARCHIVED">Đã lưu trữ</option>
         </select>
-        <button className="search-btn" type="submit">Tìm kiếm</button>
         <Button variant="contained" color="primary" onClick={openCreateForm} sx={{ ml: "auto" }}>
           + Thêm tin mới
         </Button>
@@ -376,17 +395,32 @@ const AdminNews: React.FC = () => {
                 <Typography color="error" variant="caption">{formik.errors.content}</Typography>
               )}
             </Box>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Danh mục"
-              name="category"
-              value={formik.values.category}
-              onChange={formik.handleChange}
-              error={!!formik.touched.category && !!formik.errors.category}
-              helperText={formik.touched.category && formik.errors.category}
-              required
-            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="category-label">Danh mục</InputLabel>
+              <Select
+                labelId="category-label"
+                id="category"
+                name="category"
+                value={formik.values.category}
+                label="Danh mục"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.category && Boolean(formik.errors.category)}
+              >
+                <MenuItem value="ADMISSION_INFO">Thông tin tuyển sinh</MenuItem>
+                <MenuItem value="EXAM_SCHEDULE">Lịch thi</MenuItem>
+                <MenuItem value="SCHOLARSHIP">Học bổng</MenuItem>
+                <MenuItem value="GUIDANCE">Hướng dẫn thủ tục</MenuItem>
+                <MenuItem value="REGULATION_CHANGE">Thay đổi quy định</MenuItem>
+                <MenuItem value="EVENT">Sự kiện</MenuItem>
+                <MenuItem value="RESULT_ANNOUNCEMENT">Công bố kết quả</MenuItem>
+                <MenuItem value="SYSTEM_NOTIFICATION">Thông báo hệ thống</MenuItem>
+                <MenuItem value="OTHER">Khác</MenuItem>
+              </Select>
+              {formik.touched.category && formik.errors.category && (
+                <div className="form-error">{formik.errors.category}</div>
+              )}
+            </FormControl>
             <Box marginY={2}>
               <Typography fontWeight={600} mb={1}>Ảnh</Typography>
               <input type="file" accept="image/*" onChange={handleImageChange} />
@@ -419,10 +453,9 @@ const AdminNews: React.FC = () => {
                 label="Trạng thái"
                 error={!!formik.touched.newsStatus && !!formik.errors.newsStatus}
               >
-                <MenuItem value="PUBLISHED">PUBLISHED</MenuItem>
-                <MenuItem value="DRAFT">DRAFT</MenuItem>
-                <MenuItem value="PENDING">PENDING</MenuItem>
-                <MenuItem value="REJECTED">REJECTED</MenuItem>
+                <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+                <MenuItem value="DRAFT">Bản nháp</MenuItem>
+                <MenuItem value="ARCHIVED">Đã lưu trữ</MenuItem>
               </Select>
               {formik.touched.newsStatus && formik.errors.newsStatus && (
                 <Typography color="error" variant="caption">{formik.errors.newsStatus}</Typography>

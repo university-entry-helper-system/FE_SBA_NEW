@@ -1,5 +1,5 @@
 // News status
-export type NewsStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED" | "HOT";
+export type NewsStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 
 // News category (có thể mở rộng)
 export type NewsCategory = string;
