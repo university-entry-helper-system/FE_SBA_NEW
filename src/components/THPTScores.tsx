@@ -136,6 +136,32 @@ const THPTScores = () => {
           Phổ điểm các môn thi trong kỳ thi Tốt nghiệp Trung học Phổ thông Quốc
           gia
         </p>
+
+        {/* Search Score Button */}
+        <div className="search-score-section">
+          <button
+            className="search-score-btn"
+            onClick={() =>
+              window.open("https://mazhocdata.streamlit.app/", "_blank")
+            }
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            Tra Cứu Điểm Thi
+          </button>
+          <p className="search-note">
+            Nhấn vào đây để tra cứu điểm thi chi tiết theo số báo danh
+          </p>
+        </div>
       </div>
 
       <div className="subjects-grid">
