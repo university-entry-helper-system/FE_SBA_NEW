@@ -4,7 +4,7 @@ import "../css/Home.css";
 import { ImageCarousel } from "./ImageCarousel";
 import { getAdmissionMethods } from "../api/admissionMethod";
 import AdmissionMethodsCarousel from "./AdmissionMethodsCarousel"; // Import the new component
-import { getAllUniversities, searchUniversities } from "../api/university";
+import { searchUniversities } from "../api/university";
 import { getMajors } from "../api/major";
 import { getSubjectCombinations } from "../api/subjectCombination";
 import { getTopHotNews } from "../api/news";
@@ -18,6 +18,7 @@ const HomePage = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [admissionMethods, setAdmissionMethods] = useState<any[]>([]);
   const [loadingAdmission, setLoadingAdmission] = useState(false);
   const [errorAdmission, setErrorAdmission] = useState("");
@@ -25,9 +26,11 @@ const HomePage = () => {
   // API data states
   const [universities, setUniversities] = useState<University[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
-  const [subjectCombinations, setSubjectCombinations] = useState<SubjectCombination[]>([]);
+  const [subjectCombinations, setSubjectCombinations] = useState<
+    SubjectCombination[]
+  >([]);
+  // const [errorSearchData, setErrorSearchData] = useState("");
   const [loadingSearchData, setLoadingSearchData] = useState(false);
-  const [errorSearchData, setErrorSearchData] = useState("");
   const [hotNews, setHotNews] = useState<NewsResponse[]>([]);
   const [loadingHotNews, setLoadingHotNews] = useState(false);
   const [errorHotNews, setErrorHotNews] = useState("");
@@ -48,11 +51,11 @@ const HomePage = () => {
   // Fetch search data (universities, majors, combinations)
   useEffect(() => {
     setLoadingSearchData(true);
-    setErrorSearchData("");
+    // setErrorSearchData("");
     Promise.all([
       searchUniversities({ page: 0, size: 50 }),
       getMajors({ page: 0, size: 50, sort: "name,asc" }),
-      getSubjectCombinations({ page: 0, size: 50, sort: "name,asc" })
+      getSubjectCombinations({ page: 0, size: 50, sort: "name,asc" }),
     ])
       .then(([uniRes, majorRes, comboRes]) => {
         setUniversities(uniRes.data.result.items || []);
@@ -61,7 +64,7 @@ const HomePage = () => {
       })
       .catch((error) => {
         console.error("API ERROR:", error);
-        setErrorSearchData("Không thể tải dữ liệu tìm kiếm");
+        // setErrorSearchData("Không thể tải dữ liệu tìm kiếm");
       })
       .finally(() => setLoadingSearchData(false));
   }, []);
@@ -91,40 +94,53 @@ const HomePage = () => {
   }, []);
 
   // Filtered suggestions based on tab and input
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let suggestions: any[] = [];
   if (activeTab === "de-an" || activeTab === "diem-chuan") {
     if (searchInput.trim()) {
-      suggestions = universities.filter((school) =>
-        school.name.toLowerCase().includes(searchInput.toLowerCase())
-      ).slice(0, 4);
+      suggestions = universities
+        .filter((school) =>
+          school.name.toLowerCase().includes(searchInput.toLowerCase())
+        )
+        .slice(0, 4);
     } else if (showDropdown) {
       suggestions = universities.slice(0, 4);
     }
   } else if (activeTab === "khoi-mon") {
     if (searchInput.trim()) {
-      suggestions = subjectCombinations.filter((combo) =>
-        combo.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-        (Array.isArray(combo.examSubjects) && combo.examSubjects.some(subj =>
-          subj.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-          subj.shortName.toLowerCase().includes(searchInput.toLowerCase())
-        ))
-      ).slice(0, 4);
+      suggestions = subjectCombinations
+        .filter(
+          (combo) =>
+            combo.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+            (Array.isArray(combo.examSubjects) &&
+              combo.examSubjects.some(
+                (subj) =>
+                  subj.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+                  subj.shortName
+                    .toLowerCase()
+                    .includes(searchInput.toLowerCase())
+              ))
+        )
+        .slice(0, 4);
     } else if (showDropdown) {
       suggestions = subjectCombinations.slice(0, 4);
     }
   } else if (activeTab === "nganh") {
     if (searchInput.trim()) {
-      suggestions = majors.filter((major) =>
-        major.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-        major.code.toLowerCase().includes(searchInput.toLowerCase())
-      ).slice(0, 4);
+      suggestions = majors
+        .filter(
+          (major) =>
+            major.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+            major.code.toLowerCase().includes(searchInput.toLowerCase())
+        )
+        .slice(0, 4);
     } else if (showDropdown) {
       suggestions = majors.slice(0, 4);
     }
   }
 
-
   // Placeholder for navigation on suggestion click
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSuggestionClick = (item: any) => {
     setShowDropdown(false);
     setSearchInput("");
@@ -140,8 +156,6 @@ const HomePage = () => {
       // TODO: Implement navigation for other tabs if needed
     }
   };
-
-
 
   return (
     <div className="homepage-modern">
@@ -195,29 +209,46 @@ const HomePage = () => {
                       {activeTab === "de-an" || activeTab === "diem-chuan" ? (
                         <>
                           <img
-                            src={item.logoUrl || "https://placehold.co/40x40?text=Logo"}
+                            src={
+                              item.logoUrl ||
+                              "https://placehold.co/40x40?text=Logo"
+                            }
                             alt={item.name}
                             className="search-dropdown-logo"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = "https://placehold.co/40x40?text=Logo";
+                              target.src =
+                                "https://placehold.co/40x40?text=Logo";
                             }}
                           />
-                          <span className="search-dropdown-name">{item.name}</span>
+                          <span className="search-dropdown-name">
+                            {item.name}
+                          </span>
                         </>
                       ) : activeTab === "khoi-mon" ? (
                         <>
-                          <span className="search-dropdown-name">{item.name}</span>
+                          <span className="search-dropdown-name">
+                            {item.name}
+                          </span>
                           <span className="search-dropdown-desc">
                             {Array.isArray(item.examSubjects)
-                              ? item.examSubjects.map((subj: any) => subj.shortName || subj.name).join(', ')
-                              : ''}
+                              ? item.examSubjects
+                                  .map(
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    (subj: any) => subj.shortName || subj.name
+                                  )
+                                  .join(", ")
+                              : ""}
                           </span>
                         </>
                       ) : (
                         <>
-                          <span className="search-dropdown-name">{item.name}</span>
-                          <span className="search-dropdown-desc">{item.code}</span>
+                          <span className="search-dropdown-name">
+                            {item.name}
+                          </span>
+                          <span className="search-dropdown-desc">
+                            {item.code}
+                          </span>
                         </>
                       )}
                     </div>
@@ -291,7 +322,7 @@ const HomePage = () => {
       </section>
 
       {/* Replace the old admission methods section with the new carousel component */}
-      <AdmissionMethodsCarousel 
+      <AdmissionMethodsCarousel
         admissionMethods={admissionMethods}
         loading={loadingAdmission}
         error={errorAdmission}
@@ -307,9 +338,7 @@ const HomePage = () => {
           <ul className="news-list">
             {hotNews.map((item) => (
               <li key={item.id}>
-                <Link to={`/news/${item.id}`}>
-                  {item.title}
-                </Link>
+                <Link to={`/news/${item.id}`}>{item.title}</Link>
               </li>
             ))}
           </ul>

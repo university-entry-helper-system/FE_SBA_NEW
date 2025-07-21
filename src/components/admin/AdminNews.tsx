@@ -6,38 +6,112 @@ import type { University } from "../../types/university";
 import TiptapEditor from "./TiptapEditor";
 import { filterNews } from "../../api/news";
 import {
-  Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Select, MenuItem, InputLabel, FormControl, Alert,
-  Typography, CircularProgress
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Typography,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import "../../css/AdminMajor.css";
+import "../../css/AdminNews.css";
 
 const PAGE_SIZE = 8;
 
-// Validation schema
-const NewsSchema = Yup.object().shape({
-  universityId: Yup.string().required("Chọn trường là bắt buộc"),
-  title: Yup.string().max(255).required("Tiêu đề là bắt buộc"),
-  summary: Yup.string().max(500).required("Tóm tắt là bắt buộc"),
-  content: Yup.string().required("Nội dung là bắt buộc"),
-  category: Yup.string().required("Danh mục là bắt buộc"),
-  newsStatus: Yup.string().required("Trạng thái là bắt buộc"),
-});
+// Helper to safely get min value for publishedAt input
+function getPublishedAtMin(): string {
+  return new Date().toISOString().slice(0, 16);
+}
 
-// Default form values
+// Validation schema
+function getNewsSchema() {
+  return Yup.object().shape({
+    universityId: Yup.number()
+      .min(1, "Chọn trường là bắt buộc")
+      .required("Chọn trường là bắt buộc"),
+    title: Yup.string()
+      .trim()
+      .min(1, "Tiêu đề là bắt buộc")
+      .max(255, "Tiêu đề không được quá 255 ký tự")
+      .required("Tiêu đề là bắt buộc"),
+    summary: Yup.string()
+      .trim()
+      .min(1, "Tóm tắt là bắt buộc")
+      .max(500, "Tóm tắt không được quá 500 ký tự")
+      .required("Tóm tắt là bắt buộc"),
+    content: Yup.string()
+      .trim()
+      .min(1, "Nội dung là bắt buộc")
+      .required("Nội dung là bắt buộc"),
+    category: Yup.string().required("Danh mục là bắt buộc"),
+    newsStatus: Yup.string().required("Trạng thái là bắt buộc"),
+    publishedAt: Yup.string().when(
+      [],
+      (publishedAt, schema, context: unknown) => {
+        // context?.mode === 'edit' thì bỏ validate
+        if (
+          context &&
+          typeof context === "object" &&
+          (context as { mode?: string }).mode === "edit"
+        ) {
+          return schema;
+        }
+        return schema
+          .required("Ngày đăng là bắt buộc")
+          .test(
+            "is-future",
+            "Ngày đăng phải từ hiện tại trở đi",
+            function (value) {
+              if (!value) return false;
+              return new Date(value) >= new Date(getPublishedAtMin());
+            }
+          );
+      }
+    ),
+    releaseDate: Yup.string()
+      .required("Ngày phát hành là bắt buộc")
+      .test(
+        "is-after-publishedAt",
+        "Ngày phát hành phải sau hoặc bằng ngày đăng",
+        function (value) {
+          const { publishedAt } = this.parent;
+          if (!value || !publishedAt) return false;
+          return new Date(value) >= new Date(publishedAt);
+        }
+      ),
+  });
+}
+
+// Default form values - SỬA: universityId mặc định là 1 thay vì 0
 const defaultForm: NewsRequest = {
-  universityId: 0, // <-- use 0 (or another default number)
+  universityId: 1, // Thay đổi từ 0 thành 1
   title: "",
   summary: "",
   content: "",
-  category: "ADMISSION_INFO", // Sửa thành enum name
+  category: "ADMISSION_INFO",
   image: null,
   imageUrl: "",
   newsStatus: "PUBLISHED",
   publishedAt: "",
   releaseDate: "",
+};
+
+// Helper lấy URL ảnh đầy đủ từ Minio cho news
+const getImageUrl = (imageUrl?: string) => {
+  if (!imageUrl) return "https://placehold.co/80x50?text=No+Image";
+  if (imageUrl.startsWith("http")) {
+    let url = imageUrl.split("?")[0];
+    url = url.replace("minio:9000", "localhost:9000");
+    return url;
+  }
+  return `http://localhost:9000/mybucket/${imageUrl}`;
 };
 
 const AdminNews: React.FC = () => {
@@ -53,7 +127,6 @@ const AdminNews: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [category, setCategory] = useState("");
@@ -66,8 +139,9 @@ const AdminNews: React.FC = () => {
   // Fetch universities
   useEffect(() => {
     setUniversitiesLoading(true);
-    universityApi.searchUniversities({ page: 0, size: 100 })
-      .then(res => setUniversities(res.data.result?.items || []))
+    universityApi
+      .searchUniversities({ page: 0, size: 100 })
+      .then((res) => setUniversities(res.data.result?.items || []))
       .catch(() => setUniversities([]))
       .finally(() => setUniversitiesLoading(false));
   }, []);
@@ -102,42 +176,116 @@ const AdminNews: React.FC = () => {
   useEffect(() => {
     fetchNews(page, searchInput);
     // eslint-disable-next-line
-  }, [page, searchInput, category, fromDate, toDate, minViews, maxViews, newsStatus]);
+  }, [
+    page,
+    searchInput,
+    category,
+    fromDate,
+    toDate,
+    minViews,
+    maxViews,
+    newsStatus,
+  ]);
+
+  // Helper: convert date string to ISO 8601 with +07:00 timezone (BE guide)
+  function toGmt7ISOString(dateStr: string | undefined) {
+    if (!dateStr || dateStr.trim() === "") return "";
+    // dateStr: '2025-07-21T20:44' hoặc '2025-07-21T20:44:00'
+    const [date, time] = dateStr.split("T");
+    if (!date || !time) return "";
+    // Thêm giây nếu thiếu
+    const timeWithSec = time.length === 5 ? `${time}:00` : time;
+    // Kết hợp lại và thêm +07:00
+    return `${date}T${timeWithSec}+07:00`;
+  }
+
+  // Helper: Hiển thị ngày giờ theo giờ Việt Nam
+  function toVNLocaleString(dateStr: string | undefined) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  }
+
+  // Helper: Định dạng cho input datetime-local (YYYY-MM-DDTHH:mm) theo GMT+7
+  function formatDateForInput(dateStr: string | undefined) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    // Chuyển sang giờ Việt Nam (GMT+7)
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const gmt7 = new Date(utc + 7 * 60 * 60000);
+    return gmt7.toISOString().slice(0, 16);
+  }
 
   // Formik for form
   const formik = useFormik<NewsRequest>({
     initialValues: defaultForm,
-    validationSchema: NewsSchema,
+    validate: (values) => {
+      try {
+        getNewsSchema().validateSync(values, { context: { mode } });
+        return {};
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          return err.inner.reduce((acc, curr) => {
+            if (curr.path) acc[curr.path] = curr.message;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+        return {};
+      }
+    },
     enableReinitialize: true,
+    validateOnChange: true,
+    validateOnBlur: true,
     onSubmit: async (values, { resetForm }) => {
       setError("");
       setLoading(true);
       try {
-        const submitValues = {
-          ...values,
-          universityId: Number(values.universityId) || 0,
-          publishedAt: values.publishedAt
-            ? new Date(values.publishedAt).toISOString()
-            : undefined,
-          releaseDate: values.releaseDate
-            ? new Date(values.releaseDate).toISOString()
-            : undefined,
-        };
-        // Debug: check what is being sent
-        // console.log("Submitting:", submitValues);
+        // Log giá trị formik.values để debug
+        console.log("=== formik.values ===", values);
+        // Chuyển đổi ngày sang chuẩn ISO 8601 +07:00
+        let valuesToSend: Record<string, any>;
         if (mode === "create") {
-          await newsApi.createNews(submitValues);
-          setSuccess("Tạo tin tức thành công!");
+          valuesToSend = {
+            ...values,
+            publishedAt: toGmt7ISOString(values.publishedAt || ""),
+            releaseDate: toGmt7ISOString(values.releaseDate || ""),
+          };
+          await newsApi.createNews(valuesToSend);
         } else if (mode === "edit" && selectedNews) {
-          await newsApi.updateNews(selectedNews.id, submitValues);
-          setSuccess("Cập nhật tin tức thành công!");
+          valuesToSend = {
+            ...values,
+            // Luôn giữ publishedAt gốc từ DB, không lấy từ form
+            publishedAt: selectedNews.publishedAt,
+            releaseDate: toGmt7ISOString(values.releaseDate || ""),
+          };
+          // Nếu API không cho phép update publishedAt, xóa trường này trước khi gửi
+          delete valuesToSend.publishedAt;
+          await newsApi.updateNews(selectedNews.id, valuesToSend);
         }
+        setSuccess(
+          mode === "create"
+            ? "Tạo tin tức thành công!"
+            : "Cập nhật tin tức thành công!"
+        );
         setShowForm(false);
         resetForm();
         setImagePreview(null);
-        fetchNews(page, search);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Có lỗi xảy ra.");
+        fetchNews(page, searchInput);
+      } catch (err: unknown) {
+        let msg = "Có lỗi xảy ra.";
+        if (err instanceof Error) {
+          msg = err.message;
+        } else if (
+          typeof err === "object" &&
+          err &&
+          "response" in err &&
+          typeof (err as { response?: { data?: { message?: string } } })
+            .response?.data?.message === "string"
+        ) {
+          msg = (err as { response?: { data?: { message?: string } } })
+            .response!.data!.message!;
+        }
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -150,79 +298,66 @@ const AdminNews: React.FC = () => {
     setShowForm(true);
     setImagePreview(null);
     setSelectedNews(null);
-    formik.resetForm();
+
+    // SỬA: Set giá trị mặc định tốt hơn khi tạo mới
+    const now = new Date();
+    const defaultPublishedAt = now.toISOString().slice(0, 16);
+    const defaultReleaseDate = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16);
+
+    formik.setValues({
+      ...defaultForm,
+      universityId: universities.length > 0 ? universities[0].id : 1, // Chọn trường đầu tiên
+      publishedAt: defaultPublishedAt,
+      releaseDate: defaultReleaseDate,
+    });
   };
+
   const openEditForm = (item: NewsResponse) => {
     setMode("edit");
     setShowForm(true);
     setSelectedNews(item);
     setImagePreview(item.imageUrl || null);
+
+    // publishedAt và releaseDate luôn lấy từ DB (item), convert về local input
     formik.setValues({
-      universityId: item.university?.id ?? 0,
-      title: item.title,
-      summary: item.summary,
-      content: item.content,
-      category: item.category,
+      universityId: item.university?.id ?? 1,
+      title: item.title || "",
+      summary: item.summary || "",
+      content: item.content || "",
+      category: item.category || "ADMISSION_INFO",
       image: null,
-      imageUrl: item.imageUrl,
-      newsStatus: item.newsStatus,
-      publishedAt: item.publishedAt,
-      releaseDate: item.releaseDate ? item.releaseDate.slice(0, 10) : "",
+      imageUrl: item.imageUrl || "",
+      newsStatus: item.newsStatus || "PUBLISHED",
+      publishedAt: formatDateForInput(item.publishedAt),
+      releaseDate: formatDateForInput(item.releaseDate),
     });
   };
+
   const closeForm = () => {
     setShowForm(false);
     setImagePreview(null);
     setSelectedNews(null);
     formik.resetForm();
   };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     formik.setFieldValue("image", file);
     if (file) {
       const reader = new FileReader();
-      reader.onload = ev => setImagePreview(ev.target?.result as string);
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
     }
   };
+
   const handleContentChange = (value: string) => {
     formik.setFieldValue("content", value);
   };
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(0);
-    setSearch(searchInput.trim());
-  };
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value);
-    setPage(0);
-  };
-  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFromDate(e.target.value);
-    setPage(0);
-  };
-  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setToDate(e.target.value);
-    setPage(0);
-  };
-  const handleMinViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMinViews(e.target.value);
-    setPage(0);
-  };
-  const handleMaxViewsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMaxViews(e.target.value);
-    setPage(0);
-  };
-  const handleNewsStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setNewsStatus(e.target.value);
-    setPage(0);
-  };
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-    setPage(0);
-  };
+
   const handleDelete = async (item: NewsResponse) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa tin này?")) return;
     setLoading(true);
@@ -230,145 +365,331 @@ const AdminNews: React.FC = () => {
     try {
       await newsApi.deleteNews(item.id);
       setSuccess("Đã xóa tin tức.");
-      fetchNews(page, search);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Có lỗi xảy ra khi xóa.");
+      fetchNews(page, searchInput);
+    } catch (err: unknown) {
+      let msg = "Có lỗi xảy ra khi xóa.";
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (
+        typeof err === "object" &&
+        err &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response
+          ?.data?.message === "string"
+      ) {
+        msg = (err as { response?: { data?: { message?: string } } }).response!
+          .data!.message!;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  // Helper to safely get min value for releaseDate input
+  function getReleaseDateMin(publishedAt: string): string {
+    if (typeof publishedAt === "string" && publishedAt) {
+      return publishedAt.slice(0, 16);
+    }
+    return new Date().toISOString().slice(0, 16);
+  }
+
   // Render
   return (
-    <Box className="admin-news-page" sx={{ maxWidth: 1100, mx: "auto", p: 3 }}>
-      <Typography variant="h4" fontWeight={700} mb={2} color="primary">
-        Quản lý Tin tức
-      </Typography>
-      <Box component="form" className="admin-news-search-bar" onSubmit={handleSearch} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Tìm kiếm tin tức..."
+    <div className="admin-universities">
+      <div className="universities-header">
+        <div className="header-content">
+          <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
+            Quản lý Tin tức
+          </h1>
+          <p className="admin-text-sm admin-text-gray-600">
+            Quản lý thông tin các tin tức trong hệ thống
+          </p>
+        </div>
+        <button
+          className="admin-btn admin-btn-primary add-btn"
+          onClick={openCreateForm}
+        >
+          <svg
+            className="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          Thêm tin mới
+        </button>
+      </div>
+
+      {/* Advanced Filter UI */}
+      <div className="admin-news-filter-row">
+        <TextField
+          label="Tìm kiếm"
           value={searchInput}
-          onChange={handleSearchInputChange}
+          onChange={e => setSearchInput(e.target.value)}
+          size="small"
+          style={{ minWidth: 180 }}
         />
-        <select className="category-select" value={category} onChange={handleCategoryChange}>
-          <option value="">Tất cả danh mục</option>
-          <option value="ADMISSION_INFO">Thông tin tuyển sinh</option>
-          <option value="EXAM_SCHEDULE">Lịch thi</option>
-          <option value="SCHOLARSHIP">Học bổng</option>
-          <option value="GUIDANCE">Hướng dẫn thủ tục</option>
-          <option value="REGULATION_CHANGE">Thay đổi quy định</option>
-          <option value="EVENT">Sự kiện</option>
-          <option value="RESULT_ANNOUNCEMENT">Công bố kết quả</option>
-          <option value="SYSTEM_NOTIFICATION">Thông báo hệ thống</option>
-          <option value="OTHER">Khác</option>
-        </select>
-        <input type="date" value={fromDate} onChange={handleFromDateChange} placeholder="Từ ngày" />
-        <input type="date" value={toDate} onChange={handleToDateChange} placeholder="Đến ngày" />
-        <input type="number" value={minViews} onChange={handleMinViewsChange} placeholder="Lượt xem từ" min={0} style={{ width: 100 }} />
-        <input type="number" value={maxViews} onChange={handleMaxViewsChange} placeholder="Lượt xem đến" min={0} style={{ width: 100 }} />
-        <select value={newsStatus} onChange={handleNewsStatusChange}>
-          <option value="">Tất cả trạng thái</option>
-          <option value="PUBLISHED">Đã xuất bản</option>
-          <option value="DRAFT">Bản nháp</option>
-          <option value="ARCHIVED">Đã lưu trữ</option>
-        </select>
-        <Button variant="contained" color="primary" onClick={openCreateForm} sx={{ ml: "auto" }}>
-          + Thêm tin mới
+        <FormControl size="small" style={{ minWidth: 160 }}>
+          <InputLabel>Danh mục</InputLabel>
+          <Select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            label="Danh mục"
+          >
+            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="ADMISSION_INFO">Thông tin tuyển sinh</MenuItem>
+            <MenuItem value="EXAM_SCHEDULE">Lịch thi</MenuItem>
+            <MenuItem value="SCHOLARSHIP">Học bổng</MenuItem>
+            <MenuItem value="GUIDANCE">Hướng dẫn thủ tục</MenuItem>
+            <MenuItem value="REGULATION_CHANGE">Thay đổi quy định</MenuItem>
+            <MenuItem value="EVENT">Sự kiện</MenuItem>
+            <MenuItem value="RESULT_ANNOUNCEMENT">Công bố kết quả</MenuItem>
+            <MenuItem value="SYSTEM_NOTIFICATION">Thông báo hệ thống</MenuItem>
+            <MenuItem value="OTHER">Khác</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          label="Từ ngày"
+          type="date"
+          value={fromDate}
+          onChange={e => setFromDate(e.target.value)}
+          size="small"
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="Đến ngày"
+          type="date"
+          value={toDate}
+          onChange={e => setToDate(e.target.value)}
+          size="small"
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="Lượt xem từ"
+          type="number"
+          value={minViews}
+          onChange={e => setMinViews(e.target.value)}
+          size="small"
+          inputProps={{ min: 0 }}
+        />
+        <TextField
+          label="Lượt xem đến"
+          type="number"
+          value={maxViews}
+          onChange={e => setMaxViews(e.target.value)}
+          size="small"
+          inputProps={{ min: 0 }}
+        />
+        <FormControl size="small" style={{ minWidth: 140 }}>
+          <InputLabel>Trạng thái</InputLabel>
+          <Select
+            value={newsStatus}
+            onChange={e => setNewsStatus(e.target.value)}
+            label="Trạng thái"
+          >
+            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+            <MenuItem value="DRAFT">Bản nháp</MenuItem>
+            <MenuItem value="ARCHIVED">Đã lưu trữ</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          variant="outlined"
+          onClick={() => { setPage(0); fetchNews(0, searchInput); }}
+          style={{ height: 40 }}
+        >
+          Lọc
         </Button>
-      </Box>
-      {loading && <CircularProgress sx={{ my: 2 }} />}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      <Box className="admin-news-list" mt={2}>
-        <Box component="table" className="admin-table" width="100%">
-          <thead>
-            <tr>
-              <th>Ảnh</th>
-              <th>Tiêu đề</th>
-              <th>Trường</th>
-              <th>Ngày đăng</th>
-              <th>Ngày phát hành</th>
-              <th>Số ngày đến phát hành</th>
-              <th>Lượt xem</th>
-              <th>Trạng thái</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {news.map(item => (
-              <tr key={item.id}>
-                <td>
-                  <img
-                    src={item.imageUrl || "https://placehold.co/80x50?text=No+Image"}
-                    alt={item.title}
-                    style={{ width: 80, height: 50, objectFit: "cover", borderRadius: 4 }}
-                  />
-                </td>
-                <td>{item.title}</td>
-                <td>{item.university?.shortName || item.university?.name || ""}</td>
-                <td>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : ""}</td>
-                <td>{item.releaseDate ? new Date(item.releaseDate).toLocaleDateString() : ""}</td>
-                <td>{typeof item.daysToRelease === "number" ? item.daysToRelease : ""}</td>
-                <td>{item.viewCount}</td>
-                <td>{item.newsStatus}</td>
-                <td>
-                  <Button size="small" variant="outlined" color="warning" onClick={() => openEditForm(item)} sx={{ mr: 1 }}>
-                    Sửa
-                  </Button>
-                  <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(item)}>
-                    Xóa
-                  </Button>
-                </td>
+      </div>
+      {loading && (
+        <div className="admin-news-loading-container">
+          <div className="admin-news-loading-spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      )}
+      {error && <div className="admin-news-alert alert-error">{error}</div>}
+      {success && <div className="admin-news-alert alert-success">{success}</div>}
+      <div className="admin-news-table-container">
+        <div className="table-wrapper">
+          <table className="admin-news-table">
+            <thead>
+              <tr>
+                <th>Ảnh</th>
+                <th>Tiêu đề</th>
+                <th>Trường</th>
+                <th>Ngày đăng</th>
+                <th>Ngày phát hành</th>
+                <th>Số ngày đến phát hành</th>
+                <th>Lượt xem</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </Box>
-        {/* Pagination */}
+            </thead>
+            <tbody>
+              {news.map((item) => (
+                <tr key={item.id} className="table-row">
+                  <td>
+                    <img
+                      src={getImageUrl(item.imageUrl)}
+                      alt={item.title}
+                      style={{
+                        width: 80,
+                        height: 50,
+                        objectFit: "cover",
+                        borderRadius: 4,
+                      }}
+                    />
+                  </td>
+                  <td>{item.title}</td>
+                  <td>
+                    {item.university?.shortName || item.university?.name || ""}
+                  </td>
+                  <td>{toVNLocaleString(item.publishedAt)}</td>
+                  <td>{toVNLocaleString(item.releaseDate)}</td>
+                  <td>
+                    {typeof item.daysToRelease === "number"
+                      ? item.daysToRelease
+                      : ""}
+                  </td>
+                  <td>{item.viewCount}</td>
+                  <td>{item.newsStatus}</td>
+                  <td>
+                    <div className="admin-news-action-buttons">
+                      <button
+                        className="action-btn edit-btn"
+                        onClick={() => openEditForm(item)}
+                        title="Sửa"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        className="action-btn delete-btn"
+                        onClick={() => handleDelete(item)}
+                        title="Xóa"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <polyline points="3,6 5,6 21,6" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                          />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {totalPages > 1 && (
-          <Box className="admin-pagination" mt={2} display="flex" gap={1} justifyContent="center">
-            {Array.from({ length: totalPages }).map((_, idx) => (
-              <Button
-                key={idx}
-                variant={idx === page ? "contained" : "outlined"}
-                color="primary"
-                onClick={() => setPage(idx)}
-                disabled={idx === page}
-                sx={{ minWidth: 36 }}
+          <div className="admin-news-pagination">
+            <button
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                {idx + 1}
-              </Button>
-            ))}
-          </Box>
+                <polyline points="15,18 9,12 15,6" />
+              </svg>
+              Trước
+            </button>
+            <div className="pagination-info">
+              <span>
+                Trang {page + 1} / {totalPages}
+              </span>
+            </div>
+            <button
+              className="pagination-btn"
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Sau
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="9,18 15,12 9,6" />
+              </svg>
+            </button>
+          </div>
         )}
-      </Box>
+      </div>
+
       {/* Form Dialog */}
-      <Dialog open={showForm} onClose={closeForm} maxWidth="md" fullWidth>
-        <DialogTitle>{mode === "create" ? "Thêm tin mới" : "Sửa tin tức"}</DialogTitle>
+      <Dialog open={showForm} onClose={closeForm} maxWidth="md" fullWidth className="admin-news-form-dialog">
+        <DialogTitle>
+          {mode === "create" ? "Thêm tin mới" : "Sửa tin tức"}
+        </DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={formik.handleSubmit} className="admin-form" sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            onSubmit={formik.handleSubmit}
+            className="admin-form"
+            sx={{ mt: 1 }}
+          >
             <FormControl fullWidth margin="normal">
               <InputLabel id="universityId-label">Trường</InputLabel>
               <Select
                 labelId="universityId-label"
                 name="universityId"
-                value={formik.values.universityId}
-                onChange={formik.handleChange}
+                value={formik.values.universityId || ""}
+                onChange={(e) =>
+                  formik.setFieldValue("universityId", Number(e.target.value))
+                }
                 required
                 label="Trường"
-                error={!!formik.touched.universityId && !!formik.errors.universityId}
+                error={
+                  !!formik.touched.universityId && !!formik.errors.universityId
+                }
                 disabled={universitiesLoading}
               >
-                <MenuItem value="">-- Chọn trường --</MenuItem>
-                {universities.map(u => (
-                  <MenuItem key={u.id} value={u.id.toString()}>{u.shortName || u.name}</MenuItem>
+                {universities.map((u) => (
+                  <MenuItem key={u.id} value={u.id}>
+                    {u.shortName || u.name}
+                  </MenuItem>
                 ))}
               </Select>
               {formik.touched.universityId && formik.errors.universityId && (
-                <Typography color="error" variant="caption">{formik.errors.universityId}</Typography>
+                <Typography color="error" variant="caption">
+                  {formik.errors.universityId}
+                </Typography>
               )}
             </FormControl>
+
             <TextField
               fullWidth
               margin="normal"
@@ -381,6 +702,7 @@ const AdminNews: React.FC = () => {
               inputProps={{ maxLength: 255 }}
               required
             />
+
             <TextField
               fullWidth
               margin="normal"
@@ -393,17 +715,22 @@ const AdminNews: React.FC = () => {
               inputProps={{ maxLength: 500 }}
               required
             />
+
             <Box marginY={2}>
-              <Typography fontWeight={600} mb={1}>Nội dung</Typography>
+              <Typography fontWeight={600} mb={1}>
+                Nội dung
+              </Typography>
               <TiptapEditor
                 value={formik.values.content}
                 onChange={handleContentChange}
-                minHeight={180}
               />
               {formik.touched.content && formik.errors.content && (
-                <Typography color="error" variant="caption">{formik.errors.content}</Typography>
+                <Typography color="error" variant="caption">
+                  {formik.errors.content}
+                </Typography>
               )}
             </Box>
+
             <FormControl fullWidth margin="normal">
               <InputLabel id="category-label">Danh mục</InputLabel>
               <Select
@@ -414,7 +741,10 @@ const AdminNews: React.FC = () => {
                 label="Danh mục"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.category && Boolean(formik.errors.category)}
+                error={
+                  formik.touched.category && Boolean(formik.errors.category)
+                }
+                required
               >
                 <MenuItem value="ADMISSION_INFO">Thông tin tuyển sinh</MenuItem>
                 <MenuItem value="EXAM_SCHEDULE">Lịch thi</MenuItem>
@@ -423,44 +753,84 @@ const AdminNews: React.FC = () => {
                 <MenuItem value="REGULATION_CHANGE">Thay đổi quy định</MenuItem>
                 <MenuItem value="EVENT">Sự kiện</MenuItem>
                 <MenuItem value="RESULT_ANNOUNCEMENT">Công bố kết quả</MenuItem>
-                <MenuItem value="SYSTEM_NOTIFICATION">Thông báo hệ thống</MenuItem>
+                <MenuItem value="SYSTEM_NOTIFICATION">
+                  Thông báo hệ thống
+                </MenuItem>
                 <MenuItem value="OTHER">Khác</MenuItem>
               </Select>
               {formik.touched.category && formik.errors.category && (
-                <div className="form-error">{formik.errors.category}</div>
+                <Typography color="error" variant="caption">
+                  {formik.errors.category}
+                </Typography>
               )}
             </FormControl>
+
             <Box marginY={2}>
-              <Typography fontWeight={600} mb={1}>Ảnh</Typography>
-              <input type="file" accept="image/*" onChange={handleImageChange} />
+              <Typography fontWeight={600} mb={1}>
+                Ảnh
+              </Typography>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
               {imagePreview && (
                 <img
                   src={imagePreview}
                   alt="Preview"
-                  style={{ width: 120, height: 70, objectFit: "cover", borderRadius: 4, marginLeft: 8, marginTop: 8 }}
+                  style={{
+                    width: 120,
+                    height: 70,
+                    objectFit: "cover",
+                    borderRadius: 4,
+                    marginLeft: 8,
+                    marginTop: 8,
+                  }}
                 />
               )}
             </Box>
+
             <TextField
               fullWidth
               margin="normal"
               label="Ngày đăng"
               name="publishedAt"
-              type="date"
-              value={formik.values.publishedAt ? formik.values.publishedAt.slice(0, 10) : ""}
+              type="datetime-local"
+              value={formik.values.publishedAt || ""}
               onChange={formik.handleChange}
+              error={
+                !!formik.touched.publishedAt && !!formik.errors.publishedAt
+              }
+              helperText={
+                formik.touched.publishedAt && formik.errors.publishedAt
+              }
               InputLabelProps={{ shrink: true }}
+              inputProps={{ min: getPublishedAtMin() }}
+              disabled={mode === "edit"}
+              required
             />
+
             <TextField
               fullWidth
               margin="normal"
               label="Ngày phát hành"
               name="releaseDate"
-              type="date"
-              value={formik.values.releaseDate ? formik.values.releaseDate : ""}
+              type="datetime-local"
+              value={formik.values.releaseDate || ""}
               onChange={formik.handleChange}
+              error={
+                !!formik.touched.releaseDate && !!formik.errors.releaseDate
+              }
+              helperText={
+                formik.touched.releaseDate && formik.errors.releaseDate
+              }
               InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: getReleaseDateMin(String(formik.values.publishedAt ?? "")),
+              }}
+              required
             />
+
             <FormControl fullWidth margin="normal">
               <InputLabel id="newsStatus-label">Trạng thái</InputLabel>
               <Select
@@ -470,27 +840,38 @@ const AdminNews: React.FC = () => {
                 onChange={formik.handleChange}
                 required
                 label="Trạng thái"
-                error={!!formik.touched.newsStatus && !!formik.errors.newsStatus}
+                error={
+                  !!formik.touched.newsStatus && !!formik.errors.newsStatus
+                }
               >
                 <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
                 <MenuItem value="DRAFT">Bản nháp</MenuItem>
                 <MenuItem value="ARCHIVED">Đã lưu trữ</MenuItem>
               </Select>
               {formik.touched.newsStatus && formik.errors.newsStatus && (
-                <Typography color="error" variant="caption">{formik.errors.newsStatus}</Typography>
+                <Typography color="error" variant="caption">
+                  {formik.errors.newsStatus}
+                </Typography>
               )}
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeForm} color="secondary">Hủy</Button>
-          <Button onClick={formik.submitForm} color="primary" variant="contained" disabled={loading}>
+          <Button onClick={closeForm} color="secondary">
+            Hủy
+          </Button>
+          <Button
+            onClick={formik.submitForm}
+            color="primary"
+            variant="contained"
+            disabled={loading}
+          >
             {mode === "create" ? "Tạo mới" : "Lưu thay đổi"}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 
-export default AdminNews; 
+export default AdminNews;

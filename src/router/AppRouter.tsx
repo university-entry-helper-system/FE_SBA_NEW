@@ -3,8 +3,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import HomePage from "../components/home";
 import Question from "../components/question";
-import Login from "../components/login";
-import Register from "../components/register";
+import Login from "../components/Login";
+import Register from "../components/Register";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../components/admin/AdminLayout";
 import AdminDashboard from "../components/admin/AdminDashboard";
@@ -37,6 +37,8 @@ import UniversityMajorPage from "../components/UniversityMajorPage";
 import THPTScores from "../components/THPTScores";
 import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
+import Majors from "../components/Majors";
+
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
 import FAQs from "../components/admin/AdminFAQs.tsx";
@@ -99,6 +101,7 @@ const AppRouter = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/universities" element={<UniversityPage />} />
           <Route path="/universities/:id" element={<UniversityDetail />} />
+          <Route path="/majors" element={<Majors />} />
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />

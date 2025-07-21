@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNewsPaginated, searchNews, filterNews } from "../api/news";
+import { filterNews } from "../api/news";
 import type { NewsResponse } from "../types/news";
 import "../css/home.css";
 
@@ -17,7 +17,11 @@ const NewsList: React.FC = () => {
   const [category, setCategory] = useState("");
   const navigate = useNavigate();
 
-  const fetchNews = async (pageNum = 0, searchQuery = "", categoryValue = "") => {
+  const fetchNews = async (
+    pageNum = 0,
+    searchQuery = "",
+    categoryValue = ""
+  ) => {
     setLoading(true);
     setError("");
     try {
@@ -69,7 +73,11 @@ const NewsList: React.FC = () => {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
-        <select className="category-select" value={category} onChange={handleCategoryChange}>
+        <select
+          className="category-select"
+          value={category}
+          onChange={handleCategoryChange}
+        >
           <option value="">Tất cả danh mục</option>
           <option value="ADMISSION_INFO">Thông tin tuyển sinh</option>
           <option value="EXAM_SCHEDULE">Lịch thi</option>
