@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../api/axios";
+import { downloadPdfFile } from "../utils/downloadFile";
 
 interface Major {
   majorId: string;
@@ -32,6 +33,7 @@ const UniversitySubjectCombinationPage = () => {
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!universityId || !subjectCombinationId) return;
@@ -44,6 +46,16 @@ const UniversitySubjectCombinationPage = () => {
       .finally(() => setLoading(false));
   }, [universityId, subjectCombinationId]);
 
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadPdfFile(`/pdf-export/subject-combination/download?universityId=${universityId}&subjectCombinationId=${subjectCombinationId}`, `nganh-theo-khoi-${universityId}-${subjectCombinationId}.pdf`);
+    } catch (e) {
+      alert("Không thể tải file PDF.");
+    }
+    setDownloading(false);
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Đang tải...</div>;
   if (error) return <div style={{ padding: 40, color: "#e74c3c", textAlign: "center" }}>{error}</div>;
   if (!data) return null;
@@ -53,6 +65,24 @@ const UniversitySubjectCombinationPage = () => {
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#223a7a", marginBottom: 12 }}>
         Danh sách các ngành xét tuyển khối {data.subjectCombination} - {data.universityName}
       </h1>
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        style={{
+          display: 'inline-block',
+          marginBottom: 24,
+          padding: '8px 20px',
+          background: '#2260b4',
+          color: '#fff',
+          borderRadius: 6,
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: 16,
+          boxShadow: '0 1px 4px rgba(34,96,180,0.08)'
+        }}
+      >
+        {downloading ? "Đang tải..." : "Tải PDF ngành theo khối"}
+      </button>
     
       {data.years.length === 0 ? (
         <div style={{ textAlign: "center", padding: 32 }}>Không có dữ liệu.</div>
@@ -70,7 +100,6 @@ const UniversitySubjectCombinationPage = () => {
                     <thead>
                       <tr style={{ background: "#cbe5ff" }}>
                         <th style={{ padding: "8px 6px", border: "1px solid #b3d7f6" }}>STT</th>
-                        <th style={{ padding: "8px 6px", border: "1px solid #b3d7f6" }}>Mã Ngành</th>
                         <th style={{ padding: "8px 6px", border: "1px solid #b3d7f6" }}>Tên Ngành</th>
                         <th style={{ padding: "8px 6px", border: "1px solid #b3d7f6" }}>Điểm chuẩn</th>
                         <th style={{ padding: "8px 6px", border: "1px solid #b3d7f6" }}>Ghi chú</th>
@@ -85,7 +114,6 @@ const UniversitySubjectCombinationPage = () => {
                         method.majors.map((major, idx) => (
                           <tr key={major.majorId} style={{ background: idx % 2 === 0 ? "#f9fbfd" : "#fff" }}>
                             <td style={{ padding: "8px 6px", border: "1px solid #e3eaf5", textAlign: "center" }}>{idx + 1}</td>
-                            <td style={{ padding: "8px 6px", border: "1px solid #e3eaf5" }}>{major.majorId}</td>
                             <td style={{ padding: "8px 6px", border: "1px solid #e3eaf5" }}>{major.majorName}</td>
                             <td style={{ padding: "8px 6px", border: "1px solid #e3eaf5", textAlign: "center" }}>{major.score}</td>
                             <td style={{ padding: "8px 6px", border: "1px solid #e3eaf5" }}>{major.note}</td>
