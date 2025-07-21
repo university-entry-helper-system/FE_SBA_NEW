@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../api/axios";
+import { downloadPdfFile } from "../utils/downloadFile";
 
 interface SubjectCombination {
   subjectCombination: string;
@@ -31,6 +32,7 @@ const UniversityMajorPage = () => {
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!universityId || !majorId) return;
@@ -43,6 +45,16 @@ const UniversityMajorPage = () => {
       .finally(() => setLoading(false));
   }, [universityId, majorId]);
 
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadPdfFile(`/pdf-export/major-admission/download?universityId=${universityId}&majorId=${majorId}`, `diem-chuan-nganh-${universityId}-${majorId}.pdf`);
+    } catch (e) {
+      alert("Không thể tải file PDF.");
+    }
+    setDownloading(false);
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Đang tải...</div>;
   if (error) return <div style={{ padding: 40, color: "#e74c3c", textAlign: "center" }}>{error}</div>;
   if (!data) return null;
@@ -52,6 +64,24 @@ const UniversityMajorPage = () => {
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#223a7a", marginBottom: 12 }}>
         Điểm chuẩn theo ngành - {data.universityName}
       </h1>
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        style={{
+          display: 'inline-block',
+          marginBottom: 24,
+          padding: '8px 20px',
+          background: '#2260b4',
+          color: '#fff',
+          borderRadius: 6,
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: 16,
+          boxShadow: '0 1px 4px rgba(34,96,180,0.08)'
+        }}
+      >
+        {downloading ? "Đang tải..." : "Tải PDF điểm chuẩn ngành"}
+      </button>
       {data.years.length === 0 ? (
         <div style={{ textAlign: "center", padding: 32 }}>Không có dữ liệu.</div>
       ) : (
