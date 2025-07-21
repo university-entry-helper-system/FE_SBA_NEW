@@ -1,7 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getAllUniversityAdmissionMethods } from "../../api/universityAdmissionMethod";
+import {
+  getAllUniversityAdmissionMethods,
+  createUniversityAdmissionMethod,
+  updateUniversityAdmissionMethod,
+  deleteUniversityAdmissionMethod,
+  getUniversityAdmissionMethod,
+} from "../../api/universityAdmissionMethod";
+import { getAdmissionMethods } from "../../api/admissionMethod";
+import type { UniversityAdmissionMethod } from "../../types/universityAdmissionMethod";
+import type { AdmissionMethod } from "../../types/admissionMethod";
 import "../../css/AdminUniversities.css";
+
+const defaultForm: UniversityAdmissionMethod = {
+  universityId: 0,
+  admissionMethodId: 0,
+  year: new Date().getFullYear(),
+  notes: "",
+  conditions: "",
+  regulations: "",
+  admissionTime: "",
+};
 
 interface UniversityAdmissionMethodItem {
   id: number;
@@ -25,6 +44,13 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
   const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState<UniversityAdmissionMethod>(defaultForm);
+  const [selectedMethod, setSelectedMethod] = useState<UniversityAdmissionMethod | null>(null);
+  const [allAdmissionMethods, setAllAdmissionMethods] = useState<AdmissionMethod[]>([]);
+  const [success, setSuccess] = useState("");
 
   const fetchMethods = async () => {
     if (!universityId) return;
@@ -48,10 +74,100 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
     }
   };
 
+  // Fetch all admission methods when form modal opens
+  useEffect(() => {
+    if (showFormModal) {
+      getAdmissionMethods({ page: 0, size: 100 }).then(res => {
+        setAllAdmissionMethods(res.data.result?.items || res.data.items || res.data || []);
+      });
+    }
+  }, [showFormModal]);
+
   useEffect(() => {
     fetchMethods();
     // eslint-disable-next-line
   }, [universityId, page]);
+
+  const handleAdd = () => {
+    setForm({ ...defaultForm, universityId: Number(universityId) });
+    setIsEditing(false);
+    setShowFormModal(true);
+  };
+
+  const handleEdit = async (id: number) => {
+    setLoading(true);
+    try {
+      const res = await getUniversityAdmissionMethod(id);
+      const data = res.data.result || res.data;
+      setForm({
+        universityId: data.universityId,
+        admissionMethodId: data.admissionMethodId,
+        year: data.year,
+        notes: data.notes,
+        conditions: data.conditions,
+        regulations: data.regulations,
+        admissionTime: data.admissionTime,
+      });
+      setIsEditing(true);
+      setShowFormModal(true);
+    } catch {
+      setError("Không thể lấy thông tin phương thức");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleView = async (id: number) => {
+    setLoading(true);
+    try {
+      const res = await getUniversityAdmissionMethod(id);
+      setSelectedMethod(res.data.result || res.data);
+      setShowDetailModal(true);
+    } catch {
+      setError("Không thể lấy thông tin phương thức");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Bạn có chắc muốn xóa phương thức này?")) return;
+    setLoading(true);
+    try {
+      await deleteUniversityAdmissionMethod(id);
+      setSuccess("Xóa phương thức thành công");
+      fetchMethods();
+    } catch {
+      setError("Xóa phương thức thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (isEditing) {
+        await updateUniversityAdmissionMethod(form.admissionMethodId, form);
+        setSuccess("Cập nhật phương thức thành công");
+      } else {
+        await createUniversityAdmissionMethod(form);
+        setSuccess("Thêm phương thức mới thành công");
+      }
+      setShowFormModal(false);
+      fetchMethods();
+    } catch {
+      setError(isEditing ? "Cập nhật phương thức thất bại" : "Thêm phương thức thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="admin-universities">
@@ -64,7 +180,7 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
             Quản lý các phương thức tuyển sinh của trường đại học này
           </p>
         </div>
-        <button className="admin-btn admin-btn-primary add-btn" disabled>
+        <button className="admin-btn admin-btn-primary add-btn" onClick={handleAdd}>
           + Thêm phương thức mới
         </button>
       </div>
@@ -105,13 +221,13 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
                   <td>{method.admissionTime}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="action-btn view-btn" disabled title="Xem chi tiết">
+                      <button className="action-btn view-btn" onClick={() => handleView(method.id)} title="Xem chi tiết">
                         👁️
                       </button>
-                      <button className="action-btn edit-btn" disabled title="Chỉnh sửa">
+                      <button className="action-btn edit-btn" onClick={() => handleEdit(method.id)} title="Chỉnh sửa">
                         ✏️
                       </button>
-                      <button className="action-btn delete-btn" disabled title="Xóa">
+                      <button className="action-btn delete-btn" onClick={() => handleDelete(method.id)} title="Xóa">
                         🗑️
                       </button>
                     </div>
@@ -149,6 +265,80 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
           Sau
         </button>
       </div>
+      {/* Modal for Add/Edit */}
+      {showFormModal && (
+        <div className="modal-overlay" onClick={() => setShowFormModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2>{isEditing ? "Chỉnh sửa phương thức" : "Thêm phương thức mới"}</h2>
+            <form onSubmit={handleFormSubmit} className="modal-form">
+              <div className="form-group">
+                <label>Phương thức</label>
+                <select
+                  name="admissionMethodId"
+                  value={form.admissionMethodId}
+                  onChange={handleFormChange}
+                  required
+                  disabled={isEditing}
+                >
+                  <option value="">-- Chọn phương thức --</option>
+                  {allAdmissionMethods.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Năm</label>
+                <input name="year" type="number" value={form.year} onChange={handleFormChange} required />
+              </div>
+              <div className="form-group">
+                <label>Ghi chú</label>
+                <textarea name="notes" value={form.notes} onChange={handleFormChange} />
+              </div>
+              <div className="form-group">
+                <label>Điều kiện</label>
+                <textarea name="conditions" value={form.conditions} onChange={handleFormChange} />
+              </div>
+              <div className="form-group">
+                <label>Quy chế</label>
+                <textarea name="regulations" value={form.regulations} onChange={handleFormChange} />
+              </div>
+              <div className="form-group">
+                <label>Thời gian tuyển sinh</label>
+                <input name="admissionTime" value={form.admissionTime} onChange={handleFormChange} />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowFormModal(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className="admin-btn admin-btn-primary" disabled={loading}>
+                  {loading ? "Đang lưu..." : isEditing ? "Cập nhật" : "Thêm mới"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal for View */}
+      {showDetailModal && selectedMethod && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2>Chi tiết phương thức</h2>
+            <div><b>Phương thức:</b> {allAdmissionMethods.find(m => m.id === selectedMethod.admissionMethodId)?.name || selectedMethod.admissionMethodId}</div>
+            <div><b>Năm:</b> {selectedMethod.year}</div>
+            <div><b>Ghi chú:</b> {selectedMethod.notes}</div>
+            <div><b>Điều kiện:</b> {selectedMethod.conditions}</div>
+            <div><b>Quy chế:</b> {selectedMethod.regulations}</div>
+            <div><b>Thời gian tuyển sinh:</b> {selectedMethod.admissionTime}</div>
+            <div className="modal-footer">
+              <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowDetailModal(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,6 +3,11 @@ export interface SubjectCombinationSummary {
   name: string;
 }
 
+export interface AdmissionMethodSummary {
+  id: number;
+  name: string;
+}
+
 export interface UniversityMajor {
   id:number;
   universityId: number;
@@ -17,6 +22,7 @@ export interface UniversityMajor {
   score: number;
   // Add for API response compatibility
   subjectCombinations?: SubjectCombinationSummary[];
+  admissionMethods?: AdmissionMethodSummary[];
 } 
 export interface UniversityMajorRequest {
   universityId: number;
@@ -30,4 +36,5 @@ export interface UniversityMajorRequest {
   scores: number;
   // Add for API response compatibility
   subjectCombinations?: SubjectCombinationSummary[];
+  admissionMethods?: AdmissionMethodSummary[];
 } 
