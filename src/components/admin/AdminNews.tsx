@@ -37,6 +37,7 @@ const defaultForm: NewsRequest = {
   imageUrl: "",
   newsStatus: "PUBLISHED",
   publishedAt: "",
+  releaseDate: "",
 };
 
 const AdminNews: React.FC = () => {
@@ -118,6 +119,9 @@ const AdminNews: React.FC = () => {
           publishedAt: values.publishedAt
             ? new Date(values.publishedAt).toISOString()
             : undefined,
+          releaseDate: values.releaseDate
+            ? new Date(values.releaseDate).toISOString()
+            : undefined,
         };
         // Debug: check what is being sent
         // console.log("Submitting:", submitValues);
@@ -163,6 +167,7 @@ const AdminNews: React.FC = () => {
       imageUrl: item.imageUrl,
       newsStatus: item.newsStatus,
       publishedAt: item.publishedAt,
+      releaseDate: item.releaseDate ? item.releaseDate.slice(0, 10) : "",
     });
   };
   const closeForm = () => {
@@ -284,6 +289,8 @@ const AdminNews: React.FC = () => {
               <th>Tiêu đề</th>
               <th>Trường</th>
               <th>Ngày đăng</th>
+              <th>Ngày phát hành</th>
+              <th>Số ngày đến phát hành</th>
               <th>Lượt xem</th>
               <th>Trạng thái</th>
               <th>Hành động</th>
@@ -302,6 +309,8 @@ const AdminNews: React.FC = () => {
                 <td>{item.title}</td>
                 <td>{item.university?.shortName || item.university?.name || ""}</td>
                 <td>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : ""}</td>
+                <td>{item.releaseDate ? new Date(item.releaseDate).toLocaleDateString() : ""}</td>
+                <td>{typeof item.daysToRelease === "number" ? item.daysToRelease : ""}</td>
                 <td>{item.viewCount}</td>
                 <td>{item.newsStatus}</td>
                 <td>
@@ -439,6 +448,16 @@ const AdminNews: React.FC = () => {
               name="publishedAt"
               type="date"
               value={formik.values.publishedAt ? formik.values.publishedAt.slice(0, 10) : ""}
+              onChange={formik.handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Ngày phát hành"
+              name="releaseDate"
+              type="date"
+              value={formik.values.releaseDate ? formik.values.releaseDate : ""}
               onChange={formik.handleChange}
               InputLabelProps={{ shrink: true }}
             />
