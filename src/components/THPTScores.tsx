@@ -156,10 +156,10 @@ const THPTScores = () => {
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
-            Tra Cứu Điểm Thi
+            Tra Cứu Thứ Hạng
           </button>
           <p className="search-note">
-            Nhấn vào đây để tra cứu điểm thi chi tiết theo số báo danh
+            Nhấn vào đây để tra cứu thứ hạng chi tiết theo số báo danh
           </p>
         </div>
       </div>
