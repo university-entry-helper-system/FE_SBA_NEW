@@ -6,6 +6,20 @@ export interface FaqItem {
   answer: string;
   faqType: string; // enum type
 }
+export interface FaqResponse {
+  id: number;
+  question: string;
+  answer: string;
+  status: 'active' | 'deleted';
+  faqType: string; // hoặc enum nếu cần rõ hơn
+}
+export interface PageResponse<T> {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  items: T[];
+}
 
 export const getActiveFaqs = async (): Promise<FaqItem[]> => {
   const res = await axiosInstance.get<FaqItem[]>("/faqs/status/ACTIVE");
@@ -57,3 +71,17 @@ export const getFaqTypes = async (): Promise<
   return res.data;
 };
 
+// Lọc FAQs theo search, phân trang, sắp xếp, lọc faqType và status
+export const filterFaqs = async (params: {
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string; // ví dụ: "question,asc"
+  faqType?: string;
+  status?: string;
+}): Promise<PageResponse<FaqResponse>> => {
+  const res = await axiosInstance.get("/faqs/filter", {
+    params,
+  });
+  return res.data.result;
+};
