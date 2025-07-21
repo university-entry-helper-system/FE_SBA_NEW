@@ -25,28 +25,93 @@ import "../../css/AdminUniversities.css";
 
 const PAGE_SIZE = 8;
 
-// Validation schema
-const NewsSchema = Yup.object().shape({
-  universityId: Yup.string().required("Chọn trường là bắt buộc"),
-  title: Yup.string().max(255).required("Tiêu đề là bắt buộc"),
-  summary: Yup.string().max(500).required("Tóm tắt là bắt buộc"),
-  content: Yup.string().required("Nội dung là bắt buộc"),
-  category: Yup.string().required("Danh mục là bắt buộc"),
-  newsStatus: Yup.string().required("Trạng thái là bắt buộc"),
-});
+// Helper to safely get min value for publishedAt input
+function getPublishedAtMin(): string {
+  return new Date().toISOString().slice(0, 16);
+}
 
-// Default form values
+// Validation schema
+function getNewsSchema() {
+  return Yup.object().shape({
+    universityId: Yup.number()
+      .min(1, "Chọn trường là bắt buộc")
+      .required("Chọn trường là bắt buộc"),
+    title: Yup.string()
+      .trim()
+      .min(1, "Tiêu đề là bắt buộc")
+      .max(255, "Tiêu đề không được quá 255 ký tự")
+      .required("Tiêu đề là bắt buộc"),
+    summary: Yup.string()
+      .trim()
+      .min(1, "Tóm tắt là bắt buộc")
+      .max(500, "Tóm tắt không được quá 500 ký tự")
+      .required("Tóm tắt là bắt buộc"),
+    content: Yup.string()
+      .trim()
+      .min(1, "Nội dung là bắt buộc")
+      .required("Nội dung là bắt buộc"),
+    category: Yup.string().required("Danh mục là bắt buộc"),
+    newsStatus: Yup.string().required("Trạng thái là bắt buộc"),
+    publishedAt: Yup.string().when(
+      [],
+      (publishedAt, schema, context: unknown) => {
+        // context?.mode === 'edit' thì bỏ validate
+        if (
+          context &&
+          typeof context === "object" &&
+          (context as { mode?: string }).mode === "edit"
+        ) {
+          return schema;
+        }
+        return schema
+          .required("Ngày đăng là bắt buộc")
+          .test(
+            "is-future",
+            "Ngày đăng phải từ hiện tại trở đi",
+            function (value) {
+              if (!value) return false;
+              return new Date(value) >= new Date(getPublishedAtMin());
+            }
+          );
+      }
+    ),
+    releaseDate: Yup.string()
+      .required("Ngày phát hành là bắt buộc")
+      .test(
+        "is-after-publishedAt",
+        "Ngày phát hành phải sau hoặc bằng ngày đăng",
+        function (value) {
+          const { publishedAt } = this.parent;
+          if (!value || !publishedAt) return false;
+          return new Date(value) >= new Date(publishedAt);
+        }
+      ),
+  });
+}
+
+// Default form values - SỬA: universityId mặc định là 1 thay vì 0
 const defaultForm: NewsRequest = {
-  universityId: 0, // <-- use 0 (or another default number)
+  universityId: 1, // Thay đổi từ 0 thành 1
   title: "",
   summary: "",
   content: "",
-  category: "ADMISSION_INFO", // Sửa thành enum name
+  category: "ADMISSION_INFO",
   image: null,
   imageUrl: "",
   newsStatus: "PUBLISHED",
   publishedAt: "",
   releaseDate: "",
+};
+
+// Helper lấy URL ảnh đầy đủ từ Minio cho news
+const getImageUrl = (imageUrl?: string) => {
+  if (!imageUrl) return "https://placehold.co/80x50?text=No+Image";
+  if (imageUrl.startsWith("http")) {
+    let url = imageUrl.split("?")[0];
+    url = url.replace("minio:9000", "localhost:9000");
+    return url;
+  }
+  return `http://localhost:9000/mybucket/${imageUrl}`;
 };
 
 const AdminNews: React.FC = () => {
@@ -122,40 +187,102 @@ const AdminNews: React.FC = () => {
     newsStatus,
   ]);
 
+  // Helper: convert date string to ISO 8601 with +07:00 timezone (BE guide)
+  function toGmt7ISOString(dateStr: string | undefined) {
+    if (!dateStr || dateStr.trim() === "") return "";
+    // dateStr: '2025-07-21T20:44' hoặc '2025-07-21T20:44:00'
+    const [date, time] = dateStr.split("T");
+    if (!date || !time) return "";
+    // Thêm giây nếu thiếu
+    const timeWithSec = time.length === 5 ? `${time}:00` : time;
+    // Kết hợp lại và thêm +07:00
+    return `${date}T${timeWithSec}+07:00`;
+  }
+
+  // Helper: Hiển thị ngày giờ theo giờ Việt Nam
+  function toVNLocaleString(dateStr: string | undefined) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  }
+
+  // Helper: Định dạng cho input datetime-local (YYYY-MM-DDTHH:mm) theo GMT+7
+  function formatDateForInput(dateStr: string | undefined) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    // Chuyển sang giờ Việt Nam (GMT+7)
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const gmt7 = new Date(utc + 7 * 60 * 60000);
+    return gmt7.toISOString().slice(0, 16);
+  }
+
   // Formik for form
   const formik = useFormik<NewsRequest>({
     initialValues: defaultForm,
-    validationSchema: NewsSchema,
+    validate: (values) => {
+      try {
+        getNewsSchema().validateSync(values, { context: { mode } });
+        return {};
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          return err.inner.reduce((acc, curr) => {
+            if (curr.path) acc[curr.path] = curr.message;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+        return {};
+      }
+    },
     enableReinitialize: true,
+    validateOnChange: true,
+    validateOnBlur: true,
     onSubmit: async (values, { resetForm }) => {
       setError("");
       setLoading(true);
       try {
-        const submitValues = {
-          ...values,
-          universityId: Number(values.universityId) || 0,
-          publishedAt: values.publishedAt
-            ? new Date(values.publishedAt).toISOString()
-            : undefined,
-          releaseDate: values.releaseDate
-            ? new Date(values.releaseDate).toISOString()
-            : undefined,
-        };
-        // Debug: check what is being sent
-        // console.log("Submitting:", submitValues);
+        // Log giá trị formik.values để debug
+        console.log("=== formik.values ===", values);
+        // Chuyển đổi ngày sang chuẩn ISO 8601 +07:00
+        let valuesToSend: Record<string, any>;
         if (mode === "create") {
-          await newsApi.createNews(submitValues);
-          setSuccess("Tạo tin tức thành công!");
+          valuesToSend = {
+            ...values,
+            publishedAt: toGmt7ISOString(values.publishedAt || ""),
+            releaseDate: toGmt7ISOString(values.releaseDate || ""),
+          };
+          await newsApi.createNews(valuesToSend);
         } else if (mode === "edit" && selectedNews) {
-          await newsApi.updateNews(selectedNews.id, submitValues);
-          setSuccess("Cập nhật tin tức thành công!");
+          valuesToSend = {
+            ...values,
+            releaseDate: toGmt7ISOString(values.releaseDate || ""),
+          };
+          delete valuesToSend.publishedAt;
+          await newsApi.updateNews(selectedNews.id, valuesToSend);
         }
+        setSuccess(
+          mode === "create"
+            ? "Tạo tin tức thành công!"
+            : "Cập nhật tin tức thành công!"
+        );
         setShowForm(false);
         resetForm();
         setImagePreview(null);
         fetchNews(page, searchInput);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Có lỗi xảy ra.");
+      } catch (err: unknown) {
+        let msg = "Có lỗi xảy ra.";
+        if (err instanceof Error) {
+          msg = err.message;
+        } else if (
+          typeof err === "object" &&
+          err &&
+          "response" in err &&
+          typeof (err as { response?: { data?: { message?: string } } })
+            .response?.data?.message === "string"
+        ) {
+          msg = (err as { response?: { data?: { message?: string } } })
+            .response!.data!.message!;
+        }
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -168,32 +295,50 @@ const AdminNews: React.FC = () => {
     setShowForm(true);
     setImagePreview(null);
     setSelectedNews(null);
-    formik.resetForm();
+
+    // SỬA: Set giá trị mặc định tốt hơn khi tạo mới
+    const now = new Date();
+    const defaultPublishedAt = now.toISOString().slice(0, 16);
+    const defaultReleaseDate = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16);
+
+    formik.setValues({
+      ...defaultForm,
+      universityId: universities.length > 0 ? universities[0].id : 1, // Chọn trường đầu tiên
+      publishedAt: defaultPublishedAt,
+      releaseDate: defaultReleaseDate,
+    });
   };
+
   const openEditForm = (item: NewsResponse) => {
     setMode("edit");
     setShowForm(true);
     setSelectedNews(item);
     setImagePreview(item.imageUrl || null);
+
+    // publishedAt và releaseDate luôn lấy từ DB (item), convert về local input
     formik.setValues({
-      universityId: item.university?.id ?? 0,
-      title: item.title,
-      summary: item.summary,
-      content: item.content,
-      category: item.category,
+      universityId: item.university?.id ?? 1,
+      title: item.title || "",
+      summary: item.summary || "",
+      content: item.content || "",
+      category: item.category || "ADMISSION_INFO",
       image: null,
-      imageUrl: item.imageUrl,
-      newsStatus: item.newsStatus,
-      publishedAt: item.publishedAt,
-      releaseDate: item.releaseDate ? item.releaseDate.slice(0, 10) : "",
+      imageUrl: item.imageUrl || "",
+      newsStatus: item.newsStatus || "PUBLISHED",
+      publishedAt: formatDateForInput(item.publishedAt),
+      releaseDate: formatDateForInput(item.releaseDate),
     });
   };
+
   const closeForm = () => {
     setShowForm(false);
     setImagePreview(null);
     setSelectedNews(null);
     formik.resetForm();
   };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     formik.setFieldValue("image", file);
@@ -205,9 +350,11 @@ const AdminNews: React.FC = () => {
       setImagePreview(null);
     }
   };
+
   const handleContentChange = (value: string) => {
     formik.setFieldValue("content", value);
   };
+
   const handleDelete = async (item: NewsResponse) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa tin này?")) return;
     setLoading(true);
@@ -216,12 +363,33 @@ const AdminNews: React.FC = () => {
       await newsApi.deleteNews(item.id);
       setSuccess("Đã xóa tin tức.");
       fetchNews(page, searchInput);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Có lỗi xảy ra khi xóa.");
+    } catch (err: unknown) {
+      let msg = "Có lỗi xảy ra khi xóa.";
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (
+        typeof err === "object" &&
+        err &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response
+          ?.data?.message === "string"
+      ) {
+        msg = (err as { response?: { data?: { message?: string } } }).response!
+          .data!.message!;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  // Helper to safely get min value for releaseDate input
+  function getReleaseDateMin(publishedAt: string): string {
+    if (typeof publishedAt === "string" && publishedAt) {
+      return publishedAt.slice(0, 16);
+    }
+    return new Date().toISOString().slice(0, 16);
+  }
 
   // Render
   return (
@@ -284,10 +452,7 @@ const AdminNews: React.FC = () => {
                 <tr key={item.id} className="table-row">
                   <td>
                     <img
-                      src={
-                        item.imageUrl ||
-                        "https://placehold.co/80x50?text=No+Image"
-                      }
+                      src={getImageUrl(item.imageUrl)}
                       alt={item.title}
                       style={{
                         width: 80,
@@ -301,16 +466,8 @@ const AdminNews: React.FC = () => {
                   <td>
                     {item.university?.shortName || item.university?.name || ""}
                   </td>
-                  <td>
-                    {item.publishedAt
-                      ? new Date(item.publishedAt).toLocaleDateString()
-                      : ""}
-                  </td>
-                  <td>
-                    {item.releaseDate
-                      ? new Date(item.releaseDate).toLocaleDateString()
-                      : ""}
-                  </td>
+                  <td>{toVNLocaleString(item.publishedAt)}</td>
+                  <td>{toVNLocaleString(item.releaseDate)}</td>
                   <td>
                     {typeof item.daysToRelease === "number"
                       ? item.daysToRelease
@@ -366,30 +523,47 @@ const AdminNews: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
         {totalPages > 1 && (
-          <Box
-            className="admin-pagination"
-            mt={2}
-            display="flex"
-            gap={1}
-            justifyContent="center"
-          >
-            {Array.from({ length: totalPages }).map((_, idx) => (
-              <Button
-                key={idx}
-                variant={idx === page ? "contained" : "outlined"}
-                color="primary"
-                onClick={() => setPage(idx)}
-                disabled={idx === page}
-                sx={{ minWidth: 36 }}
+          <div className="pagination">
+            <button
+              className="pagination-btn"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                {idx + 1}
-              </Button>
-            ))}
-          </Box>
+                <polyline points="15,18 9,12 15,6" />
+              </svg>
+              Trước
+            </button>
+            <div className="pagination-info">
+              <span>
+                Trang {page + 1} / {totalPages}
+              </span>
+            </div>
+            <button
+              className="pagination-btn"
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Sau
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="9,18 15,12 9,6" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
+
       {/* Form Dialog */}
       <Dialog open={showForm} onClose={closeForm} maxWidth="md" fullWidth>
         <DialogTitle>
@@ -407,8 +581,10 @@ const AdminNews: React.FC = () => {
               <Select
                 labelId="universityId-label"
                 name="universityId"
-                value={formik.values.universityId}
-                onChange={formik.handleChange}
+                value={formik.values.universityId || ""}
+                onChange={(e) =>
+                  formik.setFieldValue("universityId", Number(e.target.value))
+                }
                 required
                 label="Trường"
                 error={
@@ -416,9 +592,8 @@ const AdminNews: React.FC = () => {
                 }
                 disabled={universitiesLoading}
               >
-                <MenuItem value="">-- Chọn trường --</MenuItem>
                 {universities.map((u) => (
-                  <MenuItem key={u.id} value={u.id.toString()}>
+                  <MenuItem key={u.id} value={u.id}>
                     {u.shortName || u.name}
                   </MenuItem>
                 ))}
@@ -429,6 +604,7 @@ const AdminNews: React.FC = () => {
                 </Typography>
               )}
             </FormControl>
+
             <TextField
               fullWidth
               margin="normal"
@@ -441,6 +617,7 @@ const AdminNews: React.FC = () => {
               inputProps={{ maxLength: 255 }}
               required
             />
+
             <TextField
               fullWidth
               margin="normal"
@@ -453,6 +630,7 @@ const AdminNews: React.FC = () => {
               inputProps={{ maxLength: 500 }}
               required
             />
+
             <Box marginY={2}>
               <Typography fontWeight={600} mb={1}>
                 Nội dung
@@ -460,7 +638,6 @@ const AdminNews: React.FC = () => {
               <TiptapEditor
                 value={formik.values.content}
                 onChange={handleContentChange}
-                minHeight={180}
               />
               {formik.touched.content && formik.errors.content && (
                 <Typography color="error" variant="caption">
@@ -468,6 +645,7 @@ const AdminNews: React.FC = () => {
                 </Typography>
               )}
             </Box>
+
             <FormControl fullWidth margin="normal">
               <InputLabel id="category-label">Danh mục</InputLabel>
               <Select
@@ -481,6 +659,7 @@ const AdminNews: React.FC = () => {
                 error={
                   formik.touched.category && Boolean(formik.errors.category)
                 }
+                required
               >
                 <MenuItem value="ADMISSION_INFO">Thông tin tuyển sinh</MenuItem>
                 <MenuItem value="EXAM_SCHEDULE">Lịch thi</MenuItem>
@@ -495,9 +674,12 @@ const AdminNews: React.FC = () => {
                 <MenuItem value="OTHER">Khác</MenuItem>
               </Select>
               {formik.touched.category && formik.errors.category && (
-                <div className="form-error">{formik.errors.category}</div>
+                <Typography color="error" variant="caption">
+                  {formik.errors.category}
+                </Typography>
               )}
             </FormControl>
+
             <Box marginY={2}>
               <Typography fontWeight={600} mb={1}>
                 Ảnh
@@ -522,30 +704,48 @@ const AdminNews: React.FC = () => {
                 />
               )}
             </Box>
+
             <TextField
               fullWidth
               margin="normal"
               label="Ngày đăng"
               name="publishedAt"
-              type="date"
-              value={
-                formik.values.publishedAt
-                  ? formik.values.publishedAt.slice(0, 10)
-                  : ""
-              }
+              type="datetime-local"
+              value={formik.values.publishedAt || ""}
               onChange={formik.handleChange}
+              error={
+                !!formik.touched.publishedAt && !!formik.errors.publishedAt
+              }
+              helperText={
+                formik.touched.publishedAt && formik.errors.publishedAt
+              }
               InputLabelProps={{ shrink: true }}
+              inputProps={{ min: getPublishedAtMin() }}
+              disabled={mode === "edit"}
+              required
             />
+
             <TextField
               fullWidth
               margin="normal"
               label="Ngày phát hành"
               name="releaseDate"
-              type="date"
-              value={formik.values.releaseDate ? formik.values.releaseDate : ""}
+              type="datetime-local"
+              value={formik.values.releaseDate || ""}
               onChange={formik.handleChange}
+              error={
+                !!formik.touched.releaseDate && !!formik.errors.releaseDate
+              }
+              helperText={
+                formik.touched.releaseDate && formik.errors.releaseDate
+              }
               InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: getReleaseDateMin(String(formik.values.publishedAt ?? "")),
+              }}
+              required
             />
+
             <FormControl fullWidth margin="normal">
               <InputLabel id="newsStatus-label">Trạng thái</InputLabel>
               <Select
