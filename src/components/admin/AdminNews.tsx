@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import "../../css/AdminUniversities.css";
+import "../../css/AdminNews.css";
 
 const PAGE_SIZE = 8;
 
@@ -428,7 +428,7 @@ const AdminNews: React.FC = () => {
       </div>
 
       {/* Advanced Filter UI */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, margin: '16px 0' }}>
+      <div className="admin-news-filter-row">
         <TextField
           label="Tìm kiếm"
           value={searchInput}
@@ -509,16 +509,16 @@ const AdminNews: React.FC = () => {
         </Button>
       </div>
       {loading && (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
+        <div className="admin-news-loading-container">
+          <div className="admin-news-loading-spinner"></div>
           <p>Đang tải dữ liệu...</p>
         </div>
       )}
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-      <div className="table-container">
+      {error && <div className="admin-news-alert alert-error">{error}</div>}
+      {success && <div className="admin-news-alert alert-success">{success}</div>}
+      <div className="admin-news-table-container">
         <div className="table-wrapper">
-          <table className="data-table">
+          <table className="admin-news-table">
             <thead>
               <tr>
                 <th>Ảnh</th>
@@ -561,7 +561,7 @@ const AdminNews: React.FC = () => {
                   <td>{item.viewCount}</td>
                   <td>{item.newsStatus}</td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="admin-news-action-buttons">
                       <button
                         className="action-btn edit-btn"
                         onClick={() => openEditForm(item)}
@@ -609,7 +609,7 @@ const AdminNews: React.FC = () => {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="pagination">
+          <div className="admin-news-pagination">
             <button
               className="pagination-btn"
               disabled={page === 0}
@@ -650,7 +650,7 @@ const AdminNews: React.FC = () => {
       </div>
 
       {/* Form Dialog */}
-      <Dialog open={showForm} onClose={closeForm} maxWidth="md" fullWidth>
+      <Dialog open={showForm} onClose={closeForm} maxWidth="md" fullWidth className="admin-news-form-dialog">
         <DialogTitle>
           {mode === "create" ? "Thêm tin mới" : "Sửa tin tức"}
         </DialogTitle>
