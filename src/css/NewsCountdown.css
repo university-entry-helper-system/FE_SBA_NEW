@@ -46,6 +46,7 @@
   font-size: 2.2rem;
   font-weight: 800;
   margin-bottom: 10px;
+  color: #222;
 }
 
 .gradient-text {
@@ -86,7 +87,7 @@
 .banner-main-title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #22c55e;
+  color: #222;
   margin-top: 8px;
   margin-bottom: 2px;
   letter-spacing: 0.01em;
@@ -178,6 +179,7 @@
   font-weight: 700;
   margin: 18px 0 18px 0;
   text-align: center;
+  color: #222;
 }
 
 .countdown-news-grid {
@@ -319,7 +321,7 @@
 }
 
 .news-title {
-  color: #22c55e;
+  color: #222;
 }
 
 .news-card-university {
