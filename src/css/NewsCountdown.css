@@ -1,0 +1,357 @@
+:root {
+  --countdown-primary: #22c55e;
+  --countdown-secondary: #4ade80;
+  --countdown-green: #22c55e;
+  --countdown-blue: #3b82f6;
+  --countdown-purple: #22c55e;
+  --countdown-orange: #f59e42;
+  --countdown-bg: linear-gradient(135deg, #e0ffe7 0%, #e0fce7 100%);
+  --glass-bg: rgba(255,255,255,0.55);
+  --glass-border: rgba(34,197,94,0.18);
+  --shadow: 0 8px 32px 0 rgba(34,197,94,0.12);
+}
+
+.news-countdown-root {
+  background: var(--countdown-bg);
+  min-height: 100vh;
+  padding: 0 0 48px 0;
+}
+
+.countdown-banner-glass {
+  position: relative;
+  margin: 0 auto 32px auto;
+  max-width: 900px;
+  border-radius: 24px;
+  background: var(--glass-bg);
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--glass-border);
+  overflow: hidden;
+  padding: 36px 24px 32px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  z-index: 1;
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.8s;
+}
+
+.banner-content {
+  flex: 1;
+  z-index: 2;
+  text-align: center;
+}
+
+.banner-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--countdown-primary), var(--countdown-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.banner-countdown {
+  margin: 12px 0 8px 0;
+  font-size: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-badge {
+  display: inline-block;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #e0e7ff, #f0f4ff);
+  color: var(--countdown-primary);
+  box-shadow: 0 2px 12px 0 rgba(79,140,255,0.10);
+  animation: pulse 1.2s infinite;
+  margin-bottom: 4px;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(79,140,255,0.18); }
+  70% { box-shadow: 0 0 0 16px rgba(79,140,255,0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(79,140,255,0.18); }
+}
+
+.banner-main-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  letter-spacing: 0.01em;
+}
+
+.banner-desc {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.banner-date {
+  margin-bottom: 8px;
+}
+
+.banner-date-badge {
+  background: #e0ffe7;
+  color: var(--countdown-primary);
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-weight: 600;
+  font-size: 1rem;
+  display: inline-block;
+}
+
+.banner-socials {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+.social-icon {
+  font-size: 1.5rem;
+  color: var(--countdown-primary);
+  background: #fff;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px 0 rgba(79,140,255,0.10);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.social-icon:hover {
+  background: var(--countdown-primary);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.banner-decor-1, .banner-decor-2 {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.18;
+  z-index: 0;
+}
+.banner-decor-1 {
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, var(--countdown-primary), #fff 80%);
+  top: -60px;
+  left: -60px;
+  animation: floatY 4s ease-in-out infinite;
+}
+.banner-decor-2 {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, var(--countdown-secondary), #fff 80%);
+  bottom: -40px;
+  right: -40px;
+  animation: floatX 5s ease-in-out infinite;
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(18px); }
+}
+@keyframes floatX {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-18px); }
+}
+
+.countdown-news-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 18px 0 18px 0;
+  text-align: center;
+  color: #222;
+}
+
+.countdown-news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.countdown-news-card {
+  background: var(--glass-bg);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--glass-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+  min-height: 340px;
+  position: relative;
+  backdrop-filter: blur(8px);
+  animation: fadeInUp 0.7s;
+}
+.countdown-news-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 12px 32px 0 rgba(79,140,255,0.18);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1.5px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+}
+
+.floating {
+  animation: floatCard 3.5s ease-in-out infinite;
+}
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.countdown-card-img-wrap {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.countdown-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4ff;
+  border-radius: 12px;
+  margin-right: 8px;
+  font-size: 2rem;
+}
+.countdown-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 0 12px 12px;
+  transition: filter 0.2s;
+}
+.countdown-news-card:hover .countdown-card-img {
+  filter: brightness(0.92) blur(1px);
+}
+
+.countdown-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(79,140,255,0.10);
+  z-index: 2;
+  animation: badgePop 0.7s;
+}
+@keyframes badgePop {
+  0% { transform: scale(0.7); opacity: 0; }
+  80% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.countdown-badge.green { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.countdown-badge.blue { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.countdown-badge.purple { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.countdown-badge.orange { background: linear-gradient(90deg, #f59e42, #fbbf24); }
+
+.countdown-card-content {
+  flex: 1;
+  padding: 18px 18px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.countdown-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #222;
+  min-height: 48px;
+}
+.countdown-card-date {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 8px;
+}
+.countdown-card-link {
+  color: #22c55e;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 4px;
+  transition: color 0.18s;
+}
+.countdown-card-link:hover {
+  color: #16a34a;
+  text-decoration: underline;
+}
+
+.countdown-loading, .countdown-error, .countdown-empty {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #888;
+  margin: 32px 0 18px 0;
+}
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+
+.news-title {
+  color: #222;
+}
+
+.news-card-university {
+  color: #22c55e;
+}
+
+.news-card-date {
+  color: #22c55e;
+}
+
+@media (max-width: 900px) {
+  .countdown-banner-glass { padding: 24px 8px; }
+  .countdown-news-section { padding: 0 2px; }
+  .countdown-news-grid { gap: 16px; }
+}
+@media (max-width: 600px) {
+  .news-countdown-root { padding: 0 0 24px 0; }
+  .countdown-banner-glass { min-height: 120px; padding: 16px 2px; }
+  .banner-title { font-size: 1.2rem; }
+  .section-title { font-size: 1.1rem; }
+  .countdown-news-card { min-height: 220px; }
+  .countdown-card-content { padding: 10px 8px 8px 8px; }
+  .countdown-card-title { font-size: 1rem; min-height: 32px; }
+  .countdown-card-date { font-size: 0.85rem; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+} 
