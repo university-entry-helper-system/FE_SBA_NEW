@@ -1,5 +1,5 @@
 // News status
-export type NewsStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED" | "HOT";
+export type NewsStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 
 // News category (có thể mở rộng)
 export type NewsCategory = string;
@@ -29,6 +29,8 @@ export interface NewsResponse {
   createdBy: string;
   updatedAt?: string;
   updatedBy?: string;
+  releaseDate?: string;
+  daysToRelease?: number;
 }
 
 // NewsRequest (tạo/sửa)
@@ -42,6 +44,7 @@ export interface NewsRequest {
   imageUrl?: string;
   newsStatus?: NewsStatus;
   publishedAt?: string;
+  releaseDate?: string;
 }
 
 // Phân trang

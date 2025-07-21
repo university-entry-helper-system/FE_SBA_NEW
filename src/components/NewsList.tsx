@@ -126,6 +126,16 @@ const NewsList: React.FC = () => {
                         ? new Date(item.publishedAt).toLocaleDateString()
                         : ""}
                     </span>
+                    {/* Hiển thị số ngày đến phát hành nếu có */}
+                    {typeof item.daysToRelease === "number" && (
+                      <span className="news-card-daysToRelease">
+                        {item.daysToRelease > 0
+                          ? `Còn ${item.daysToRelease} ngày đến phát hành`
+                          : item.daysToRelease === 0
+                          ? "Phát hành hôm nay"
+                          : `Đã phát hành ${-item.daysToRelease} ngày trước`}
+                      </span>
+                    )}
                   </div>
                   <div className="news-card-views">👁 {item.viewCount}</div>
                 </div>

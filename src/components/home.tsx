@@ -7,9 +7,11 @@ import AdmissionMethodsCarousel from "./AdmissionMethodsCarousel"; // Import the
 import { getAllUniversities, searchUniversities } from "../api/university";
 import { getMajors } from "../api/major";
 import { getSubjectCombinations } from "../api/subjectCombination";
+import { getTopHotNews } from "../api/news";
 import type { University } from "../types/university";
 import type { Major } from "../types/major";
 import type { SubjectCombination } from "../types/subjectCombination";
+import type { NewsResponse } from "../types/news";
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
@@ -26,6 +28,9 @@ const HomePage = () => {
   const [subjectCombinations, setSubjectCombinations] = useState<SubjectCombination[]>([]);
   const [loadingSearchData, setLoadingSearchData] = useState(false);
   const [errorSearchData, setErrorSearchData] = useState("");
+  const [hotNews, setHotNews] = useState<NewsResponse[]>([]);
+  const [loadingHotNews, setLoadingHotNews] = useState(false);
+  const [errorHotNews, setErrorHotNews] = useState("");
 
   const navigate = useNavigate();
 
@@ -59,6 +64,17 @@ const HomePage = () => {
         setErrorSearchData("Không thể tải dữ liệu tìm kiếm");
       })
       .finally(() => setLoadingSearchData(false));
+  }, []);
+
+  useEffect(() => {
+    setLoadingHotNews(true);
+    setErrorHotNews("");
+    getTopHotNews()
+      .then((res) => {
+        setHotNews(res.data.result || []);
+      })
+      .catch(() => setErrorHotNews("Không thể tải tin nổi bật"))
+      .finally(() => setLoadingHotNews(false));
   }, []);
 
   useEffect(() => {
@@ -283,21 +299,21 @@ const HomePage = () => {
 
       <section className="news-section">
         <h2 className="news-title">Tin tức tuyển sinh mới nhất</h2>
-        <ul className="news-list">
-          <li>
-            <Link to="/news/1">
-              ĐH Bách Khoa Hà Nội công bố đề án tuyển sinh 2025
-            </Link>
-          </li>
-          <li>
-            <Link to="/news/2">ĐH FPT mở thêm ngành mới năm 2025</Link>
-          </li>
-          <li>
-            <Link to="/news/3">
-              Bộ GD&ĐT cập nhật phương thức xét tuyển đại học
-            </Link>
-          </li>
-        </ul>
+        {loadingHotNews ? (
+          <div>Đang tải...</div>
+        ) : errorHotNews ? (
+          <div>{errorHotNews}</div>
+        ) : (
+          <ul className="news-list">
+            {hotNews.map((item) => (
+              <li key={item.id}>
+                <Link to={`/news/${item.id}`}>
+                  {item.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
