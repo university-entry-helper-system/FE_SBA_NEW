@@ -7,7 +7,6 @@ import type { MultiValue } from "react-select";
 import {getTopUniversityOnDate} from "../../api/stats.ts";
 import { useNavigate } from "react-router-dom";
 
-
 const defaultForm = {
   universityCode: "",
   name: "",
@@ -39,7 +38,6 @@ const AdminUniversities: React.FC = () => {
     universityName: string;
     totalSearches: number;
   } | null>(null);
-  const navigate = useNavigate();
   // Pagination, search, sort
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -60,6 +58,8 @@ const AdminUniversities: React.FC = () => {
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     []
   );
+  const navigate = useNavigate();
+  // Remove dropdownNode and openDropdown state and related logic
 
   // Key lưu localStorage
   const FORM_STORAGE_KEY = "adminUniversityForm";
@@ -661,6 +661,20 @@ const AdminUniversities: React.FC = () => {
                             <line x1="10" y1="11" x2="10" y2="17" />
                             <line x1="14" y1="11" x2="14" y2="17" />
                           </svg>
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={() => navigate(`/admin/universities/${university.id}/majors`)}
+                          title="Quản lý ngành"
+                        >
+                          🏫
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={() => navigate(`/admin/universities/${university.id}/admission-methods`)}
+                          title="Quản lý phương thức tuyển sinh"
+                        >
+                          📋
                         </button>
                       </div>
                     </td>
