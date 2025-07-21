@@ -37,6 +37,8 @@ import UniversityMajorPage from "../components/UniversityMajorPage";
 import THPTScores from "../components/THPTScores";
 import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
+import AdminUniversityMajorPage from "../components/admin/AdminUniversityMajorPage";
+import AdminUniversityAdmissionMethodPage from "../components/admin/AdminUniversityAdmissionMethodPage";
 import Majors from "../components/Majors";
 import Contact from "../components/Contact";
 
@@ -68,6 +70,8 @@ const AppRouter = () => {
           <Route index element={<AdminDashboard />} />
           {/* Nested admin routes */}
           <Route path="universities" element={<AdminUniversities />} />
+          <Route path="universities/:universityId/majors" element={<AdminUniversityMajorPage />} />
+          <Route path="universities/:universityId/admission-methods" element={<AdminUniversityAdmissionMethodPage />} />
           <Route path="majors" element={<AdminMajors />} />
           <Route path="provinces" element={<AdminProvince />} />
           <Route path="categories" element={<UniversityCategoryPage />} />
