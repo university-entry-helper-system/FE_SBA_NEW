@@ -38,6 +38,7 @@ import THPTScores from "../components/THPTScores";
 import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
 import Majors from "../components/Majors";
+import Contact from "../components/Contact";
 
 const UserLayout = () => {
   return (
@@ -134,6 +135,7 @@ const AppRouter = () => {
           <Route path="/thpt-scores" element={<THPTScores />} />
           <Route path="/dgnl-hcm-scores" element={<DGNLHCMScores />} />
           <Route path="/dgnl-hanoi-scores" element={<DGNLHanoiScores />} />
+          <Route path="/contact" element={<Contact />} />
           {/* Other user routes */}
         </Route>
       </Routes>
