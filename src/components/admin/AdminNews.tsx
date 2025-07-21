@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import * as newsApi from "../../api/news";
+import {filterNews} from "../../api/news";
 import * as universityApi from "../../api/university";
-import type { NewsResponse, NewsRequest, NewsFormMode } from "../../types/news";
-import type { University } from "../../types/university";
+import type {NewsFormMode, NewsRequest, NewsResponse} from "../../types/news";
+import type {University} from "../../types/university";
 import TiptapEditor from "./TiptapEditor";
-import { filterNews } from "../../api/news";
 import {
   Box,
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
+  DialogContent,
+  DialogTitle,
   FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
   Typography,
 } from "@mui/material";
-import { useFormik } from "formik";
+import {useFormik} from "formik";
 import * as Yup from "yup";
 import "../../css/AdminNews.css";
 
@@ -54,7 +54,7 @@ function getNewsSchema() {
     newsStatus: Yup.string().required("Trạng thái là bắt buộc"),
     publishedAt: Yup.string().when(
       [],
-      (publishedAt, schema, context: unknown) => {
+      (_publishedAt, schema, context: unknown) => {
         // context?.mode === 'edit' thì bỏ validate
         if (
           context &&
@@ -240,56 +240,81 @@ const AdminNews: React.FC = () => {
       setError("");
       setLoading(true);
       try {
-        // Log giá trị formik.values để debug
-        console.log("=== formik.values ===", values);
-        // Chuyển đổi ngày sang chuẩn ISO 8601 +07:00
-        let valuesToSend: Record<string, any>;
+        let valuesToSend: NewsRequest = { // Thay đổi từ Record<string, any> sang NewsRequest
+          ...values,
+          publishedAt: toGmt7ISOString(values.publishedAt || ""),
+          releaseDate: toGmt7ISOString(values.releaseDate || ""),
+        };
         if (mode === "create") {
           valuesToSend = {
             ...values,
             publishedAt: toGmt7ISOString(values.publishedAt || ""),
             releaseDate: toGmt7ISOString(values.releaseDate || ""),
           };
-          await newsApi.createNews(valuesToSend);
+          const res = await newsApi.createNews(valuesToSend);
+          // Cập nhật trực tiếp danh sách tin tức sau khi tạo mới
+          res.data.result.publishedAt = values.publishedAt;
+            res.data.result.releaseDate = values.releaseDate;
+          if (res.data.result.publishedAt && res.data.result.releaseDate) {
+            // Lấy ngày hiện tại
+            const currentDate = new Date();
+
+
+            const releaseDate = new Date(res.data.result.releaseDate);
+
+
+            let daysToRelease = 0;
+            if (releaseDate > currentDate) {
+              // Tính số mili giây giữa ngày hiện tại và ngày phát hành
+              const diffInMillis = releaseDate.getTime() - currentDate.getTime();
+
+              // Chuyển mili giây thành số ngày
+              daysToRelease = Math.ceil(diffInMillis / (1000 * 3600 * 24));
+            }
+
+
+            res.data.result.daysToRelease = daysToRelease;
+
+          }
+
+          setNews([res.data.result, ...news]); // Thêm tin mới vào đầu danh sách
         } else if (mode === "edit" && selectedNews) {
           valuesToSend = {
             ...values,
-            // Luôn giữ publishedAt gốc từ DB, không lấy từ form
             publishedAt: selectedNews.publishedAt,
             releaseDate: toGmt7ISOString(values.releaseDate || ""),
           };
-          // Nếu API không cho phép update publishedAt, xóa trường này trước khi gửi
-          delete valuesToSend.publishedAt;
           await newsApi.updateNews(selectedNews.id, valuesToSend);
+          // Cập nhật tin tức đã sửa trong danh sách
+          // Giữ nguyên giá trị này
+          setNews(news.map((item) => item.id === selectedNews.id ? { ...item, ...valuesToSend } : item));
         }
         setSuccess(
-          mode === "create"
-            ? "Tạo tin tức thành công!"
-            : "Cập nhật tin tức thành công!"
+            mode === "create" ? "Tạo tin tức thành công!" : "Cập nhật tin tức thành công!"
         );
         setShowForm(false);
         resetForm();
         setImagePreview(null);
-        fetchNews(page, searchInput);
       } catch (err: unknown) {
         let msg = "Có lỗi xảy ra.";
         if (err instanceof Error) {
           msg = err.message;
         } else if (
-          typeof err === "object" &&
-          err &&
-          "response" in err &&
-          typeof (err as { response?: { data?: { message?: string } } })
-            .response?.data?.message === "string"
+            typeof err === "object" &&
+            err &&
+            "response" in err &&
+            typeof (err as { response?: { data?: { message?: string } } })
+                .response?.data?.message === "string"
         ) {
           msg = (err as { response?: { data?: { message?: string } } })
-            .response!.data!.message!;
+              .response!.data!.message!;
         }
         setError(msg);
       } finally {
         setLoading(false);
       }
     },
+
   });
 
   // Handlers
