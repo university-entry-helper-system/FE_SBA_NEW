@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import emailjs from "@emailjs/browser";
 import "../css/Contact.css";
 
 const Contact = () => {
+  const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -30,11 +32,27 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitStatus("idle");
 
-    // Simulate API call
+    // EmailJS configuration
+    const serviceID =
+      import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_xkvi6fi";
+    const templateID =
+      import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_wt73syk";
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Send email using EmailJS
+      const result = await emailjs.sendForm(
+        serviceID,
+        templateID,
+        formRef.current!,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "YOUR_PUBLIC_KEY_HERE" // Replace with your EmailJS public key
+      );
+
+      console.log("Email sent successfully:", result.text);
       setSubmitStatus("success");
+
+      // Reset form
       setFormData({
         name: "",
         email: "",
@@ -42,9 +60,19 @@ const Contact = () => {
         subject: "",
         message: "",
       });
+
+      // Auto hide success message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus("idle");
+      }, 5000);
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error("Error sending email:", error);
       setSubmitStatus("error");
+
+      // Auto hide error message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus("idle");
+      }, 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +265,11 @@ const Contact = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="contact-form">
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              className="contact-form"
+            >
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="name">Họ và Tên *</label>
@@ -287,12 +319,16 @@ const Contact = () => {
                     required
                   >
                     <option value="">Chọn chủ đề</option>
-                    <option value="admission">Tư vấn tuyển sinh</option>
-                    <option value="university">Thông tin trường đại học</option>
-                    <option value="major">Thông tin ngành học</option>
-                    <option value="score">Điểm chuẩn</option>
-                    <option value="support">Hỗ trợ kỹ thuật</option>
-                    <option value="other">Khác</option>
+                    <option value="Tư vấn tuyển sinh">Tư vấn tuyển sinh</option>
+                    <option value="Thông tin trường đại học">
+                      Thông tin trường đại học
+                    </option>
+                    <option value="Thông tin ngành học">
+                      Thông tin ngành học
+                    </option>
+                    <option value="Điểm chuẩn">Điểm chuẩn</option>
+                    <option value="Hỗ trợ kỹ thuật">Hỗ trợ kỹ thuật</option>
+                    <option value="Khác">Khác</option>
                   </select>
                 </div>
               </div>
@@ -314,6 +350,7 @@ const Contact = () => {
                 type="submit"
                 className="submit-btn"
                 disabled={isSubmitting}
+                id="sendBtn"
               >
                 {isSubmitting ? (
                   <>

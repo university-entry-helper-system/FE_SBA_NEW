@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: linear-gradient(135deg, #38d9a9 0%, #60a5fa 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px 10px 0 0;
+        text-align: center;
+      }
+      .header h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+      }
+      .content {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 0 0 10px 10px;
+      }
+      .field {
+        margin-bottom: 15px;
+        background: white;
+        padding: 12px;
+        border-radius: 5px;
+        border-left: 4px solid #38d9a9;
+      }
+      .label {
+        font-weight: bold;
+        color: #38d9a9;
+        display: block;
+        margin-bottom: 5px;
+      }
+      .value {
+        color: #333;
+        font-size: 14px;
+      }
+      .message-box {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #38d9a9;
+        margin-top: 10px;
+        white-space: pre-wrap;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+        font-size: 12px;
+        border-top: 1px solid #ddd;
+        padding-top: 15px;
+      }
+      a {
+        color: #38d9a9;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>📧 Tin nhắn mới từ trang liên hệ</h2>
+        <p>Bạn có một tin nhắn mới từ website SBA</p>
+      </div>
+
+      <div class="content">
+        <div class="field">
+          <span class="label">👤 Họ và tên:</span>
+          <div class="value">{{name}}</div>
+        </div>
+
+        <div class="field">
+          <span class="label">📧 Email:</span>
+          <div class="value">
+            <a href="mailto:{{email}}">{{email}}</a>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="label">📱 Số điện thoại:</span>
+          <div class="value">{{phone}}</div>
+        </div>
+
+        <div class="field">
+          <span class="label">📝 Chủ đề:</span>
+          <div class="value">{{subject}}</div>
+        </div>
+
+        <div class="field">
+          <span class="label">💬 Tin nhắn:</span>
+          <div class="message-box">{{message}}</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>---</p>
+        <p><strong>🚀 Gửi từ trang liên hệ SBA System</strong></p>
+        <p>Vui lòng phản hồi khách hàng sớm nhất có thể.</p>
+        <p style="margin-top: 10px; font-size: 11px; color: #999">
+          Thời gian gửi: {{send_time}} | Từ IP: {{user_ip}}
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
