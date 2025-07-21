@@ -254,8 +254,11 @@ const AdminNews: React.FC = () => {
         } else if (mode === "edit" && selectedNews) {
           valuesToSend = {
             ...values,
+            // Luôn giữ publishedAt gốc từ DB, không lấy từ form
+            publishedAt: selectedNews.publishedAt,
             releaseDate: toGmt7ISOString(values.releaseDate || ""),
           };
+          // Nếu API không cho phép update publishedAt, xóa trường này trước khi gửi
           delete valuesToSend.publishedAt;
           await newsApi.updateNews(selectedNews.id, valuesToSend);
         }
@@ -422,6 +425,88 @@ const AdminNews: React.FC = () => {
           </svg>
           Thêm tin mới
         </button>
+      </div>
+
+      {/* Advanced Filter UI */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, margin: '16px 0' }}>
+        <TextField
+          label="Tìm kiếm"
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+          size="small"
+          style={{ minWidth: 180 }}
+        />
+        <FormControl size="small" style={{ minWidth: 160 }}>
+          <InputLabel>Danh mục</InputLabel>
+          <Select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            label="Danh mục"
+          >
+            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="ADMISSION_INFO">Thông tin tuyển sinh</MenuItem>
+            <MenuItem value="EXAM_SCHEDULE">Lịch thi</MenuItem>
+            <MenuItem value="SCHOLARSHIP">Học bổng</MenuItem>
+            <MenuItem value="GUIDANCE">Hướng dẫn thủ tục</MenuItem>
+            <MenuItem value="REGULATION_CHANGE">Thay đổi quy định</MenuItem>
+            <MenuItem value="EVENT">Sự kiện</MenuItem>
+            <MenuItem value="RESULT_ANNOUNCEMENT">Công bố kết quả</MenuItem>
+            <MenuItem value="SYSTEM_NOTIFICATION">Thông báo hệ thống</MenuItem>
+            <MenuItem value="OTHER">Khác</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          label="Từ ngày"
+          type="date"
+          value={fromDate}
+          onChange={e => setFromDate(e.target.value)}
+          size="small"
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="Đến ngày"
+          type="date"
+          value={toDate}
+          onChange={e => setToDate(e.target.value)}
+          size="small"
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="Lượt xem từ"
+          type="number"
+          value={minViews}
+          onChange={e => setMinViews(e.target.value)}
+          size="small"
+          inputProps={{ min: 0 }}
+        />
+        <TextField
+          label="Lượt xem đến"
+          type="number"
+          value={maxViews}
+          onChange={e => setMaxViews(e.target.value)}
+          size="small"
+          inputProps={{ min: 0 }}
+        />
+        <FormControl size="small" style={{ minWidth: 140 }}>
+          <InputLabel>Trạng thái</InputLabel>
+          <Select
+            value={newsStatus}
+            onChange={e => setNewsStatus(e.target.value)}
+            label="Trạng thái"
+          >
+            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+            <MenuItem value="DRAFT">Bản nháp</MenuItem>
+            <MenuItem value="ARCHIVED">Đã lưu trữ</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          variant="outlined"
+          onClick={() => { setPage(0); fetchNews(0, searchInput); }}
+          style={{ height: 40 }}
+        >
+          Lọc
+        </Button>
       </div>
       {loading && (
         <div className="loading-container">
