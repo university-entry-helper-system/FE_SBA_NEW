@@ -9,8 +9,16 @@ import type {
 
 const BASE_URL = "/universities";
 
+export interface UniversityResponse {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  items: University[];
+}
+
 export const getAllUniversities = () =>
-  axios.get<{ result: University[] }>(BASE_URL);
+    axios.get<{ result: UniversityResponse }>(BASE_URL);
 
 export const getUniversityById = (id: number) =>
   axios.get<{ result: University }>(`${BASE_URL}/${id}`);

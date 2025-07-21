@@ -37,7 +37,8 @@ import UniversityMajorPage from "../components/UniversityMajorPage";
 import THPTScores from "../components/THPTScores";
 import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
-
+import VisitChart from "../components/admin/VisitChart.tsx";
+import SearchChart from "../components/admin/SearchChart.tsx";
 const UserLayout = () => {
   return (
     <>
@@ -65,6 +66,8 @@ const AppRouter = () => {
         >
           <Route index element={<AdminDashboard />} />
           {/* Nested admin routes */}
+          <Route path="visit-chart" element={<VisitChart />} />
+          <Route path="search-charts" element={<SearchChart />} />
           <Route path="universities" element={<AdminUniversities />} />
           <Route path="majors" element={<AdminMajors />} />
           <Route path="provinces" element={<AdminProvince />} />

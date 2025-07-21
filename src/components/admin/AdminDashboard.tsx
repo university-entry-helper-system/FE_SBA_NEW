@@ -1,23 +1,54 @@
-import { useState } from "react";
 import "../../css/AdminDashboard.css";
+import { compareTodayWithYesterday } from "../../api/stats.ts";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {getAllUniversities} from "../../api/university.ts";
+import {getMajors} from "../../api/major.ts";
+import {getAccountStats} from "../../api/account.ts";
+
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     users: 128,
-    universities: 245,
-    majors: 612,
-    visits: 9872,
+    universities: 0,
+    majors: 512,
+    visits: 0,
+    visitChange: 0,
   });
 
-  const refreshStats = () => {
-    setStats({
-      users: Math.floor(Math.random() * 200) + 100,
-      universities: Math.floor(Math.random() * 100) + 200,
-      majors: Math.floor(Math.random() * 200) + 500,
-      visits: Math.floor(Math.random() * 1000) + 9000,
-    });
+  const refreshStats = async () => {
+    try {
+      // Gọi đồng thời để tối ưu tốc độ
+      const [res, unires, mjs, acc] = await Promise.all([
+        compareTodayWithYesterday(),
+        getAllUniversities(),
+        getMajors({
+        }),
+        getAccountStats(),
+      ]);
+
+      const { todayCount, percentageChange } = res.data.result;
+      const universities = unires.data.result.totalElements;
+      const majors = mjs.data.result.totalElements;
+      const users = acc.data.result.totalAccounts;
+
+      setStats({
+        users: users,
+        universities: universities,
+        majors: majors,
+        visits: todayCount,
+        visitChange: percentageChange,
+      });
+    } catch (error) {
+      console.error("Lỗi khi làm mới thống kê:", error);
+    }
   };
 
+  useEffect(() => {
+    refreshStats();
+  }, []);
   return (
     <div className="admin-dashboard">
       {/* Header Section */}
@@ -53,7 +84,9 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="stats-grid">
-        <div className="stat-card users-card">
+        <div className="stat-card users-card"
+             onClick={() => navigate("/admin/accounts")}
+             style={{ cursor: "pointer" }}>
           <div className="stat-icon">
             <svg
               viewBox="0 0 24 24"
@@ -71,11 +104,12 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3 className="stat-title">Người dùng</h3>
             <p className="stat-number">{stats.users}</p>
-            <span className="stat-change positive">+12%</span>
           </div>
         </div>
 
-        <div className="stat-card universities-card">
+        <div className="stat-card universities-card"
+             onClick={() => navigate("/admin/universities")}
+             style={{ cursor: "pointer" }}>
           <div className="stat-icon">
             <svg
               viewBox="0 0 24 24"
@@ -93,11 +127,12 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3 className="stat-title">Trường đại học</h3>
             <p className="stat-number">{stats.universities}</p>
-            <span className="stat-change positive">+8%</span>
           </div>
         </div>
 
-        <div className="stat-card majors-card">
+        <div className="stat-card majors-card"
+             onClick={() => navigate("/admin/majors")}
+             style={{ cursor: "pointer" }}>
           <div className="stat-icon">
             <svg
               viewBox="0 0 24 24"
@@ -115,11 +150,12 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3 className="stat-title">Ngành đào tạo</h3>
             <p className="stat-number">{stats.majors}</p>
-            <span className="stat-change positive">+15%</span>
           </div>
         </div>
 
-        <div className="stat-card visits-card">
+        <div className="stat-card visits-card"
+             onClick={() => navigate("/admin/visit-chart")}
+             style={{ cursor: "pointer" }}>
           <div className="stat-icon">
             <svg
               viewBox="0 0 24 24"
@@ -137,7 +173,14 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3 className="stat-title">Lượt truy cập</h3>
             <p className="stat-number">{stats.visits.toLocaleString()}</p>
-            <span className="stat-change positive">+24%</span>
+            <span
+                className={`stat-change ${
+                    stats.visitChange >= 0 ? "positive" : "negative"
+                }`}
+            >
+              {stats.visitChange >= 0 ? "+" : "-"}
+              {stats.visitChange.toFixed(1)}%
+            </span>
           </div>
         </div>
       </div>
