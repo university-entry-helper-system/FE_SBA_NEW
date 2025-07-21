@@ -37,6 +37,7 @@ import UniversityMajorPage from "../components/UniversityMajorPage";
 import THPTScores from "../components/THPTScores";
 import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
+import Majors from "../components/Majors";
 
 const UserLayout = () => {
   return (
@@ -94,6 +95,7 @@ const AppRouter = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/universities" element={<UniversityPage />} />
           <Route path="/universities/:id" element={<UniversityDetail />} />
+          <Route path="/majors" element={<Majors />} />
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
