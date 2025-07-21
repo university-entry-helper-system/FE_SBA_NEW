@@ -39,6 +39,7 @@ import DGNLHCMScores from "../components/DGNLHCMScores";
 import DGNLHanoiScores from "../components/DGNLHanoiScores";
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
+import FAQs from "../components/admin/AdminFAQs.tsx";
 const UserLayout = () => {
   return (
     <>
@@ -73,6 +74,7 @@ const AppRouter = () => {
           <Route path="provinces" element={<AdminProvince />} />
           <Route path="categories" element={<UniversityCategoryPage />} />
           <Route path="exam-subjects" element={<AdminExamSubject />} />
+          <Route path="faqs" element={<FAQs />} />
           <Route path="admission-methods" element={<AdminAdmissionMethod />} />
           <Route
             path="subject-combinations"
