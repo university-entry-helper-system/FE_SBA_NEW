@@ -29,6 +29,7 @@
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
     "@types/react-router-dom": "^5.3.3",
+    "@types/recharts": "^1.8.29",
     "@types/yup": "^0.29.14",
     "antd": "^5.26.6",
     "axios": "^1.10.0",
