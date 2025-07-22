@@ -4,6 +4,17 @@ import { getNewsById } from "../api/news";
 import type { NewsResponse } from "../types/news";
 import "../css/home.css";
 
+// Helper lấy URL ảnh đầy đủ từ Minio cho news (giống AdminNews)
+const getImageUrl = (imageUrl?: string) => {
+  if (!imageUrl) return "https://placehold.co/600x300?text=No+Image";
+  if (imageUrl.startsWith("http")) {
+    let url = imageUrl.split("?")[0];
+    url = url.replace("minio:9000", "localhost:9000");
+    return url;
+  }
+  return `http://localhost:9000/mybucket/${imageUrl}`;
+};
+
 const NewsDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [news, setNews] = useState<NewsResponse | null>(null);
@@ -41,9 +52,17 @@ const NewsDetail: React.FC = () => {
       <div className="news-detail-card">
         <div className="news-detail-img-wrap">
           <img
-            src={news.imageUrl || "https://placehold.co/600x300?text=No+Image"}
+            src={getImageUrl(news.imageUrl)}
             alt={news.title}
             className="news-detail-img"
+            style={{
+              width: "100%",
+              height: "auto",
+              maxWidth: "100%",
+              borderRadius: 12,
+              objectFit: "cover",
+              display: "block",
+            }}
             onError={(e) => {
               (e.target as HTMLImageElement).src =
                 "https://placehold.co/600x300?text=No+Image";

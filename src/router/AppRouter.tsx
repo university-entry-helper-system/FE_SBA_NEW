@@ -41,6 +41,7 @@ import AdminUniversityMajorPage from "../components/admin/AdminUniversityMajorPa
 import AdminUniversityAdmissionMethodPage from "../components/admin/AdminUniversityAdmissionMethodPage";
 import Majors from "../components/Majors";
 import Contact from "../components/Contact";
+import AdmissionConsulting from "../components/AdmissionConsulting";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
@@ -75,8 +76,14 @@ const AppRouter = () => {
           <Route path="visit-chart" element={<VisitChart />} />
           <Route path="search-charts" element={<SearchChart />} />
           <Route path="universities" element={<AdminUniversities />} />
-          <Route path="universities/:universityId/majors" element={<AdminUniversityMajorPage />} />
-          <Route path="universities/:universityId/admission-methods" element={<AdminUniversityAdmissionMethodPage />} />
+          <Route
+            path="universities/:universityId/majors"
+            element={<AdminUniversityMajorPage />}
+          />
+          <Route
+            path="universities/:universityId/admission-methods"
+            element={<AdminUniversityAdmissionMethodPage />}
+          />
           <Route path="majors" element={<AdminMajors />} />
           <Route path="provinces" element={<AdminProvince />} />
           <Route path="categories" element={<UniversityCategoryPage />} />
@@ -146,6 +153,7 @@ const AppRouter = () => {
           <Route path="/dgnl-hcm-scores" element={<DGNLHCMScores />} />
           <Route path="/dgnl-hanoi-scores" element={<DGNLHanoiScores />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<AdmissionConsulting />} />
           {/* Other user routes */}
         </Route>
       </Routes>
