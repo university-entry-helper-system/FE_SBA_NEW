@@ -35,6 +35,12 @@ interface UniversityAdmissionMethodItem {
   admissionTime: string;
 }
 
+interface FormData extends Omit<UniversityAdmissionMethod, 'admissionTime'> {
+  admissionTime: string;
+  fromDate: string;
+  toDate: string;
+}
+
 const AdminUniversityAdmissionMethodPage: React.FC = () => {
   const { universityId } = useParams<{ universityId: string }>();
   const [methods, setMethods] = useState<UniversityAdmissionMethodItem[]>([]);
@@ -47,10 +53,97 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState<UniversityAdmissionMethod>(defaultForm);
+  const [form, setForm] = useState<FormData>({
+    ...defaultForm,
+    fromDate: "",
+    toDate: ""
+  });
   const [selectedMethod, setSelectedMethod] = useState<UniversityAdmissionMethod | null>(null);
   const [allAdmissionMethods, setAllAdmissionMethods] = useState<AdmissionMethod[]>([]);
   const [success, setSuccess] = useState("");
+
+  // Helper function to parse admissionTime string to fromDate and toDate
+  const parseAdmissionTime = (admissionTime: string): { fromDate: string; toDate: string } => {
+    if (!admissionTime) return { fromDate: "", toDate: "" };
+    
+    // Try to parse different formats like "DD/MM/YYYY - DD/MM/YYYY" or "DD/MM/YYYY đến DD/MM/YYYY"
+    const patterns = [
+      /^(.+?)\s*-\s*(.+?)$/,
+      /^(.+?)\s*đến\s*(.+?)$/,
+      /^(.+?)\s*to\s*(.+?)$/,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = admissionTime.match(pattern);
+      if (match) {
+        const [, from, to] = match;
+        // Try to convert to ISO format if possible
+        const fromDate = convertToISODate(from.trim());
+        const toDate = convertToISODate(to.trim());
+        return { fromDate, toDate };
+      }
+    }
+    
+    return { fromDate: "", toDate: "" };
+  };
+
+  // Helper function to convert date string to ISO format for datetime-local input
+  const convertToISODate = (dateStr: string): string => {
+    if (!dateStr) return "";
+    
+    try {
+      // Try parsing DD/MM/YYYY format
+      const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) {
+        const [, day, month, year] = ddmmyyyy;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;
+      }
+      
+      // Try parsing other formats or return as is if already in ISO format
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().slice(0, 16);
+      }
+    } catch (e) {
+      console.warn("Could not parse date:", dateStr);
+    }
+    
+    return "";
+  };
+
+  // Helper function to format datetime-local input to display string
+  const formatDateTimeToString = (fromDate: string, toDate: string): string => {
+    if (!fromDate && !toDate) return "";
+    
+    const formatDate = (isoDate: string): string => {
+      if (!isoDate) return "";
+      try {
+        const date = new Date(isoDate);
+        return date.toLocaleString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit", 
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch (e) {
+        return isoDate;
+      }
+    };
+
+    const formattedFrom = formatDate(fromDate);
+    const formattedTo = formatDate(toDate);
+    
+    if (formattedFrom && formattedTo) {
+      return `${formattedFrom} đến ${formattedTo}`;
+    } else if (formattedFrom) {
+      return `Từ ${formattedFrom}`;
+    } else if (formattedTo) {
+      return `Đến ${formattedTo}`;
+    }
+    
+    return "";
+  };
 
   const fetchMethods = async () => {
     if (!universityId) return;
@@ -89,7 +182,12 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
   }, [universityId, page]);
 
   const handleAdd = () => {
-    setForm({ ...defaultForm, universityId: Number(universityId) });
+    setForm({ 
+      ...defaultForm, 
+      universityId: Number(universityId),
+      fromDate: "",
+      toDate: ""
+    });
     setIsEditing(false);
     setShowFormModal(true);
   };
@@ -99,6 +197,8 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
     try {
       const res = await getUniversityAdmissionMethod(id);
       const data = res.data.result || res.data;
+      const { fromDate, toDate } = parseAdmissionTime(data.admissionTime);
+      
       setForm({
         universityId: data.universityId,
         admissionMethodId: data.admissionMethodId,
@@ -107,6 +207,8 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
         conditions: data.conditions,
         regulations: data.regulations,
         admissionTime: data.admissionTime,
+        fromDate,
+        toDate,
       });
       setIsEditing(true);
       setShowFormModal(true);
@@ -151,13 +253,40 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(""); // Clear previous errors
+    
+    // Validate date range
+    if (form.fromDate && form.toDate) {
+      const fromDateTime = new Date(form.fromDate);
+      const toDateTime = new Date(form.toDate);
+      
+      if (toDateTime <= fromDateTime) {
+        setError("Ngày kết thúc phải lớn hơn ngày bắt đầu");
+        return;
+      }
+    }
+    
     setLoading(true);
+    
     try {
+      // Convert fromDate and toDate to admissionTime string
+      const admissionTimeString = formatDateTimeToString(form.fromDate, form.toDate);
+      
+      const submitData: UniversityAdmissionMethod = {
+        universityId: form.universityId,
+        admissionMethodId: form.admissionMethodId,
+        year: form.year,
+        notes: form.notes,
+        conditions: form.conditions,
+        regulations: form.regulations,
+        admissionTime: admissionTimeString,
+      };
+
       if (isEditing) {
-        await updateUniversityAdmissionMethod(form.admissionMethodId, form);
+        await updateUniversityAdmissionMethod(form.admissionMethodId, submitData);
         setSuccess("Cập nhật phương thức thành công");
       } else {
-        await createUniversityAdmissionMethod(form);
+        await createUniversityAdmissionMethod(submitData);
         setSuccess("Thêm phương thức mới thành công");
       }
       setShowFormModal(false);
@@ -189,6 +318,16 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
           Hiển thị {methods.length} trên tổng số {totalElements} phương thức
         </span>
       </div>
+      {error && (
+        <div className="error-message" style={{ color: 'red', marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="success-message" style={{ color: 'green', marginBottom: 16 }}>
+          {success}
+        </div>
+      )}
       {loading ? (
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -271,6 +410,11 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2>{isEditing ? "Chỉnh sửa phương thức" : "Thêm phương thức mới"}</h2>
             <form onSubmit={handleFormSubmit} className="modal-form">
+              {error && (
+                <div className="error-message" style={{ color: 'red', marginBottom: 16, padding: '8px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px' }}>
+                  {error}
+                </div>
+              )}
               <div className="form-group">
                 <label>Phương thức</label>
                 <select
@@ -305,8 +449,23 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
                 <textarea name="regulations" value={form.regulations} onChange={handleFormChange} />
               </div>
               <div className="form-group">
-                <label>Thời gian tuyển sinh</label>
-                <input name="admissionTime" value={form.admissionTime} onChange={handleFormChange} />
+                <label>Từ ngày</label>
+                <input 
+                  name="fromDate" 
+                  type="datetime-local" 
+                  value={form.fromDate} 
+                  onChange={handleFormChange} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Đến ngày</label>
+                <input 
+                  name="toDate" 
+                  type="datetime-local" 
+                  value={form.toDate} 
+                  onChange={handleFormChange}
+                  min={form.fromDate || undefined}
+                />
               </div>
               <div className="modal-footer">
                 <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowFormModal(false)}>
@@ -343,4 +502,4 @@ const AdminUniversityAdmissionMethodPage: React.FC = () => {
   );
 };
 
-export default AdminUniversityAdmissionMethodPage; 
+export default AdminUniversityAdmissionMethodPage;
