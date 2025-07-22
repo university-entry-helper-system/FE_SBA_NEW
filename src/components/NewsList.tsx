@@ -15,6 +15,17 @@ const getBadgeClass = (days: number) => {
   return "countdown-badge orange";
 };
 
+// Helper lấy URL ảnh đầy đủ từ Minio cho news (giống AdminNews)
+const getImageUrl = (imageUrl?: string) => {
+  if (!imageUrl) return "https://placehold.co/300x180?text=No+Image";
+  if (imageUrl.startsWith("http")) {
+    let url = imageUrl.split("?")[0];
+    url = url.replace("minio:9000", "localhost:9000");
+    return url;
+  }
+  return `http://localhost:9000/mybucket/${imageUrl}`;
+};
+
 const NewsList: React.FC = () => {
   const [news, setNews] = useState<NewsResponse[]>([]);
   const [countdownNews, setCountdownNews] = useState<NewsResponse[]>([]);
@@ -34,14 +45,24 @@ const NewsList: React.FC = () => {
       setError("");
       try {
         // Lấy nhiều hơn PAGE_SIZE để đủ countdown và news thường
-        const res = await filterNews({ category: category || undefined, search: search || undefined, page: 0, size: 50 });
+        const res = await filterNews({
+          category: category || undefined,
+          search: search || undefined,
+          page: 0,
+          size: 50,
+        });
         const items: NewsResponse[] = res.data.result.items || [];
         // News sắp diễn ra (daysToRelease > 0)
-        const countdown = items.filter(n => typeof n.daysToRelease === "number" && n.daysToRelease > 0)
+        const countdown = items
+          .filter(
+            (n) => typeof n.daysToRelease === "number" && n.daysToRelease > 0
+          )
           .sort((a, b) => (a.daysToRelease ?? 0) - (b.daysToRelease ?? 0));
         setCountdownNews(countdown);
         // News thường (đã phát hành hoặc không có daysToRelease)
-        const normal = items.filter(n => !n.daysToRelease || n.daysToRelease <= 0);
+        const normal = items.filter(
+          (n) => !n.daysToRelease || n.daysToRelease <= 0
+        );
         setNews(normal.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE));
         setTotalPages(Math.ceil(normal.length / PAGE_SIZE));
       } catch {
@@ -126,9 +147,7 @@ const NewsList: React.FC = () => {
                 {bannerNews.daysToRelease} Ngày
               </span>
             </div>
-            <div className="banner-main-title">
-              {bannerNews.title}
-            </div>
+            <div className="banner-main-title">{bannerNews.title}</div>
             {bannerNews.summary && (
               <div className="banner-desc">
                 <em>{bannerNews.summary}</em>
@@ -136,13 +155,39 @@ const NewsList: React.FC = () => {
             )}
             <div className="banner-date">
               <span className="banner-date-badge">
-                {bannerNews.releaseDate ? new Date(bannerNews.releaseDate).toLocaleString() : ""}
+                {bannerNews.releaseDate
+                  ? new Date(bannerNews.releaseDate).toLocaleString()
+                  : ""}
               </span>
             </div>
             <div className="banner-socials">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Facebook"><i className="fab fa-facebook-f"></i></a>
-              <a href="https://zalo.me" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Zalo"><i className="fab fa-facebook-messenger"></i></a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="YouTube"><i className="fab fa-youtube"></i></a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-icon"
+                aria-label="Facebook"
+              >
+                <i className="fab fa-facebook-f"></i>
+              </a>
+              <a
+                href="https://zalo.me"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-icon"
+                aria-label="Zalo"
+              >
+                <i className="fab fa-facebook-messenger"></i>
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-icon"
+                aria-label="YouTube"
+              >
+                <i className="fab fa-youtube"></i>
+              </a>
             </div>
           </div>
           <div className="banner-decor-1 floating"></div>
@@ -165,7 +210,13 @@ const NewsList: React.FC = () => {
               >
                 <div className="countdown-card-img-wrap">
                   <div className="countdown-card-icon">
-                    <span role="img" aria-label="Đồng hồ cát" style={{fontSize: 32}}>⏳</span>
+                    <span
+                      role="img"
+                      aria-label="Đồng hồ cát"
+                      style={{ fontSize: 32 }}
+                    >
+                      ⏳
+                    </span>
                   </div>
                   <span className={getBadgeClass(item.daysToRelease!)}>
                     Còn {item.daysToRelease} ngày
@@ -174,12 +225,26 @@ const NewsList: React.FC = () => {
                 <div className="countdown-card-content">
                   <h3 className="countdown-card-title">{item.title}</h3>
                   {item.summary && (
-                    <div className="countdown-card-date" style={{color:'#888', fontSize:'0.97rem', marginBottom:4}}>{item.summary}</div>
+                    <div
+                      className="countdown-card-date"
+                      style={{
+                        color: "#888",
+                        fontSize: "0.97rem",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {item.summary}
+                    </div>
                   )}
                   <div className="countdown-card-date">
-                    Ngày phát hành: {item.releaseDate ? new Date(item.releaseDate).toLocaleDateString() : ""}
+                    Ngày phát hành:{" "}
+                    {item.releaseDate
+                      ? new Date(item.releaseDate).toLocaleDateString()
+                      : ""}
                   </div>
-                  <a className="countdown-card-link" href={`/news/${item.id}`}>→ Xem chi tiết</a>
+                  <a className="countdown-card-link" href={`/news/${item.id}`}>
+                    → Xem chi tiết
+                  </a>
                 </div>
               </div>
             ))}
@@ -205,9 +270,17 @@ const NewsList: React.FC = () => {
               >
                 <div className="news-card-img-wrap">
                   <img
-                    src={item.imageUrl || "https://placehold.co/300x180?text=No+Image"}
+                    src={getImageUrl(item.imageUrl)}
                     alt={item.title}
                     className="news-card-img"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      maxWidth: "100%",
+                      borderRadius: 10,
+                      objectFit: "cover",
+                      display: "block",
+                    }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         "https://placehold.co/300x180?text=No+Image";

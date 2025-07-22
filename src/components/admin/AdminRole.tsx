@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "../../css/AdminMajor.css";
+import "../../css/AdminUniversities.css";
 
 interface Role {
   id: number;
@@ -143,42 +143,63 @@ const AdminRole: React.FC = () => {
   };
 
   return (
-    <div className="admin-majors-page majors-container">
-      <h2 className="majors-title">Quản lý vai trò</h2>
-      {error && <div className="error majors-error">{error}</div>}
-      <form className="major-form majors-form" onSubmit={handleSubmit}>
-        <div className="majors-form-row">
-          <input
-            className="majors-input"
-            name="name"
-            value={form.name}
-            onChange={handleInputChange}
-            placeholder="Tên vai trò"
-            required
-          />
-          <input
-            className="majors-input"
-            name="description"
-            value={form.description}
-            onChange={handleInputChange}
-            placeholder="Mô tả"
-          />
+    <div className="admin-universities">
+      <div className="universities-header">
+        <div className="header-content">
+          <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
+            Quản lý vai trò
+          </h1>
+          <p className="admin-text-sm admin-text-gray-600">
+            Quản lý thông tin các vai trò trong hệ thống
+          </p>
         </div>
-        <div className="majors-form-actions">
-          <button type="submit" className="majors-btn majors-btn-submit">
-            {isEditing ? "Cập nhật" : "Thêm mới"}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              className="majors-btn majors-btn-cancel"
-              onClick={handleCancel}
-            >
-              Hủy
+      </div>
+      {error && <div className="alert alert-error">{error}</div>}
+      {/* Card form create giống AdminAccount */}
+      <div
+        className="admin-card"
+        style={{ maxWidth: 600, margin: "0 auto 24px auto" }}
+      >
+        <h2
+          className="admin-text-xl admin-font-semibold"
+          style={{ marginBottom: 12 }}
+        >
+          Thêm mới vai trò
+        </h2>
+        <form className="major-form majors-form" onSubmit={handleSubmit}>
+          <div className="majors-form-row">
+            <input
+              className="majors-input"
+              name="name"
+              value={form.name}
+              onChange={handleInputChange}
+              placeholder="Tên vai trò"
+              required
+            />
+            <input
+              className="majors-input"
+              name="description"
+              value={form.description}
+              onChange={handleInputChange}
+              placeholder="Mô tả"
+            />
+          </div>
+          <div className="majors-form-actions">
+            <button type="submit" className="majors-btn majors-btn-submit">
+              {isEditing ? "Cập nhật" : "Thêm mới"}
             </button>
-          )}
-        </div>
-      </form>
+            {isEditing && (
+              <button
+                type="button"
+                className="majors-btn majors-btn-cancel"
+                onClick={handleCancel}
+              >
+                Hủy
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
       <hr className="majors-divider" />
       {loading ? (
         <div className="majors-loading">Đang tải...</div>

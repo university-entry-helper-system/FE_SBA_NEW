@@ -12,6 +12,7 @@ import type { University } from "../types/university";
 import type { Major } from "../types/major";
 import type { SubjectCombination } from "../types/subjectCombination";
 import type { NewsResponse } from "../types/news";
+import Chatbot from "./Chatbot";
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState("de-an");
@@ -344,6 +345,7 @@ const HomePage = () => {
           </ul>
         )}
       </section>
+      <Chatbot />
     </div>
   );
 };
