@@ -91,11 +91,27 @@ const Chatbot: React.FC = () => {
     });
   }, [streamingMessage, isStreaming]);
 
-  // Khi kết thúc streaming (assistant trả lời xong), tự động refresh kết nối
+  // Khi kết thúc streaming (assistant trả lời xong), chờ 2s rồi mới hiển thị response
   useEffect(() => {
     if (!isStreaming && streamingMessage) {
-      // Đảm bảo chỉ refresh khi vừa kết thúc một câu trả lời
-      refreshConnection();
+      const timeout = setTimeout(() => {
+        setMessages((msgs) => {
+          if (
+            msgs.length &&
+            msgs[msgs.length - 1].role === "assistant" &&
+            msgs[msgs.length - 1].content !== streamingMessage
+          ) {
+            return [
+              ...msgs.slice(0, -1),
+              { role: "assistant", content: streamingMessage },
+            ];
+          }
+          return msgs;
+        });
+        setStreamingMessage("");
+        refreshConnection();
+      }, 2000);
+      return () => clearTimeout(timeout);
     }
     // eslint-disable-next-line
   }, [isStreaming, streamingMessage]);
@@ -268,6 +284,12 @@ const Chatbot: React.FC = () => {
 
   // Gửi tin nhắn
   const handleSend = () => {
+    // Kiểm tra SBD phải đúng 8 số
+    if (input.length !== 8) {
+      setError("SBD phải có đúng 8 số!");
+      return;
+    }
+
     if (
       !input.trim() ||
       !ws ||
@@ -287,9 +309,15 @@ const Chatbot: React.FC = () => {
       return;
     }
 
-    // Thêm tin nhắn user vào lịch sử
-    const userMessage: Message = { role: "user", content: input.trim() };
+    // Tạo message với format yêu cầu
+    const formattedMessage = `Tôi muốn tra cứu điểm chuẩn ${input.trim()} năm 2025`;
+
+    // Thêm tin nhắn user vào lịch sử (hiển thị message được format)
+    const userMessage: Message = { role: "user", content: formattedMessage };
     setMessages((prev) => [...prev, userMessage]);
+
+    // Clear error
+    setError("");
 
     // Hiển thị typing indicator trong 3 giây
     setShowTypingIndicator(true);
@@ -297,16 +325,16 @@ const Chatbot: React.FC = () => {
       setShowTypingIndicator(false);
     }, 3000);
 
-    // Gửi qua WebSocket
+    // Gửi message được format qua WebSocket
     console.log(
       "[handleSend] Sending message:",
-      input.trim(),
+      formattedMessage,
       "sessionId:",
       sessionId,
       "ws.readyState:",
       ws.readyState
     );
-    ws.send(input.trim());
+    ws.send(formattedMessage);
 
     // Reset input và chuẩn bị cho streaming
     setInput("");
@@ -347,6 +375,18 @@ const Chatbot: React.FC = () => {
         connectWebSocket();
       }
     }, 500);
+  };
+
+  // Xử lý input SBD
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Chỉ cho nhập số, tối đa 8 số
+    const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+    setInput(val);
+
+    // Clear error khi user bắt đầu nhập lại
+    if (error && val.length <= 8) {
+      setError("");
+    }
   };
 
   return (
@@ -504,6 +544,8 @@ const Chatbot: React.FC = () => {
                 color: "#c62828",
                 fontSize: 12,
                 borderBottom: "1px solid #eee",
+                textAlign: "center",
+                fontWeight: 500,
               }}
             >
               ⚠️ {error}
@@ -528,9 +570,9 @@ const Chatbot: React.FC = () => {
                   padding: 20,
                 }}
               >
-                👋 Xin chào! Tôi là chatbot giáo dục.
+                👋 Xin chào! Tôi là chatbot tra cứu điểm chuẩn.
                 <br />
-                Hãy hỏi tôi về điểm chuẩn, trường học, ngành học...
+                Hãy nhập SBD (8 số) để tra cứu điểm chuẩn năm 2025.
               </div>
             )}
 
@@ -633,7 +675,7 @@ const Chatbot: React.FC = () => {
                     <span
                       style={{ marginLeft: 8, color: "#666", fontSize: 12 }}
                     >
-                      Đang trả lời...
+                      Đang tra cứu...
                     </span>
                   </div>
                 </div>
@@ -652,42 +694,70 @@ const Chatbot: React.FC = () => {
             }}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                placeholder="Nhập câu hỏi của bạn..."
-                style={{
-                  flex: 1,
-                  borderRadius: 20,
-                  border: "2px solid #e0e0e0",
-                  padding: "10px 16px",
-                  fontSize: 14,
-                  outline: "none",
-                  transition: "border-color 0.3s ease",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                onBlur={(e) => (e.target.style.borderColor = "#e0e0e0")}
-                disabled={
-                  isStreaming ||
-                  showTypingIndicator ||
-                  connectionStatus !== "connected"
-                }
-              />
+              <div style={{ flex: 1, position: "relative" }}>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder="Nhập SBD (8 số)..."
+                  style={{
+                    width: "100%",
+                    borderRadius: 20,
+                    border: error ? "2px solid #f44336" : "2px solid #e0e0e0",
+                    padding: "10px 16px",
+                    fontSize: 14,
+                    outline: "none",
+                    transition: "border-color 0.3s ease",
+                    backgroundColor: error ? "#fff5f5" : "#fff",
+                  }}
+                  onFocus={(e) => {
+                    if (!error) {
+                      e.target.style.borderColor = "#667eea";
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!error) {
+                      e.target.style.borderColor = "#e0e0e0";
+                    }
+                  }}
+                  disabled={
+                    isStreaming ||
+                    showTypingIndicator ||
+                    connectionStatus !== "connected"
+                  }
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={8}
+                  autoComplete="off"
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 16,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 12,
+                    color: input.length === 8 ? "#4CAF50" : "#999",
+                    fontWeight: 500,
+                  }}
+                >
+                  {input.length}/8
+                </div>
+              </div>
               <button
                 onClick={handleSend}
                 disabled={
                   isStreaming ||
                   showTypingIndicator ||
-                  !input.trim() ||
+                  input.length !== 8 ||
                   connectionStatus !== "connected"
                 }
                 style={{
                   background:
                     isStreaming ||
                     showTypingIndicator ||
-                    !input.trim() ||
+                    input.length !== 8 ||
                     connectionStatus !== "connected"
                       ? "#ccc"
                       : "linear-gradient(135deg, #667eea, #764ba2)",
@@ -699,7 +769,7 @@ const Chatbot: React.FC = () => {
                   cursor:
                     isStreaming ||
                     showTypingIndicator ||
-                    !input.trim() ||
+                    input.length !== 8 ||
                     connectionStatus !== "connected"
                       ? "not-allowed"
                       : "pointer",
@@ -717,6 +787,7 @@ const Chatbot: React.FC = () => {
                 onMouseOut={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
+                title={input.length !== 8 ? "Vui lòng nhập đủ 8 số" : "Gửi"}
               >
                 ➤
               </button>
