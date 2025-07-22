@@ -28,6 +28,12 @@ const defaultForm: UniversityMajorRequest = {
   scores: 0,
 };
 
+// Validation state interface
+interface ValidationErrors {
+  quota?: string;
+  scores?: string;
+}
+
 const AdminUniversityMajorPage: React.FC = () => {
   const { universityId } = useParams<{ universityId: string }>();
   const [majors, setMajors] = useState<UniversityMajor[]>([]);
@@ -48,6 +54,22 @@ const AdminUniversityMajorPage: React.FC = () => {
   const [allMajors, setAllMajors] = useState<Major[]>([]);
   const [allAdmissionMethods, setAllAdmissionMethods] = useState<AdmissionMethod[]>([]);
   const [allSubjectCombinations, setAllSubjectCombinations] = useState<SubjectCombination[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+
+  // Validation function
+  const validateForm = (): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    
+    if (form.quota <= 0) {
+      errors.quota = "Chỉ tiêu phải lớn hơn 0";
+    }
+    
+    if (form.scores <= 0 || form.scores >= 40) {
+      errors.scores = "Điểm chuẩn phải lớn hơn 0 và nhỏ hơn 40";
+    }
+    
+    return errors;
+  };
 
   const fetchMajors = async () => {
     if (!universityId) return;
@@ -105,6 +127,7 @@ const AdminUniversityMajorPage: React.FC = () => {
   const handleAdd = () => {
     setForm({ ...defaultForm, universityId: Number(universityId) });
     setIsEditing(false);
+    setValidationErrors({});
     setShowFormModal(true);
   };
 
@@ -129,6 +152,7 @@ const AdminUniversityMajorPage: React.FC = () => {
         scores:  data.score || 0,
       });
       setIsEditing(true);
+      setValidationErrors({});
       setShowFormModal(true);
     } catch {
       setError("Không thể lấy thông tin ngành");
@@ -166,11 +190,22 @@ const AdminUniversityMajorPage: React.FC = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    const newValue = type === 'number' ? (value === "" ? 0 : Number(value)) : value;
+    
     setForm((prev) => ({
       ...prev,
-      [name]: type === 'number' ? (value === "" ? "" : Number(value)) : value,
+      [name]: newValue,
     }));
+
+    // Clear validation error when user starts typing
+    if (validationErrors[name as keyof ValidationErrors]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
+
   // Add a handler for select change
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -203,6 +238,14 @@ const AdminUniversityMajorPage: React.FC = () => {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
     setLoading(true);
     try {
       if (isEditing) {
@@ -213,6 +256,7 @@ const AdminUniversityMajorPage: React.FC = () => {
         setSuccess("Thêm ngành mới thành công");
       }
       setShowFormModal(false);
+      setValidationErrors({});
       fetchMajors();
     } catch {
       setError(isEditing ? "Cập nhật ngành thất bại" : "Thêm ngành thất bại");
@@ -380,14 +424,49 @@ const AdminUniversityMajorPage: React.FC = () => {
                 <label>Tên ngành (trường)</label>
                 <input name="universityMajorName" value={form.universityMajorName} onChange={handleFormChange} required />
               </div>
+              
               <div className="form-group">
                 <label>Điểm chuẩn</label>
-                <input name="scores" type="number" value={form.scores} onChange={handleFormChange} required />
+                <input 
+                  name="scores" 
+                  type="number" 
+                  value={form.scores} 
+                  onChange={handleFormChange} 
+                  required 
+                  min="0"
+                  max="41"
+                  step="0.01"
+                  style={{
+                    borderColor: validationErrors.scores ? '#ef4444' : undefined
+                  }}
+                />
+                {validationErrors.scores && (
+                  <div style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {validationErrors.scores}
+                  </div>
+                )}
               </div>
+              
               <div className="form-group">
                 <label>Chỉ tiêu</label>
-                <input name="quota" type="number" value={form.quota} onChange={handleFormChange} required />
+                <input 
+                  name="quota" 
+                  type="number" 
+                  value={form.quota} 
+                  onChange={handleFormChange} 
+                  required 
+                  min="1"
+                  style={{
+                    borderColor: validationErrors.quota ? '#ef4444' : undefined
+                  }}
+                />
+                {validationErrors.quota && (
+                  <div style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {validationErrors.quota}
+                  </div>
+                )}
               </div>
+              
               <div className="form-group">
                 <label>Năm</label>
                 <input name="year" type="number" value={form.year} onChange={handleFormChange} required />
@@ -490,4 +569,4 @@ const AdminUniversityMajorPage: React.FC = () => {
   );
 };
 
-export default AdminUniversityMajorPage; 
+export default AdminUniversityMajorPage;
