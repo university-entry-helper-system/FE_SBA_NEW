@@ -1,270 +1,246 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../css/ScoreEvaluation.css";
+import {
+  getAllSubjectCombinations,
+  getEligibleMajors,
+  type SubjectCombination,
+  type EligibleMajor,
+} from "../api/eligibleMajors";
 
 const ScoreEvaluation = () => {
-  const [scores, setScores] = useState({
-    math: "",
-    literature: "",
-    english: "",
-    physics: "",
-    chemistry: "",
-    biology: "",
-    history: "",
-    geography: "",
-    civics: "",
-  });
+  const [score, setScore] = useState("");
+  const [selectedCombination, setSelectedCombination] = useState("");
+  const [combinations, setCombinations] = useState<SubjectCombination[]>([]);
+  const [eligibleMajors, setEligibleMajors] = useState<EligibleMajor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [combinationsLoading, setCombinationsLoading] = useState(true);
 
-  const [evaluationResult, setEvaluationResult] = useState<{
-    totalScore: number;
-    averageScore: number;
-    evaluation: string;
-    recommendations: string[];
-  } | null>(null);
+  // Load subject combinations when component mounts
+  useEffect(() => {
+    const loadCombinations = async () => {
+      try {
+        setCombinationsLoading(true);
+        const response = await getAllSubjectCombinations();
+        if (response.code === 1000) {
+          setCombinations(response.result.items);
+        } else {
+          setError("Không thể tải danh sách tổ hợp môn");
+        }
+      } catch (err) {
+        setError("Lỗi khi tải danh sách tổ hợp môn");
+        console.error("Error loading combinations:", err);
+      } finally {
+        setCombinationsLoading(false);
+      }
+    };
 
-  const handleScoreChange = (subject: string, value: string) => {
-    const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue < 0 || numValue > 10) return;
+    loadCombinations();
+  }, []);
 
-    setScores((prev) => ({
-      ...prev,
-      [subject]: value,
-    }));
-  };
-
-  const evaluateScores = () => {
-    const filledScores = Object.values(scores)
-      .filter((score) => score !== "")
-      .map((score) => parseFloat(score));
-
-    if (filledScores.length === 0) return;
-
-    const totalScore = filledScores.reduce((sum, score) => sum + score, 0);
-    const averageScore = totalScore / filledScores.length;
-
-    let evaluation = "";
-    let recommendations: string[] = [];
-
-    if (averageScore >= 8.5) {
-      evaluation = "Xuất sắc";
-      recommendations = [
-        "Bạn có thể nhắm đến các trường đại học top đầu",
-        "Cân nhắc các ngành học có điểm chuẩn cao",
-        "Có thể tham gia các chương trình học bổng",
-      ];
-    } else if (averageScore >= 7.0) {
-      evaluation = "Tốt";
-      recommendations = [
-        "Có nhiều lựa chọn trường đại học chất lượng",
-        "Nên tìm hiểu kỹ về ngành học phù hợp",
-        "Có thể cân nhắc các trường đại học quốc tế",
-      ];
-    } else if (averageScore >= 5.5) {
-      evaluation = "Khá";
-      recommendations = [
-        "Nên chọn ngành học phù hợp với sở thích",
-        "Tìm hiểu về các trường đại học vùng",
-        "Cân nhắc các phương thức tuyển sinh khác",
-      ];
-    } else if (averageScore >= 4.0) {
-      evaluation = "Trung bình";
-      recommendations = [
-        "Cần cải thiện kết quả học tập",
-        "Tham khảo các trường cao đẳng chất lượng",
-        "Cân nhắc học nghề hoặc đào tạo kỹ năng",
-      ];
-    } else {
-      evaluation = "Cần cải thiện";
-      recommendations = [
-        "Nên tập trung cải thiện kết quả học tập",
-        "Tìm hiểu về các chương trình đào tạo nghề",
-        "Có thể cân nhắc thi lại để cải thiện điểm",
-      ];
+  const handleEvaluate = async () => {
+    if (!score.trim()) {
+      setError("Vui lòng nhập điểm số");
+      return;
     }
 
-    setEvaluationResult({
-      totalScore,
-      averageScore,
-      evaluation,
-      recommendations,
-    });
+    if (!selectedCombination) {
+      setError("Vui lòng chọn tổ hợp môn");
+      return;
+    }
+
+    const scoreValue = parseFloat(score);
+    if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 30) {
+      setError("Điểm số phải từ 0 đến 30");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setEligibleMajors([]);
+
+    try {
+      const response = await getEligibleMajors({
+        score: scoreValue,
+        subjectCombinationId: parseInt(selectedCombination),
+      });
+
+      if (response.code === 1000) {
+        setEligibleMajors(response.result);
+        if (response.result.length === 0) {
+          setError("Không tìm thấy ngành phù hợp với điểm số này");
+        }
+      } else {
+        setError("Không thể tìm kiếm ngành phù hợp");
+      }
+    } catch (err) {
+      setError("Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau.");
+      console.error("Search error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const resetForm = () => {
-    setScores({
-      math: "",
-      literature: "",
-      english: "",
-      physics: "",
-      chemistry: "",
-      biology: "",
-      history: "",
-      geography: "",
-      civics: "",
+  const handleReset = () => {
+    setScore("");
+    setSelectedCombination("");
+    setEligibleMajors([]);
+    setError("");
+  };
+
+  const getSelectedCombinationInfo = () => {
+    if (!selectedCombination) return null;
+    return combinations.find(
+      (combo) => combo.id.toString() === selectedCombination
+    );
+  };
+
+  const groupMajorsByUniversity = () => {
+    const grouped: { [key: string]: EligibleMajor[] } = {};
+    eligibleMajors.forEach((major) => {
+      if (!grouped[major.universityName]) {
+        grouped[major.universityName] = [];
+      }
+      grouped[major.universityName].push(major);
     });
-    setEvaluationResult(null);
+    return grouped;
   };
 
   return (
     <div className="score-evaluation-container">
-      {/* Header */}
+      {/* Header Section */}
       <div className="evaluation-header">
         <h1 className="page-title">Đánh Giá Điểm Thi</h1>
         <p className="page-description">
-          Nhập điểm các môn thi để nhận được đánh giá và tư vấn hướng nghiệp
+          Nhập điểm tổ hợp và chọn khối thi để xem các ngành có thể đậu
         </p>
       </div>
 
       <div className="evaluation-content">
-        {/* Score Input Form */}
+        {/* Input Form */}
         <div className="score-input-section">
-          <h2>Nhập Điểm Các Môn Thi</h2>
+          <h2>Thông Tin Điểm Thi</h2>
 
-          <div className="subjects-grid">
-            <div className="subject-group">
-              <h3>Môn Bắt Buộc</h3>
-              <div className="score-inputs">
-                <div className="score-input-item">
-                  <label>Toán</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.math}
-                    onChange={(e) => handleScoreChange("math", e.target.value)}
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>Ngữ Văn</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.literature}
-                    onChange={(e) =>
-                      handleScoreChange("literature", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>Tiếng Anh</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.english}
-                    onChange={(e) =>
-                      handleScoreChange("english", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-              </div>
+          <div className="input-form">
+            <div className="form-group">
+              <label htmlFor="score">Điểm tổ hợp:</label>
+              <input
+                type="number"
+                id="score"
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                placeholder="Nhập điểm tổ hợp (0-30)"
+                min="0"
+                max="30"
+                step="0.01"
+                disabled={loading}
+              />
             </div>
 
-            <div className="subject-group">
-              <h3>Tổ hợp Khoa học Tự nhiên</h3>
-              <div className="score-inputs">
-                <div className="score-input-item">
-                  <label>Vật Lý</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.physics}
-                    onChange={(e) =>
-                      handleScoreChange("physics", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>Hóa Học</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.chemistry}
-                    onChange={(e) =>
-                      handleScoreChange("chemistry", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>Sinh Học</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.biology}
-                    onChange={(e) =>
-                      handleScoreChange("biology", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-              </div>
+            <div className="form-group">
+              <label htmlFor="combination">Tổ hợp môn:</label>
+              {combinationsLoading ? (
+                <div className="loading-select">Đang tải...</div>
+              ) : (
+                <select
+                  id="combination"
+                  value={selectedCombination}
+                  onChange={(e) => setSelectedCombination(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="">Chọn tổ hợp môn</option>
+                  {combinations.map((combo) => (
+                    <option key={combo.id} value={combo.id.toString()}>
+                      {combo.name} - {combo.block.name}(
+                      {combo.examSubjects
+                        .map((subject) => subject.shortName)
+                        .join(", ")}
+                      )
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            <div className="subject-group">
-              <h3>Tổ hợp Khoa học Xã hội</h3>
-              <div className="score-inputs">
-                <div className="score-input-item">
-                  <label>Lịch Sử</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.history}
-                    onChange={(e) =>
-                      handleScoreChange("history", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>Địa Lý</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.geography}
-                    onChange={(e) =>
-                      handleScoreChange("geography", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="score-input-item">
-                  <label>GDCD</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={scores.civics}
-                    onChange={(e) =>
-                      handleScoreChange("civics", e.target.value)
-                    }
-                    placeholder="0.0"
-                  />
-                </div>
+            {/* Selected Combination Info */}
+            {selectedCombination && (
+              <div className="combination-info">
+                {(() => {
+                  const comboInfo = getSelectedCombinationInfo();
+                  return comboInfo ? (
+                    <div className="combo-details">
+                      <h4>
+                        {comboInfo.name} - {comboInfo.block.name}
+                      </h4>
+                      <div className="subjects-list">
+                        {comboInfo.examSubjects.map((subject) => (
+                          <span key={subject.id} className="subject-tag">
+                            {subject.name}
+                          </span>
+                        ))}
+                      </div>
+                      {comboInfo.description && (
+                        <p className="combo-description">
+                          {comboInfo.description}
+                        </p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
+            )}
+
+            <div className="form-actions">
+              <button
+                className="evaluate-btn"
+                onClick={handleEvaluate}
+                disabled={loading || combinationsLoading}
+              >
+                {loading ? (
+                  <>
+                    <div className="spinner"></div>
+                    Đang tìm kiếm...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    Tìm Ngành Phù Hợp
+                  </>
+                )}
+              </button>
+              <button
+                className="reset-btn"
+                onClick={handleReset}
+                disabled={loading}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="1,4 1,10 7,10" />
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                Làm Lại
+              </button>
             </div>
           </div>
 
-          <div className="action-buttons">
-            <button className="evaluate-btn" onClick={evaluateScores}>
+          {error && (
+            <div className="error-message">
               <svg
                 width="20"
                 height="20"
@@ -273,70 +249,110 @@ const ScoreEvaluation = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M9 12l2 2 4-4" />
-                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
-                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
-                <path d="M3 12h6m6 0h6" />
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
-              Đánh Giá Điểm
-            </button>
-            <button className="reset-btn" onClick={resetForm}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="1,4 1,10 7,10" />
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              Làm Lại
-            </button>
-          </div>
+              {error}
+            </div>
+          )}
         </div>
 
-        {/* Evaluation Result */}
-        {evaluationResult && (
-          <div className="evaluation-result">
-            <h2>Kết Quả Đánh Giá</h2>
-
-            <div className="result-summary">
-              <div className="result-item">
-                <label>Tổng điểm:</label>
-                <span className="score-value">
-                  {evaluationResult.totalScore.toFixed(1)}
-                </span>
-              </div>
-              <div className="result-item">
-                <label>Điểm trung bình:</label>
-                <span className="score-value">
-                  {evaluationResult.averageScore.toFixed(2)}
-                </span>
-              </div>
-              <div className="result-item">
-                <label>Xếp loại:</label>
-                <span
-                  className={`evaluation-level ${evaluationResult.evaluation
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}
-                >
-                  {evaluationResult.evaluation}
-                </span>
-              </div>
+        {/* Results */}
+        {eligibleMajors.length > 0 && (
+          <div className="results-section">
+            <div className="results-header">
+              <h2>Ngành Có Thể Đậu</h2>
+              <p>
+                Tìm thấy <strong>{eligibleMajors.length}</strong> ngành phù hợp
+                với điểm số <strong>{score}</strong> của bạn
+              </p>
             </div>
 
-            <div className="recommendations">
-              <h3>Gợi Ý Và Tư Vấn</h3>
-              <ul>
-                {evaluationResult.recommendations.map((rec, index) => (
-                  <li key={index}>{rec}</li>
-                ))}
-              </ul>
+            <div className="results-table-container">
+              <table className="results-table">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Trường</th>
+                    <th>Ngành</th>
+                    <th>Điểm chuẩn</th>
+                    <th>Điểm dư</th>
+                    <th>Năm</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {eligibleMajors.map((major, index) => {
+                    const userScore = parseFloat(score);
+                    const extraPoints = userScore - major.score;
+                    return (
+                      <tr
+                        key={`${major.universityId}-${major.majorId}`}
+                        className="table-row"
+                      >
+                        <td className="stt-cell">{index + 1}</td>
+                        <td className="university-cell">
+                          <div className="university-name">
+                            {major.universityName}
+                          </div>
+                        </td>
+                        <td className="major-cell">
+                          <div className="major-name">{major.majorName}</div>
+                          {major.uniMajorName !== major.majorName && (
+                            <div className="uni-major-name">
+                              {major.uniMajorName}
+                            </div>
+                          )}
+                        </td>
+                        <td className="score-cell">
+                          <span className="score-value">{major.score}</span>
+                        </td>
+                        <td className="extra-points-cell">
+                          <span className="extra-points">
+                            +{extraPoints.toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="year-cell">
+                          <span className="year-badge">{major.year}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
+
+        {/* Instructions */}
+        <div className="instructions-section">
+          <h3>Hướng Dẫn Sử Dụng</h3>
+          <div className="instructions-grid">
+            <div className="instruction-item">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <h4>Nhập điểm tổ hợp</h4>
+                <p>Nhập tổng điểm 3 môn trong tổ hợp thi (thang điểm 30)</p>
+              </div>
+            </div>
+            <div className="instruction-item">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <h4>Chọn tổ hợp môn</h4>
+                <p>Chọn tổ hợp môn thi phù hợp với nguyện vọng của bạn</p>
+              </div>
+            </div>
+            <div className="instruction-item">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <h4>Xem kết quả</h4>
+                <p>
+                  Hệ thống sẽ hiển thị các ngành có thể đậu với điểm của bạn
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
