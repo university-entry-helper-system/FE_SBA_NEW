@@ -196,15 +196,53 @@ const Navbar = () => {
                 </Link>
               </div>
             </li>
-            <li>
-              <Link
-                to="/graduation-score"
-                className={`navbar-menu-link ${isLinkActive(
-                  "/graduation-score"
-                )}`}
+            <li className="navbar-dropdown">
+              <span
+                className={`navbar-menu-link dropdown-toggle ${
+                  isLinkActive("/graduation-score") ||
+                  isLinkActive("/university-score-lookup") ||
+                  isLinkActive("/score-evaluation")
+                    ? "active"
+                    : ""
+                }`}
               >
                 Tính điểm tốt nghiệp
-              </Link>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="dropdown-arrow"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </span>
+              <div className="dropdown-menu">
+                <Link
+                  to="/university-score-lookup"
+                  className={`dropdown-item ${isLinkActive(
+                    "/university-score-lookup"
+                  )}`}
+                >
+                  Tra cứu điểm thi đại học
+                </Link>
+                <Link
+                  to="/score-evaluation"
+                  className={`dropdown-item ${isLinkActive(
+                    "/score-evaluation"
+                  )}`}
+                >
+                  Đánh giá điểm thi
+                </Link>
+                <Link
+                  to="/graduation-score"
+                  className={`dropdown-item ${isLinkActive(
+                    "/graduation-score"
+                  )}`}
+                >
+                  Tính điểm tốt nghiệp
+                </Link>
+              </div>
             </li>
             {/* Role-based links */}
             {isAuthenticated && user?.roleName === "ROLE_ADMIN" && (
@@ -316,6 +354,28 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Câu hỏi thường gặp
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/university-score-lookup"
+                className={`navbar-mobile-link ${isLinkActive(
+                  "/university-score-lookup"
+                )}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tra cứu điểm thi đại học
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/score-evaluation"
+                className={`navbar-mobile-link ${isLinkActive(
+                  "/score-evaluation"
+                )}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Đánh giá điểm thi
               </Link>
             </li>
             <li>

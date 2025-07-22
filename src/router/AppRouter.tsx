@@ -42,6 +42,8 @@ import AdminUniversityAdmissionMethodPage from "../components/admin/AdminUnivers
 import Majors from "../components/Majors";
 import Contact from "../components/Contact";
 import AdmissionConsulting from "../components/AdmissionConsulting";
+import UniversityScoreLookup from "../components/UniversityScoreLookup";
+import ScoreEvaluation from "../components/ScoreEvaluation";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
@@ -152,6 +154,11 @@ const AppRouter = () => {
           <Route path="/thpt-scores" element={<THPTScores />} />
           <Route path="/dgnl-hcm-scores" element={<DGNLHCMScores />} />
           <Route path="/dgnl-hanoi-scores" element={<DGNLHanoiScores />} />
+          <Route
+            path="/university-score-lookup"
+            element={<UniversityScoreLookup />}
+          />
+          <Route path="/score-evaluation" element={<ScoreEvaluation />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<AdmissionConsulting />} />
           {/* Other user routes */}
