@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { calculateGraduationScore } from "../api/graduationCaculate";
 import type {
   GraduationScoreRequest,
@@ -140,8 +141,15 @@ export default function GraduationScoreCalculator() {
       };
       const res = await calculateGraduationScore(data);
       setResult(res.data.result);
-    } catch (err: any) {
-      setError("Có lỗi xảy ra khi tính điểm. Vui lòng thử lại.");
+    } catch (err) {
+      console.error("Calculation error:", err);
+      if (err instanceof Error) {
+        setError(`Lỗi: ${err.message}`);
+      } else {
+        setError(
+          "Có lỗi xảy ra khi tính điểm. Vui lòng kiểm tra lại thông tin đã nhập."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -428,6 +436,33 @@ export default function GraduationScoreCalculator() {
           <div className="gsc-step-title">
             Bước 3. Nhập điểm ưu tiên, khuyến khích
           </div>
+
+          <div className="gsc-info-section">
+            <div className="gsc-info-card">
+              <h4>💡 Thông tin quan trọng về điểm ưu tiên và khuyến khích:</h4>
+              <div className="gsc-info-content">
+                <div className="gsc-info-item">
+                  <strong>🎯 Điểm ưu tiên theo đối tượng:</strong>
+                  <p>
+                    Được cộng cho các thí sinh thuộc diện gia đình chính sách,
+                    người có công với cách mạng, hoặc có các điều kiện ưu tiên
+                    khác. <strong>Mức cộng tối đa: 2.0 điểm</strong>
+                  </p>
+                </div>
+                <div className="gsc-info-item">
+                  <strong>🏆 Tổng điểm khuyến khích:</strong>
+                  <p>
+                    Tổng điểm khuyến khích tối đa được cộng là{" "}
+                    <strong>4.0 điểm</strong>.
+                  </p>
+                </div>
+              </div>
+              <Link to="/priority-score-info" className="gsc-info-link">
+                📋 Xem chi tiết luật điểm ưu tiên & khuyến khích
+              </Link>
+            </div>
+          </div>
+
           <div className="gsc-row gsc-row-priority">
             <label>
               Điểm ưu tiên
@@ -435,11 +470,13 @@ export default function GraduationScoreCalculator() {
                 type="number"
                 step="0.01"
                 min="0"
-                max="10"
+                max="2"
                 name="priorityScore"
                 value={form.priorityScore ?? ""}
                 onChange={handleChange}
+                placeholder="Tối đa 2.0 điểm"
               />
+              <small className="gsc-input-hint">Tối đa 2.0 điểm</small>
             </label>
             <label>
               Điểm khuyến khích
@@ -447,11 +484,13 @@ export default function GraduationScoreCalculator() {
                 type="number"
                 step="0.01"
                 min="0"
-                max="10"
+                max="4"
                 name="bonusScore"
                 value={form.bonusScore ?? ""}
                 onChange={handleChange}
+                placeholder="Tối đa 4.0 điểm"
               />
+              <small className="gsc-input-hint">Tối đa 4.0 điểm</small>
             </label>
           </div>
         </div>

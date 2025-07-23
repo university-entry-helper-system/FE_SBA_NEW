@@ -44,6 +44,7 @@ import Contact from "../components/Contact";
 import AdmissionConsulting from "../components/AdmissionConsulting";
 import UniversityScoreLookup from "../components/UniversityScoreLookup";
 import ScoreEvaluation from "../components/ScoreEvaluation";
+import PriorityScoreInfo from "../components/PriorityScoreInfo";
 import Schoolarship from "../components/admin/AdminScholarship.tsx";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
@@ -161,6 +162,7 @@ const AppRouter = () => {
             element={<UniversityScoreLookup />}
           />
           <Route path="/score-evaluation" element={<ScoreEvaluation />} />
+          <Route path="/priority-score-info" element={<PriorityScoreInfo />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<AdmissionConsulting />} />
           {/* Other user routes */}
