@@ -9,6 +9,7 @@ import {
 
 const ScoreEvaluation = () => {
   const [score, setScore] = useState("");
+  const [maxGap, setMaxGap] = useState("");
   const [selectedCombination, setSelectedCombination] = useState("");
   const [combinations, setCombinations] = useState<SubjectCombination[]>([]);
   const [eligibleMajors, setEligibleMajors] = useState<EligibleMajor[]>([]);
@@ -60,10 +61,15 @@ const ScoreEvaluation = () => {
     setEligibleMajors([]);
 
     try {
-      const response = await getEligibleMajors({
+      const requestData = {
         score: scoreValue,
         subjectCombinationId: parseInt(selectedCombination),
-      });
+        maxGap: maxGap.trim() ? 
+          (parseFloat(maxGap) >= 0 ? parseFloat(maxGap) : null) : 
+          null
+      };
+
+      const response = await getEligibleMajors(requestData);
 
       if (response.code === 1000) {
         setEligibleMajors(response.result);
@@ -83,6 +89,7 @@ const ScoreEvaluation = () => {
 
   const handleReset = () => {
     setScore("");
+    setMaxGap("");
     setSelectedCombination("");
     setEligibleMajors([]);
     setError("");
@@ -93,17 +100,6 @@ const ScoreEvaluation = () => {
     return combinations.find(
       (combo) => combo.id.toString() === selectedCombination
     );
-  };
-
-  const groupMajorsByUniversity = () => {
-    const grouped: { [key: string]: EligibleMajor[] } = {};
-    eligibleMajors.forEach((major) => {
-      if (!grouped[major.universityName]) {
-        grouped[major.universityName] = [];
-      }
-      grouped[major.universityName].push(major);
-    });
-    return grouped;
   };
 
   return (
@@ -135,6 +131,24 @@ const ScoreEvaluation = () => {
                 step="0.01"
                 disabled={loading}
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="maxGap">Khoảng điểm chênh lệch (tùy chọn):</label>
+              <input
+                type="number"
+                id="maxGap"
+                value={maxGap}
+                onChange={(e) => setMaxGap(e.target.value)}
+                placeholder="Ví dụ: 1 (sẽ tìm trong khoảng ±1 điểm)"
+                min="0"
+                max="10"
+                step="0.1"
+                disabled={loading}
+              />
+              <small className="form-hint">
+                Để trống để xem tất cả ngành có thể đậu, hoặc nhập số để giới hạn khoảng điểm
+              </small>
             </div>
 
             <div className="form-group">
@@ -277,7 +291,7 @@ const ScoreEvaluation = () => {
                     <th>Trường</th>
                     <th>Ngành</th>
                     <th>Điểm chuẩn</th>
-                    <th>Điểm dư</th>
+                    <th>Điểm chênh lệch</th>
                     <th>Năm</th>
                   </tr>
                 </thead>
@@ -308,8 +322,12 @@ const ScoreEvaluation = () => {
                           <span className="score-value">{major.score}</span>
                         </td>
                         <td className="extra-points-cell">
-                          <span className="extra-points">
-                            +{extraPoints.toFixed(2)}
+                          <span 
+                            className={`score-difference ${
+                              extraPoints >= 0 ? 'positive' : 'negative'
+                            }`}
+                          >
+                            {extraPoints >= 0 ? '+' : ''}{extraPoints.toFixed(2)}
                           </span>
                         </td>
                         <td className="year-cell">

@@ -54,6 +54,7 @@ export interface EligibleMajorsResponse {
 export interface EligibleMajorsRequest {
   score: number;
   subjectCombinationId: number;
+  maxGap?: number | null;
 }
 
 // API calls

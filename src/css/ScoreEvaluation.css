@@ -79,6 +79,13 @@
   background: white;
 }
 
+.form-hint {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
@@ -375,9 +382,7 @@
   width: 100px;
 }
 
-.extra-points {
-  background: linear-gradient(135deg, #10b981, #34d399);
-  color: white;
+.score-difference {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   font-weight: 700;
@@ -385,7 +390,17 @@
   display: inline-block;
   min-width: 50px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.score-difference.positive {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+}
+
+.score-difference.negative {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  color: white;
 }
 
 .year-cell {
@@ -450,7 +465,7 @@
   }
 
   .score-value,
-  .extra-points {
+  .score-difference {
     padding: 0.4rem 0.6rem;
     font-size: 0.85rem;
   }
@@ -490,7 +505,7 @@
   }
 
   .score-value,
-  .extra-points {
+  .score-difference {
     padding: 0.3rem 0.5rem;
     font-size: 0.8rem;
     min-width: 40px;
