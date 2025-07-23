@@ -55,6 +55,28 @@ export interface EligibleMajorsRequest {
   score: number;
   subjectCombinationId: number;
   maxGap?: number | null;
+  provinceId?: number | null;
+}
+
+// Interface cho Province
+export interface Province {
+  id: number;
+  name: string;
+  description: string;
+  region: "BAC" | "TRUNG" | "NAM";
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface ProvinceResponse {
+  code: number;
+  message: string;
+  result: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    items: Province[];
+  };
 }
 
 // API calls
@@ -68,5 +90,10 @@ export const getEligibleMajors = async (
   data: EligibleMajorsRequest
 ): Promise<EligibleMajorsResponse> => {
   const response = await axios.post("/university-majors/eligible-majors", data);
+  return response.data;
+};
+
+export const getAllProvinces = async (): Promise<ProvinceResponse> => {
+  const response = await axios.get("/provinces?page=0&size=50");
   return response.data;
 };

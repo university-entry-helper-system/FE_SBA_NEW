@@ -110,6 +110,21 @@
   text-align: center;
 }
 
+/* Province Select Optgroup Styling */
+.form-group optgroup {
+  font-weight: 600;
+  font-style: normal;
+  color: #2d3748;
+  background-color: #f7fafc;
+  padding: 0.5rem 0;
+}
+
+.form-group optgroup option {
+  font-weight: 400;
+  padding: 0.5rem 1rem;
+  color: #4a5568;
+}
+
 /* Combination Info */
 .combination-info {
   background: #f8f9fa;
