@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as scholarshipApi from "../../api/scholarshipService";
 import * as universityApi from "../../api/university";
 import type { ScholarshipRequest, ScholarshipResponse, ValueType, EligibilityType, ScholarshipStatus } from "../../types/scholarshipTypes";
-import type { University } from "../../types/university";
+import type { University , UniversityShort} from "../../types/university";
 import InputAdornment from "@mui/material/InputAdornment";
 import {
     Box,
@@ -17,6 +17,9 @@ import {
     Select,
     TextField,
     Typography,
+    List,
+    ListItem,
+    ListItemText,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -53,10 +56,16 @@ function getScholarshipSchema() {
                         .min(1, "Giá trị học bổng phải từ 1% đến 100%")
                         .max(100, "Giá trị học bổng phải từ 1% đến 100%")
                         .required("Giá trị học bổng là bắt buộc")
-                    : schema
-                        .min(500, "Giá trị học bổng phải lớn hơn hoặc bằng 500000 VNĐ")
-                        .required("Giá trị học bổng là bắt buộc");
+                    : valueType === "ACADEMIC_YEAR"
+                        ? schema
+                            .min(1, "Giá trị năm học bổng theo năm học phải lớn hơn hoặc bằng 1 năm")
+                            .max(4, "Giá trị năm học bổng theo năm học không được quá 4 năm")
+                            .required("Giá trị học bổng là bắt buộc")
+                        : schema
+                            .min(500, "Giá trị học bổng phải lớn hơn hoặc bằng 500000 VNĐ")
+                            .required("Giá trị học bổng là bắt buộc");
             }),
+
         eligibilityType: Yup.string().required("Loại điều kiện là bắt buộc"),
         minScore: Yup.number()
             .when("eligibilityType", ([eligibilityType], schema) => {
@@ -65,11 +74,16 @@ function getScholarshipSchema() {
                         .min(0, "Điểm trung bình học bạ phải từ 0 đến 10")
                         .max(10, "Điểm trung bình học bạ phải từ 0 đến 10")
                         .required("Điểm trung bình học bạ là bắt buộc")
-                    : schema
-                        .min(0, "Điểm thi THPT phải từ 0 đến 30")
-                        .max(30, "Điểm thi THPT phải từ 0 đến 30")
-                        .required("Điểm thi THPT là bắt buộc");
-            }),
+                    : eligibilityType === "EXAM_SCORE"
+                            ? schema
+                                .min(0, "Điểm thi THPT phải từ 0 đến 30")
+                                .max(30, "Điểm thi THPT phải từ 0 đến 30")
+                                .required("Điểm thi THPT là bắt buộc")
+                            : schema
+                            .min(0, "Điểm đánh giá năng lực phải từ 0 đến 1200")
+                            .max(1200, "Điểm đánh giá năng lực phải từ 0 đến 1200")
+                            .required("Điểm đánh giá năng lực là bắt buộc");
+                }),
         applyLink: Yup.string()
             .url("Link nộp học bổng phải là một URL hợp lệ")
             .optional(),
@@ -141,6 +155,8 @@ const AdminScholarship: React.FC = () => {
     const [valueType, setValueType] = useState<ValueType | "">("");
     const [eligibilityType, setEligibilityType] = useState<EligibilityType | "">("");
     const [status, setStatus] = useState<ScholarshipStatus | "">("");
+    const [showUniversitiesDialog, setShowUniversitiesDialog] = useState(false);
+    const [selectedUniversities, setSelectedUniversities] = useState<UniversityShort[]>([]);
 
     // Fetch universities
     useEffect(() => {
@@ -222,11 +238,23 @@ const AdminScholarship: React.FC = () => {
 
                 } else if (mode === "edit" && selectedScholarship) {
                     await scholarshipApi.updateScholarship(selectedScholarship.id, valuesToSend);
+                    console.log(scholarships);
+                    const updatedUniversities = universities
+                        .filter((univ) => valuesToSend.universityIds?.includes(univ.id))  // Kiểm tra nếu universityIds có tồn tại
+                        .map((univ) => ({
+                            id: univ.id,
+                            name: univ.name,  // Lấy các thuộc tính cần thiết
+                            shortName: univ.shortName
+                        }));
                     setScholarships(
+
                         scholarships.map((item) =>
-                            item.id === selectedScholarship.id ? { ...item, ...valuesToSend, universities: item.universities } : item
+                            item.id === selectedScholarship.id ? { ...item, ...valuesToSend,universities: updatedUniversities  } : item
                         )
                     );
+                    console.log(selectedScholarship);
+                    console.log(updatedUniversities);
+                    console.log(scholarships);
                 }
                 setSuccess(
                     mode === "create" ? "Tạo học bổng thành công!" : "Cập nhật học bổng thành công!"
@@ -317,6 +345,16 @@ const AdminScholarship: React.FC = () => {
         }
     };
 
+    const openUniversitiesDialog = (universities: UniversityShort[]) => {
+        setSelectedUniversities(universities);
+        setShowUniversitiesDialog(true);
+    };
+
+    const closeUniversitiesDialog = () => {
+        setShowUniversitiesDialog(false);
+        setSelectedUniversities([]);
+    };
+
     // Render
     return (
         <div className="admin-universities">
@@ -369,6 +407,7 @@ const AdminScholarship: React.FC = () => {
                         <MenuItem value="">Tất cả</MenuItem>
                         <MenuItem value="PERCENTAGE">Phần trăm</MenuItem>
                         <MenuItem value="FIXED_AMOUNT">Số tiền</MenuItem>
+                        <MenuItem value="ACADEMIC_YEAR">Năm học</MenuItem>
                     </Select>
                 </FormControl>
                 <FormControl size="small" style={{ minWidth: 160 }}>
@@ -381,6 +420,8 @@ const AdminScholarship: React.FC = () => {
                         <MenuItem value="">Tất cả</MenuItem>
                         <MenuItem value="GPA">Học bạ</MenuItem>
                         <MenuItem value="EXAM_SCORE">Điểm thi</MenuItem>
+                        <MenuItem value="EVALUATION">ĐGNL</MenuItem>
+
                     </Select>
                 </FormControl>
                 <FormControl size="small" style={{ minWidth: 140 }}>
@@ -438,16 +479,25 @@ const AdminScholarship: React.FC = () => {
                                 <td>
                                     {item.valueType === "PERCENTAGE"
                                         ? "% học phí"
-                                        : ".000 VND"}
+                                        : item.valueType === "ACADEMIC_YEAR" ? "Năm học" : ".000 VND"}
                                 </td>
                                 <td>{item.eligibilityType==="GPA"
                                         ? "Học bạ"
-                                        : "Điểm thi THPT"
+                                        : item.eligibilityType==="EVALUATION"? "Điểm thi ĐGNL" : "Điểm thi THPT"
                                 }</td>
                                 <td>{item.minScore}</td>
                                 <td>
                                     {item.universities && Array.isArray(item.universities)
-                                        ? item.universities.map((u) => u.shortName || u.name).join(", ")
+                                        ? item.universities.length > 2
+                                            ? (
+                                                <span
+                                                    style={{ cursor: 'pointer', color: '#1976d2' }}
+                                                    onClick={() => openUniversitiesDialog(item.universities)}
+                                                                                    >
+                                                    {item.universities.slice(0, 2).map((u) => u.shortName || u.name).join(", ")}, ...
+                                                </span>
+                                            )
+                                            : item.universities.map((u) => u.shortName || u.name).join(", ")
                                         : ""}
                                 </td>
                                 <td>{toVNLocaleString(item.applicationDeadline)}</td>
@@ -600,6 +650,7 @@ const AdminScholarship: React.FC = () => {
                             >
                                 <MenuItem value="PERCENTAGE">Phần trăm</MenuItem>
                                 <MenuItem value="FIXED_AMOUNT">Số tiền</MenuItem>
+                                <MenuItem value="ACADEMIC_YEAR">Năm học</MenuItem>
                             </Select>
                             {formik.touched.valueType && formik.errors.valueType && (
                                 <Typography color="error" variant="caption">
@@ -620,12 +671,14 @@ const AdminScholarship: React.FC = () => {
                             error={!!formik.touched.valueAmount && !!formik.errors.valueAmount}
                             helperText={
                                 (formik.touched.valueAmount && formik.errors.valueAmount) ||
-                                (formik.values.valueType === "PERCENTAGE" ? "% toàn bộ học phí" : "VNĐ")
+                                (formik.values.valueType === "PERCENTAGE" ? "% Toan bo hoc phi" :
+                                    formik.values.valueType === "ACADEMIC_YEAR" ? ".000 VNĐ" : "Năm học")
                             }
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        {formik.values.valueType === "PERCENTAGE" ? "% Toan bo hoc phi" : ".000 VNĐ"}
+                                        {formik.values.valueType === "PERCENTAGE" ? "% Toan bo hoc phi" :
+                                            formik.values.valueType === "ACADEMIC_YEAR" ?  "Năm học" :".000 VNĐ" }
                                     </InputAdornment>
                                 ),
                             }}
@@ -648,7 +701,8 @@ const AdminScholarship: React.FC = () => {
                                 label="Loại điều kiện"
                             >
                                 <MenuItem value="GPA">Học bạ</MenuItem>
-                                <MenuItem value="EXAM_SCORE">Điểm thi</MenuItem>
+                                <MenuItem value="EXAM_SCORE">Điểm thi THPT</MenuItem>
+                                <MenuItem value="EVALUATION">Điểm thi ĐGNL</MenuItem>
                             </Select>
                             {formik.touched.eligibilityType && formik.errors.eligibilityType && (
                                 <Typography color="error" variant="caption">
@@ -670,7 +724,7 @@ const AdminScholarship: React.FC = () => {
                             helperText={formik.touched.minScore && formik.errors.minScore}
                             inputProps={{
                                 min: 0,
-                                max: formik.values.eligibilityType === "GPA" ? 10 : 30,
+                                max: formik.values.eligibilityType === "GPA" ? 10 : formik.values.eligibilityType === "EVALUATION" ? 1200 : 30,
                             }}
                             required
                         />
@@ -743,6 +797,29 @@ const AdminScholarship: React.FC = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+
+            <Dialog open={showUniversitiesDialog} onClose={closeUniversitiesDialog} maxWidth="sm" fullWidth>
+                <DialogTitle>Danh sách trường</DialogTitle>
+                <DialogContent>
+                    <List>
+                        {selectedUniversities.map((u) => (
+                            <ListItem key={u.id}>
+                                <ListItemText primary={u.shortName} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeUniversitiesDialog} color="primary">
+                        Đóng
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+
+
+
         </div>
     );
 };

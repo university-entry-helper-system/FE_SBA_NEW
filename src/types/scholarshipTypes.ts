@@ -1,5 +1,5 @@
-export type ValueType = "PERCENTAGE" | "FIXED_AMOUNT";
-export type EligibilityType = "GPA" | "EXAM_SCORE";
+export type ValueType = "PERCENTAGE" | "FIXED_AMOUNT" | "ACADEMIC_YEAR";
+export type EligibilityType = "GPA" | "EXAM_SCORE" | "EVALUATION";
 export type ScholarshipStatus = "ACTIVE" | "EXPIRED";
 
 export interface UniversityShort {

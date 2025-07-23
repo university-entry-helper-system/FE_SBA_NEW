@@ -1,36 +1,51 @@
-/* SearchChart.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.chart-card {
-    background-color: #ffffff;
-    border-radius: 8px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-bottom: 24px;
+body {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
-.chart-title {
-    font-size: 20px;
+.ant-card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ant-table-thead > tr > th {
+    background: #f0f4f8;
+    color: #4b5563;
     font-weight: 600;
-    color: #1d4ed8;
-    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-.chart-control {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
+.ant-table-tbody > tr:hover > td {
+    background: #f8fafc;
 }
 
-.chart-button {
-    background-color: #1d4ed8;
-    color: white;
-    font-weight: 600;
-    padding: 6px 16px;
-    border: none;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
+.ant-select-selector {
+    border-color: #d1d5db !important;
 }
 
-.chart-button:hover {
-    background-color: #1e40af;
+.ant-btn-primary {
+    background-color: #4a90e2;
+    border-color: #4a90e2;
+    transition: all 0.3s ease;
+}
+
+.ant-btn-primary:hover {
+    background-color: #357abd;
+    border-color: #357abd;
+}
+
+.ant-picker {
+    border-color: #d1d5db !important;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
