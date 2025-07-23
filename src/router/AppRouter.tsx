@@ -44,6 +44,7 @@ import Contact from "../components/Contact";
 import AdmissionConsulting from "../components/AdmissionConsulting";
 import UniversityScoreLookup from "../components/UniversityScoreLookup";
 import ScoreEvaluation from "../components/ScoreEvaluation";
+import Schoolarship from "../components/admin/AdminScholarship.tsx";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
@@ -78,6 +79,7 @@ const AppRouter = () => {
           <Route path="visit-chart" element={<VisitChart />} />
           <Route path="search-charts" element={<SearchChart />} />
           <Route path="universities" element={<AdminUniversities />} />
+          <Route path="schoolarships" element={<Schoolarship />} />
           <Route
             path="universities/:universityId/majors"
             element={<AdminUniversityMajorPage />}

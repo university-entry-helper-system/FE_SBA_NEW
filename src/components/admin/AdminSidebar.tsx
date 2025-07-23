@@ -241,6 +241,29 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
                 </NavLink>
               </li>
 
+                <li className="admin-nav-item">
+                    <NavLink
+                        to="/admin/schoolarships"
+                        className={({ isActive }) =>
+                            isActive ? "admin-nav-link active" : "admin-nav-link"
+                        }
+                    >
+                        <svg
+                            className="admin-nav-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M22 12l-10-5L2 12l10 5 10-5z" />
+                            <path d="M12 17v4" />
+                            <path d="M8 21h8" />
+                        </svg>
+                        <span className="admin-nav-text">Quản lý học bổng</span>
+                    </NavLink>
+                </li>
               <li className="admin-nav-item">
                 <NavLink
                   to="/admin/exam-subjects"
