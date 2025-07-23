@@ -1,0 +1,367 @@
+/* Priority Score Info Container */
+.priority-score-info-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.info-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: white;
+}
+
+.info-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.info-description {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Main Content */
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Sections */
+.info-section {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.section-title {
+  color: #2d3748;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid #667eea;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Subsections */
+.subsection {
+  margin-bottom: 2rem;
+}
+
+.subsection-title {
+  color: #4a5568;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Info Cards */
+.info-card {
+  background: #f8fafc;
+  border-radius: 15px;
+  padding: 1.5rem;
+  border-left: 5px solid #667eea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-card p {
+  color: #2d3748;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.info-card ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.info-card li {
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Highlight Boxes */
+.highlight-box {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+}
+
+/* Score Tables */
+.score-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.score-row:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+/* Award Levels */
+.award-level,
+.cert-level {
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  flex: 1;
+  text-align: center;
+}
+
+.award-level.gold,
+.cert-level.excellent {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #744210;
+}
+
+.award-level.silver,
+.cert-level.good {
+  background: linear-gradient(135deg, #c0c0c0, #e5e7eb);
+  color: #374151;
+}
+
+.award-level.bronze,
+.cert-level.average {
+  background: linear-gradient(135deg, #cd7f32, #d69e2e);
+  color: white;
+}
+
+.cert-level.special {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+}
+
+/* Score Values */
+.score-value {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  min-width: 100px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Certificate Sections */
+.certificate-section {
+  margin-bottom: 1.5rem;
+}
+
+.certificate-section h4 {
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid #667eea;
+}
+
+/* Important Notes */
+.important-note {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.important-note h4 {
+  color: #856404;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.important-note p {
+  color: #856404;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* General Notes Section */
+.general-notes {
+  background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+  border: 2px solid #0284c7;
+}
+
+.general-notes .section-title {
+  color: #0369a1;
+  border-bottom-color: #0284c7;
+}
+
+.general-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.general-list li {
+  background: white;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 4px solid #0284c7;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  padding-left: 3rem;
+}
+
+.general-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0284c7;
+  color: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Benefit List */
+.benefit-list {
+  background: #f0fff4;
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #10b981;
+}
+
+.benefit-list li {
+  color: #065f46;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.benefit-list li::before {
+  content: "•";
+  color: #10b981;
+  font-weight: 700;
+  position: absolute;
+  left: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .priority-score-info-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .info-title {
+    font-size: 2rem;
+  }
+
+  .info-description {
+    font-size: 1rem;
+  }
+
+  .info-section {
+    padding: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .subsection-title {
+    font-size: 1.1rem;
+  }
+
+  .score-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .award-level,
+  .cert-level {
+    flex: none;
+    width: 100%;
+  }
+
+  .score-value {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .info-header {
+    margin-bottom: 2rem;
+  }
+
+  .info-title {
+    font-size: 1.75rem;
+  }
+
+  .info-section {
+    padding: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+  }
+
+  .info-card {
+    padding: 1rem;
+  }
+
+  .general-list li {
+    padding: 0.75rem;
+    padding-left: 2.5rem;
+  }
+
+  .general-list li::before {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.8rem;
+  }
+}
