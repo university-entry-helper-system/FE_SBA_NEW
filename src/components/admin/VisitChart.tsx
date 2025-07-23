@@ -1,12 +1,12 @@
-import "../../css/AdminDashboard.css";
-import { useState } from "react";
+
+import React, { useState } from "react";
 import { getDailyVisitCounts } from "../../api/stats";
 import { DatePicker, Button } from "antd";
 import { Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ComposedChart, ResponsiveContainer } from "recharts";
 
 import  { Dayjs } from "dayjs";
 
-const VisitChart = () => {
+const VisitChart : React.FC  = () => {
     const [from, setFrom] = useState<Dayjs | null>(null);
     const [to, setTo] = useState<Dayjs | null>(null);
     const [data, setData] = useState([]);

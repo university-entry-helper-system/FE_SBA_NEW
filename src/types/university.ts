@@ -95,3 +95,7 @@ export interface UniversityPage {
   totalPages: number;
   items: University[];
 }
+export interface UniversityShort {
+  id: number;
+  shortName?: string;
+}
