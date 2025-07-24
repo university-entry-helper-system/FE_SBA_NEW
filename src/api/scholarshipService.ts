@@ -18,7 +18,7 @@ export const deleteScholarship = (id: number) =>
     axios.delete<void>(`/scholarships/${id}`);
 
 export const getScholarshipById = (id: number) =>
-    axios.get<ScholarshipResponse>(`/scholarships/${id}`);
+    axios.get<ApiResponse<ScholarshipResponse>>(`/scholarships/${id}`);
 
 export const getAllScholarships = () =>
     axios.get<ApiResponse<ScholarshipResponse[]>>("/scholarships");

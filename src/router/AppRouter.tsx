@@ -111,7 +111,7 @@ const AppRouter = () => {
           <Route path="campuses" element={<AdminCampuses />} />
           <Route path="news" element={<AdminNews />} />
         </Route>
-<Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
+        <Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
         {/* User Routes with UserLayout (Navbar + Footer) */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -172,24 +172,6 @@ const AppRouter = () => {
           <Route path="/about" element={<AdmissionConsulting />} />
           {/* Other user routes */}
         </Route>
-        {/*<Route element={<UserLayout />}>*/}
-        {/*  <Route*/}
-        {/*      path="/user-dashboard"*/}
-        {/*      element={*/}
-        {/*        <ProtectedRoute allowedRoles={[2]}>*/}
-        {/*          <UserDashboard />*/}
-        {/*        </ProtectedRoute>*/}
-        {/*      }*/}
-        {/*  />*/}
-        {/*  <Route*/}
-        {/*      path="/user-profile"*/}
-        {/*      element={*/}
-        {/*        <ProtectedRoute allowedRoles={[2]}>*/}
-        {/*          <UserProfile />*/}
-        {/*        </ProtectedRoute>*/}
-        {/*      }*/}
-        {/*  />*/}
-        {/*</Route>*/}
       </Routes>
     </BrowserRouter>
   );

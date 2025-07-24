@@ -9,8 +9,8 @@ import type {
     GetUserProfileImageRequest,
 } from "../types/userProfile";
 
-const BASE_URL = "/user-profiles";
-const IMAGE_URL = "/user-profile-images";
+const BASE_URL = "/user-profile";
+const IMAGE_URL = "/user-profile-image";
 
 // Lấy danh sách UserProfiles (có tìm kiếm, phân trang, sắp xếp)
 export const getUserProfiles = (params?: {

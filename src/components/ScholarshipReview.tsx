@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Link ,useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { getScholarshipsByUniversity } from "../api/scholarshipService.ts";
 import type { ScholarshipResponse } from "../types/scholarshipTypes.ts";
 import "../css/scholarship-review.css";
@@ -38,7 +38,7 @@ const ScholarshipReview = () => {
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const universitiesPerPage = 12;
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     useEffect(() => {
         const fetchUniversitiesAndScholarships = async () => {
@@ -158,10 +158,10 @@ const ScholarshipReview = () => {
 
 
 
-    const handleApplyClick = (id : number) => {
-        // Điều hướng đến trang user-profile với scholarship.id
-        navigate(`/user-profile/${id}`);
-    };
+    // const handleApplyClick = (id : number) => {
+    //     // Điều hướng đến trang user-profile với scholarship.id
+    //     // navigate(`/user-profile/${id}`);
+    // };
 
     return (
         <div className="university-container">
@@ -243,7 +243,7 @@ const ScholarshipReview = () => {
                                                     </p>
                                                     {scholarship.id && (
                                                         <button
-                                                            onClick={() => handleApplyClick(scholarship.id)}
+                                                            // onClick={() => handleApplyClick(scholarship.id)}
                                                             className="scholarship-apply-btn"
                                                         >
                                                             Đăng ký xét tuyển
