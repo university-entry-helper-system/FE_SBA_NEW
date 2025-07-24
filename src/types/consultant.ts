@@ -7,6 +7,7 @@ export interface ConsultantSpecialty {
 }
 
 export interface ConsultantProfile {
+  id: number;
   accountId: string;
   fullName: string;
   bio: string;
@@ -48,4 +49,4 @@ export interface ConsultantProfileApiResponse {
   code: number;
   message: string;
   result: ConsultantProfilePaginatedResult;
-} 
+}

@@ -1,36 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { ConsultationWebSocketClient } from '../../utils/consultationSocket';
-import { 
-  getConsultantConsultations, 
-  answerConsultation, 
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { ConsultationWebSocketClient } from "../../utils/consultationSocket";
+import {
+  getConsultantConsultations,
+  answerConsultation,
   updateConsultantAnswer,
-  cancelConsultation 
-} from '../../api/consultation';
-import { 
-  GroupedConsultationResponse, 
-  ConsultationResponse, 
+  cancelConsultation,
+} from "../../api/consultation";
+import {
+  GroupedConsultationResponse,
+  ConsultationResponse,
   ConsultationStatus,
   WebSocketNotification,
-  NotificationType 
-} from '../../types/consultation';
-import NotificationPanel from '../NotificationPanel';
-import { showToastNotification } from '../../utils/notification';
-
+  NotificationType,
+} from "../../types/consultation";
+import NotificationPanel from "../NotificationPanel";
+import { showToastNotification } from "../../utils/notification";
+import "../../css/consultant/ConsultantPage.css";
 
 const ConsultantPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated } = useAuth();
-  const [groupedConsultations, setGroupedConsultations] = useState<GroupedConsultationResponse[]>([]);
-  const [selectedUserConsultations, setSelectedUserConsultations] = useState<ConsultationResponse[]>([]);
+  const [groupedConsultations, setGroupedConsultations] = useState<
+    GroupedConsultationResponse[]
+  >([]);
+  const [selectedUserConsultations, setSelectedUserConsultations] = useState<
+    ConsultationResponse[]
+  >([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedUserName, setSelectedUserName] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [answerText, setAnswerText] = useState('');
-  const [resolutionNotes, setResolutionNotes] = useState('');
-  const [selectedConsultationId, setSelectedConsultationId] = useState<number | null>(null);
+  const [error, setError] = useState("");
+  const [answerText, setAnswerText] = useState("");
+  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [selectedConsultationId, setSelectedConsultationId] = useState<
+    number | null
+  >(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,43 +45,44 @@ const ConsultantPage: React.FC = () => {
   const wsClientRef = useRef<ConsultationWebSocketClient | null>(null);
 
   // Debug: Log dependencies
-  console.log('Dependencies:', {
+  console.log("Dependencies:", {
     useAuth: !!useAuth,
     useConsultationWebSocket: !!ConsultationWebSocketClient,
     NotificationPanel: !!NotificationPanel,
   });
+
   // Check if user has consultant role
   useEffect(() => {
-    console.log('Auth check:', { isAuthenticated, user });
+    console.log("Auth check:", { isAuthenticated, user });
     if (!isAuthenticated || !user) {
-      console.log('Redirecting to login: Not authenticated or no user');
-      navigate('/login');
+      console.log("Redirecting to login: Not authenticated or no user");
+      navigate("/login");
       return;
     }
-    if (user?.roleName !== 'ROLE_CONSULTANT') {
-      console.log('Redirecting to login: Invalid role', user.roleName);
-      navigate('/login');
+    if (user?.roleName !== "ROLE_CONSULTANT") {
+      console.log("Redirecting to login: Invalid role", user.roleName);
+      navigate("/login");
       return;
     }
   }, [isAuthenticated, user, navigate]);
 
   // WebSocket connection
- useEffect(() => {
+  useEffect(() => {
     if (user?.accountId && user?.roleName && isAuthenticated) {
       wsClientRef.current = new ConsultationWebSocketClient({
-        baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+        baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
         userId: user.accountId,
         userRole: user.roleName,
-        authToken: localStorage.getItem('accessToken') || '',
+        authToken: localStorage.getItem("accessToken") || "",
         onNotification: (notification) => {
-          console.log('WebSocket notification (consultant):', notification);
+          console.log("WebSocket notification (consultant):", notification);
           handleWebSocketNotification(notification);
         },
-        onConnect: () => console.log('WebSocket connected (consultant)'),
-        onDisconnect: () => console.log('WebSocket disconnected (consultant)'),
+        onConnect: () => console.log("WebSocket connected (consultant)"),
+        onDisconnect: () => console.log("WebSocket disconnected (consultant)"),
         onError: (err) => {
-          console.error('WebSocket error (consultant):', err);
-          setError('WebSocket connection failed');
+          console.error("WebSocket error (consultant):", err);
+          setError("WebSocket connection failed");
         },
       });
       wsClientRef.current.connect();
@@ -88,58 +95,61 @@ const ConsultantPage: React.FC = () => {
     };
   }, [user?.accountId, user?.roleName, isAuthenticated]);
 
- useEffect(() => {
-      console.log('Loading grouped consultations...');
-      loadGroupedConsultations();
-    
+  useEffect(() => {
+    console.log("Loading grouped consultations...");
+    loadGroupedConsultations();
   }, [isAuthenticated, user]);
- useEffect(() => {
-    console.log('Selected consultations updated:', selectedUserConsultations);
+
+  useEffect(() => {
+    console.log("Selected consultations updated:", selectedUserConsultations);
     scrollToBottom();
   }, [selectedUserConsultations]);
 
-// --- Add effect to always update selectedUserConsultations with latest data ---
-useEffect(() => {
-  if (selectedUserId && groupedConsultations.length > 0) {
-    const groupedConsultation = groupedConsultations.find(gc => gc.senderId === selectedUserId);
-    if (groupedConsultation) {
-      setSelectedUserConsultations(groupedConsultation.consultations);
+  // --- Add effect to always update selectedUserConsultations with latest data ---
+  useEffect(() => {
+    if (selectedUserId && groupedConsultations.length > 0) {
+      const groupedConsultation = groupedConsultations.find(
+        (gc) => gc.senderId === selectedUserId
+      );
+      if (groupedConsultation) {
+        setSelectedUserConsultations(groupedConsultation.consultations);
+      }
+    }
+  }, [groupedConsultations, selectedUserId]);
+
+  function handleWebSocketNotification(notification: WebSocketNotification) {
+    showToastNotification(notification);
+
+    switch (notification.type) {
+      case NotificationType.NEW_CONSULTATION:
+      case NotificationType.CONSULTATION_UPDATED:
+      case NotificationType.CONSULTATION_ANSWERED:
+      case NotificationType.CONSULTATION_CANCELLED:
+        // Force refresh both grouped consultations and selected user data
+        setDataRefreshTrigger((prev) => prev + 1);
+        break;
     }
   }
-}, [groupedConsultations, selectedUserId]);
 
-function handleWebSocketNotification(notification: WebSocketNotification) {
-  showToastNotification(notification);
-
-  switch (notification.type) {
-    case NotificationType.NEW_CONSULTATION:
-    case NotificationType.CONSULTATION_UPDATED:
-    case NotificationType.CONSULTATION_ANSWERED:
-    case NotificationType.CONSULTATION_CANCELLED:
-      // Force refresh both grouped consultations and selected user data
-      setDataRefreshTrigger(prev => prev + 1);
-      break;
-  }
-}
-// --- Fix: Use latest data after notification for selectedUserConsultations ---
-useEffect(() => {
-  if (dataRefreshTrigger > 0) {
-    (async () => {
-      const newGrouped = await loadGroupedConsultations();
-      if (selectedUserId) {
-        const groupedConsultation = newGrouped.find(gc => gc.senderId === selectedUserId);
-        if (groupedConsultation) {
-          setSelectedUserConsultations(groupedConsultation.consultations);
+  // --- Fix: Use latest data after notification for selectedUserConsultations ---
+  useEffect(() => {
+    if (dataRefreshTrigger > 0) {
+      (async () => {
+        const newGrouped = await loadGroupedConsultations();
+        if (selectedUserId) {
+          const groupedConsultation = newGrouped.find(
+            (gc) => gc.senderId === selectedUserId
+          );
+          if (groupedConsultation) {
+            setSelectedUserConsultations(groupedConsultation.consultations);
+          }
         }
-      }
-    })();
-  }
-}, [dataRefreshTrigger]);
-
- 
+      })();
+    }
+  }, [dataRefreshTrigger]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // --- Fix: Refactor loadGroupedConsultations to return new data ---
@@ -150,15 +160,19 @@ useEffect(() => {
       let newGrouped = response.result.content || [];
       // Sort by most recent consultation (by sentAt)
       newGrouped = newGrouped.sort((a, b) => {
-        const aDate = a.consultations[0]?.sentAt ? new Date(a.consultations[0].sentAt).getTime() : 0;
-        const bDate = b.consultations[0]?.sentAt ? new Date(b.consultations[0].sentAt).getTime() : 0;
+        const aDate = a.consultations[0]?.sentAt
+          ? new Date(a.consultations[0].sentAt).getTime()
+          : 0;
+        const bDate = b.consultations[0]?.sentAt
+          ? new Date(b.consultations[0].sentAt).getTime()
+          : 0;
         return bDate - aDate;
       });
       setGroupedConsultations(newGrouped);
-      setError('');
+      setError("");
       return newGrouped;
     } catch (err: any) {
-      setError(err.message || 'Failed to load consultations');
+      setError(err.message || "Failed to load consultations");
       return [];
     } finally {
       setLoading(false);
@@ -166,22 +180,24 @@ useEffect(() => {
   };
 
   const loadUserConsultations = (userId: string, userName: string) => {
-    const groupedConsultation = groupedConsultations.find(gc => gc.senderId === userId);
+    const groupedConsultation = groupedConsultations.find(
+      (gc) => gc.senderId === userId
+    );
     if (groupedConsultation) {
       setSelectedUserConsultations(groupedConsultation.consultations);
       setSelectedUserId(userId);
       setSelectedUserName(userName);
-      
+
       // Clear previous answer state
-      setAnswerText('');
-      setResolutionNotes('');
+      setAnswerText("");
+      setResolutionNotes("");
       setSelectedConsultationId(null);
     }
   };
 
   const handleAnswerConsultation = async (consultationId: number) => {
     if (!answerText.trim()) {
-      alert('Vui lòng nhập câu trả lời');
+      alert("Vui lòng nhập câu trả lời");
       return;
     }
 
@@ -190,12 +206,12 @@ useEffect(() => {
       await answerConsultation({
         consultationId,
         answer: answerText.trim(),
-        resolutionNotes: resolutionNotes.trim() || undefined
+        resolutionNotes: resolutionNotes.trim() || undefined,
       });
 
       // Clear form
-      setAnswerText('');
-      setResolutionNotes('');
+      setAnswerText("");
+      setResolutionNotes("");
       setSelectedConsultationId(null);
 
       // Reload data
@@ -204,9 +220,9 @@ useEffect(() => {
         loadUserConsultations(selectedUserId, selectedUserName);
       }
 
-      showSuccessMessage('Đã trả lời câu hỏi thành công!');
+      showSuccessMessage("Đã trả lời câu hỏi thành công!");
     } catch (err: any) {
-      alert(err.message || 'Failed to answer consultation');
+      alert(err.message || "Failed to answer consultation");
     } finally {
       setIsAnswering(false);
     }
@@ -214,7 +230,7 @@ useEffect(() => {
 
   const handleUpdateAnswer = async (consultationId: number) => {
     if (!answerText.trim()) {
-      alert('Vui lòng nhập câu trả lời');
+      alert("Vui lòng nhập câu trả lời");
       return;
     }
 
@@ -223,12 +239,12 @@ useEffect(() => {
       await updateConsultantAnswer({
         consultationId,
         answer: answerText.trim(),
-        resolutionNotes: resolutionNotes.trim() || undefined
+        resolutionNotes: resolutionNotes.trim() || undefined,
       });
 
       // Clear form
-      setAnswerText('');
-      setResolutionNotes('');
+      setAnswerText("");
+      setResolutionNotes("");
       setSelectedConsultationId(null);
 
       // Reload data
@@ -237,16 +253,16 @@ useEffect(() => {
         loadUserConsultations(selectedUserId, selectedUserName);
       }
 
-      showSuccessMessage('Đã cập nhật câu trả lời thành công!');
+      showSuccessMessage("Đã cập nhật câu trả lời thành công!");
     } catch (err: any) {
-      alert(err.message || 'Failed to update answer');
+      alert(err.message || "Failed to update answer");
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleCancelConsultation = async (consultationId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn hủy câu hỏi này?')) {
+    if (!confirm("Bạn có chắc chắn muốn hủy câu hỏi này?")) {
       return;
     }
 
@@ -259,14 +275,14 @@ useEffect(() => {
         loadUserConsultations(selectedUserId, selectedUserName);
       }
 
-      showSuccessMessage('Đã hủy câu hỏi thành công!');
+      showSuccessMessage("Đã hủy câu hỏi thành công!");
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel consultation');
+      alert(err.message || "Failed to cancel consultation");
     }
   };
 
   const showSuccessMessage = (message: string) => {
-    const toast = document.createElement('div');
+    const toast = document.createElement("div");
     toast.style.cssText = `
       position: fixed;
       top: 20px;
@@ -297,45 +313,45 @@ useEffect(() => {
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-  };
-
-  const getStatusColor = (status: ConsultationStatus) => {
-    switch (status) {
-      case ConsultationStatus.PENDING:
-        return '#f59e0b';
-      case ConsultationStatus.ANSWERED:
-        return '#10b981';
-      case ConsultationStatus.CANCELLED:
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
   };
 
   const getStatusText = (status: ConsultationStatus) => {
     switch (status) {
       case ConsultationStatus.PENDING:
-        return 'Chờ phản hồi';
+        return "Chờ phản hồi";
       case ConsultationStatus.ANSWERED:
-        return 'Đã phản hồi';
+        return "Đã phản hồi";
       case ConsultationStatus.CANCELLED:
-        return 'Đã hủy';
+        return "Đã hủy";
       default:
         return status;
     }
   };
 
+  const getStatusClass = (status: ConsultationStatus) => {
+    switch (status) {
+      case ConsultationStatus.PENDING:
+        return "status-pending";
+      case ConsultationStatus.ANSWERED:
+        return "status-answered";
+      case ConsultationStatus.CANCELLED:
+        return "status-cancelled";
+      default:
+        return "";
+    }
+  };
+
   const handleLogout = async () => {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
       await logout();
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -343,130 +359,72 @@ useEffect(() => {
     setSelectedConsultationId(consultation.id);
     if (consultation.answer) {
       setAnswerText(consultation.answer);
-      setResolutionNotes(consultation.resolutionNotes || '');
+      setResolutionNotes(consultation.resolutionNotes || "");
     } else {
-      setAnswerText('');
-      setResolutionNotes('');
+      setAnswerText("");
+      setResolutionNotes("");
     }
   };
 
-  
-
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f5f5f5' }}>
+    <div className="consultant-page">
       {/* Sidebar */}
-      <div style={{
-        width: '320px',
-        backgroundColor: 'white',
-        borderRight: '1px solid #e5e7eb',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div className="consultant-sidebar">
         {/* Header */}
-        <div style={{
-          padding: '20px',
-          borderBottom: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: '#1f2937' }}>
-              Tư vấn viên
-            </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="sidebar-header">
+          <div className="sidebar-header-content">
+            <h2 className="sidebar-title">Tư vấn viên</h2>
+            <div className="connection-indicator">
               {/* Connection Status */}
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: wsClientRef.current ? '#10b981' : '#ef4444'
-              }} />
-              
+              <div
+                className={`connection-dot ${
+                  wsClientRef.current ? "" : "disconnected"
+                }`}
+              />
               {/* Notifications */}
               {/* NotificationPanel is omitted in per-component WebSocket mode */}
             </div>
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-            Xin chào, {user?.email}
-          </div>
+          <div className="sidebar-subtitle">Xin chào, {user?.email}</div>
         </div>
 
         {/* User List */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loading && (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
-              Đang tải...
-            </div>
-          )}
+        <div className="user-list">
+          {loading && <div className="loading-state">Đang tải...</div>}
 
-          {error && (
-            <div style={{ padding: '20px', color: '#ef4444', fontSize: '0.9rem' }}>
-              {error}
-            </div>
-          )}
+          {error && <div className="error-state">{error}</div>}
 
           {groupedConsultations.map((grouped) => {
-            const pendingCount = grouped.consultations.filter(c => c.consultationsStatus === ConsultationStatus.PENDING).length;
+            const pendingCount = grouped.consultations.filter(
+              (c) => c.consultationsStatus === ConsultationStatus.PENDING
+            ).length;
             const isSelected = selectedUserId === grouped.senderId;
 
             return (
               <div
                 key={grouped.senderId}
-                onClick={() => loadUserConsultations(grouped.senderId, grouped.consultations[0].sender.fullName)}
-                style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #f3f4f6',
-                  cursor: 'pointer',
-                  backgroundColor: isSelected ? '#eff6ff' : 'transparent',
-                  borderLeft: isSelected ? '4px solid #3b82f6' : '4px solid transparent',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
+                onClick={() =>
+                  loadUserConsultations(
+                    grouped.senderId,
+                    grouped.consultations[0].sender.fullName
+                  )
+                }
+                className={`user-item ${isSelected ? "selected" : ""}`}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: 600, 
-                      color: '#1f2937',
-                      marginBottom: '4px'
-                    }}>
+                <div className="user-info">
+                  <div className="user-details">
+                    <div className="user-name">
                       {grouped.consultations[0].sender.fullName}
                     </div>
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      color: '#6b7280',
-                      marginBottom: '6px'
-                    }}>
+                    <div className="user-questions-count">
                       {grouped.consultations.length} câu hỏi
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                    <div className="user-timestamp">
                       {formatDateTime(grouped.consultations[0].sentAt)}
                     </div>
                   </div>
                   {pendingCount > 0 && (
-                    <div style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      borderRadius: '50%',
-                      width: '24px',
-                      height: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold'
-                    }}>
-                      {pendingCount}
-                    </div>
+                    <div className="pending-badge">{pendingCount}</div>
                   )}
                 </div>
               </div>
@@ -474,48 +432,16 @@ useEffect(() => {
           })}
 
           {!loading && groupedConsultations.length === 0 && (
-            <div style={{ 
-              padding: '40px 20px', 
-              textAlign: 'center', 
-              color: '#6b7280' 
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💬</div>
-              <div>Chưa có câu hỏi nào</div>
+            <div className="empty-state">
+              <div className="empty-state-icon">💬</div>
+              <div className="empty-state-text">Chưa có câu hỏi nào</div>
             </div>
           )}
         </div>
 
         {/* Logout Button */}
-        <div style={{ 
-          padding: '16px 20px', 
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb'
-        }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#dc2626';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ef4444';
-            }}
-          >
+        <div className="logout-section">
+          <button onClick={handleLogout} className="logout-button">
             <span>🚪</span>
             Đăng xuất
           </button>
@@ -523,165 +449,108 @@ useEffect(() => {
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="main-content">
         {selectedUserId ? (
           <>
             {/* Chat Header */}
-            <div style={{
-              padding: '20px',
-              backgroundColor: 'white',
-              borderBottom: '1px solid #e5e7eb',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600, color: '#1f2937' }}>
-                  {selectedUserName}
-                </h3>
-                <div style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '4px' }}>
+            <div className="chat-header">
+              <div className="chat-header-info">
+                <h3>{selectedUserName}</h3>
+                <div className="chat-header-subtitle">
                   {selectedUserConsultations.length} câu hỏi
                 </div>
               </div>
               <button
                 onClick={() => {
                   setSelectedUserId(null);
-                  setSelectedUserName('');
+                  setSelectedUserName("");
                   setSelectedUserConsultations([]);
                   setSelectedConsultationId(null);
-                  setAnswerText('');
-                  setResolutionNotes('');
+                  setAnswerText("");
+                  setResolutionNotes("");
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  padding: '4px'
-                }}
+                className="close-chat-button"
               >
                 ×
               </button>
             </div>
 
             {/* Messages Area */}
-            <div style={{
-              flex: 1,
-              padding: '20px',
-              overflowY: 'auto',
-              backgroundColor: '#f9fafb'
-            }}>
+            <div className="messages-area">
               {selectedUserConsultations.map((consultation) => (
-                <div key={consultation.id} style={{ marginBottom: '32px' }}>
+                <div key={consultation.id} className="conversation-item">
                   {/* User Question */}
-                  <div style={{
-                    backgroundColor: '#f3f4f6',
-                    color: '#222',
-                    padding: '16px 20px',
-                    borderRadius: '16px 16px 16px 4px',
-                    marginRight: '40%',
-                    marginBottom: '12px',
-                    position: 'relative',
-                    textAlign: 'left',
-                    alignSelf: 'flex-start',
-                    maxWidth: '60%',
-                  }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem' }}>
-                      {consultation.title}
-                    </div>
-                    <div style={{ marginBottom: '12px', lineHeight: '1.5' }}>
+                  <div className="user-message">
+                    <div className="message-title">{consultation.title}</div>
+                    <div className="message-content">
                       {consultation.content}
                     </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    <div className="message-timestamp">
                       {formatDateTime(consultation.sentAt)}
                       {consultation.senderUpdatedAt && (
-                        <span> (chỉnh sửa: {formatDateTime(consultation.senderUpdatedAt)})</span>
+                        <span>
+                          {" "}
+                          (chỉnh sửa:{" "}
+                          {formatDateTime(consultation.senderUpdatedAt)})
+                        </span>
                       )}
                     </div>
                   </div>
 
                   {/* Status */}
-                  <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                    <span style={{
-                      fontSize: '0.85rem',
-                      color: getStatusColor(consultation.consultationsStatus),
-                      backgroundColor: `${getStatusColor(consultation.consultationsStatus)}20`,
-                      padding: '6px 12px',
-                      borderRadius: '16px',
-                      fontWeight: 500
-                    }}>
+                  <div className="status-container">
+                    <span
+                      className={`status-badge ${getStatusClass(
+                        consultation.consultationsStatus
+                      )}`}
+                    >
                       {getStatusText(consultation.consultationsStatus)}
                     </span>
                   </div>
 
                   {/* Answer */}
                   {consultation.answer && (
-                    <div style={{
-                      backgroundColor: '#2563eb',
-                      color: 'white',
-                      padding: '16px 20px',
-                      borderRadius: '16px 16px 4px 16px',
-                      marginLeft: '40%',
-                      marginBottom: '12px',
-                      alignSelf: 'flex-end',
-                      maxWidth: '60%',
-                      textAlign: 'right',
-                    }}>
-                      <div style={{ marginBottom: '12px', lineHeight: '1.5' }}>
+                    <div className="consultant-message">
+                      <div className="message-content">
                         {consultation.answer}
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>
-                        {consultation.answeredAt && formatDateTime(consultation.answeredAt)}
+                      <div className="message-timestamp">
+                        {consultation.answeredAt &&
+                          formatDateTime(consultation.answeredAt)}
                         {consultation.consultantUpdatedAt && (
-                          <span> (chỉnh sửa: {formatDateTime(consultation.consultantUpdatedAt)})</span>
+                          <span>
+                            {" "}
+                            (chỉnh sửa:{" "}
+                            {formatDateTime(consultation.consultantUpdatedAt)})
+                          </span>
                         )}
                       </div>
                       {consultation.resolutionNotes && (
-                        <div style={{
-                          marginTop: '12px',
-                          padding: '12px',
-                          backgroundColor: 'rgba(255,255,255,0.1)',
-                          borderRadius: '8px',
-                          fontSize: '0.85rem',
-                          color: '#e0e7ef'
-                        }}>
-                          <strong>Ghi chú:</strong> {consultation.resolutionNotes}
+                        <div className="resolution-notes">
+                          <strong>Ghi chú:</strong>{" "}
+                          {consultation.resolutionNotes}
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Action buttons for pending consultations */}
-                  {consultation.consultationsStatus === ConsultationStatus.PENDING && (
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '12px' }}>
+                  {consultation.consultationsStatus ===
+                    ConsultationStatus.PENDING && (
+                    <div className="action-buttons">
                       <button
-                        onClick={() => selectConsultationForAnswer(consultation)}
-                        style={{
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px 16px',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                          fontWeight: 500
-                        }}
+                        onClick={() =>
+                          selectConsultationForAnswer(consultation)
+                        }
+                        className="action-button primary"
                       >
                         Trả lời câu hỏi
                       </button>
                       <button
-                        onClick={() => handleCancelConsultation(consultation.id)}
-                        style={{
-                          backgroundColor: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px 16px',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                          fontWeight: 500
-                        }}
+                        onClick={() =>
+                          handleCancelConsultation(consultation.id)
+                        }
+                        className="action-button danger"
                       >
                         Hủy
                       </button>
@@ -689,30 +558,20 @@ useEffect(() => {
                   )}
 
                   {/* Action buttons for answered consultations */}
-                  {consultation.answer && consultation.consultationsStatus !== ConsultationStatus.PENDING && (
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      gap: '12px',
-                      marginTop: '12px'
-                    }}>
-                      <button
-                        onClick={() => selectConsultationForAnswer(consultation)}
-                        style={{
-                          backgroundColor: '#f59e0b',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          fontWeight: 500
-                        }}
-                      >
-                        Chỉnh sửa
-                      </button>
-                    </div>
-                  )}
+                  {consultation.answer &&
+                    consultation.consultationsStatus !==
+                      ConsultationStatus.PENDING && (
+                      <div className="action-buttons">
+                        <button
+                          onClick={() =>
+                            selectConsultationForAnswer(consultation)
+                          }
+                          className="action-button warning"
+                        >
+                          Chỉnh sửa
+                        </button>
+                      </div>
+                    )}
                 </div>
               ))}
               <div ref={messagesEndRef} />
@@ -720,120 +579,55 @@ useEffect(() => {
 
             {/* Answer Form */}
             {selectedConsultationId && (
-              <div style={{
-                padding: '20px',
-                backgroundColor: 'white',
-                borderTop: '1px solid #e5e7eb'
-              }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    fontSize: '0.9rem', 
-                    fontWeight: 600, 
-                    color: '#374151',
-                    marginBottom: '6px'
-                  }}>
-                    Câu trả lời *
-                  </label>
+              <div className="answer-form">
+                <div className="form-group">
+                  <label className="form-label">Câu trả lời *</label>
                   <textarea
                     value={answerText}
                     onChange={(e) => setAnswerText(e.target.value)}
                     placeholder="Nhập câu trả lời của bạn..."
-                    style={{
-                      width: '100%',
-                      minHeight: '100px',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '0.9rem',
-                      resize: 'vertical',
-                      outline: 'none',
-                      fontFamily: 'inherit'
-                    }}
+                    className="form-textarea"
+                    style={{ minHeight: "100px" }}
                     disabled={isAnswering || isUpdating}
                   />
                 </div>
 
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    fontSize: '0.9rem', 
-                    fontWeight: 600, 
-                    color: '#374151',
-                    marginBottom: '6px'
-                  }}>
-                    Ghi chú (tùy chọn)
-                  </label>
+                <div className="form-group">
+                  <label className="form-label">Ghi chú (tùy chọn)</label>
                   <textarea
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
                     placeholder="Ghi chú thêm về câu trả lời..."
-                    style={{
-                      width: '100%',
-                      minHeight: '60px',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '0.9rem',
-                      resize: 'vertical',
-                      outline: 'none',
-                      fontFamily: 'inherit'
-                    }}
+                    className="form-textarea"
+                    style={{ minHeight: "60px" }}
                     disabled={isAnswering || isUpdating}
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <div className="form-actions">
                   <button
                     onClick={() => {
-                      setSelectedConsultationId(selectedConsultationId);
-                      setAnswerText('');
-                      setResolutionNotes('');
+                      setSelectedConsultationId(null);
+                      setAnswerText("");
+                      setResolutionNotes("");
                     }}
                     disabled={isAnswering || isUpdating}
-                    style={{
-                      backgroundColor: '#6b7280',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '10px 20px',
-                      fontSize: '0.9rem',
-                      cursor: (isAnswering || isUpdating) ? 'not-allowed' : 'pointer',
-                      fontWeight: 500,
-                      opacity: (isAnswering || isUpdating) ? 0.6 : 1
-                    }}
+                    className="form-button secondary"
                   >
                     Hủy
                   </button>
 
-                  {selectedUserConsultations.find(c => c.id === selectedConsultationId)?.answer ? (
+                  {selectedUserConsultations.find(
+                    (c) => c.id === selectedConsultationId
+                  )?.answer ? (
                     <button
                       onClick={() => handleUpdateAnswer(selectedConsultationId)}
                       disabled={isUpdating || !answerText.trim()}
-                      style={{
-                        backgroundColor: (!answerText.trim() || isUpdating) ? '#9ca3af' : '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '10px 20px',
-                        fontSize: '0.9rem',
-                        cursor: (!answerText.trim() || isUpdating) ? 'not-allowed' : 'pointer',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
+                      className="form-button warning"
                     >
                       {isUpdating ? (
                         <>
-                          <div style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid transparent',
-                            borderTop: '2px solid white',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }} />
+                          <div className="loading-spinner" />
                           Đang cập nhật...
                         </>
                       ) : (
@@ -845,32 +639,15 @@ useEffect(() => {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleAnswerConsultation(selectedConsultationId)}
+                      onClick={() =>
+                        handleAnswerConsultation(selectedConsultationId)
+                      }
                       disabled={isAnswering || !answerText.trim()}
-                      style={{
-                        backgroundColor: (!answerText.trim() || isAnswering) ? '#9ca3af' : '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '10px 20px',
-                        fontSize: '0.9rem',
-                        cursor: (!answerText.trim() || isAnswering) ? 'not-allowed' : 'pointer',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
+                      className="form-button primary"
                     >
                       {isAnswering ? (
                         <>
-                          <div style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid transparent',
-                            borderTop: '2px solid white',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }} />
+                          <div className="loading-spinner" />
                           Đang gửi...
                         </>
                       ) : (
@@ -887,104 +664,59 @@ useEffect(() => {
           </>
         ) : (
           /* Welcome Screen */
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'white'
-          }}>
-            <div style={{ textAlign: 'center', color: '#6b7280' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '16px' }}>💬</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '1.3rem', fontWeight: 600 }}>
-                Chào mừng đến trang tư vấn
-              </h3>
-              <p style={{ margin: 0, fontSize: '1rem' }}>
-                Chọn một người dùng từ danh sách để xem và trả lời câu hỏi của họ
+          <div className="welcome-screen">
+            <div className="welcome-content">
+              <div className="welcome-icon">💬</div>
+              <h3 className="welcome-title">Chào mừng đến trang tư vấn</h3>
+              <p className="welcome-description">
+                Chọn một người dùng từ danh sách để xem và trả lời câu hỏi của
+                họ
               </p>
-              
+
               {/* Statistics */}
-              <div style={{ 
-                marginTop: '32px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '24px'
-              }}>
-                <div style={{
-                  padding: '16px',
-                  background: '#f0f9ff',
-                  borderRadius: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700, 
-                    color: '#3b82f6',
-                    marginBottom: '4px'
-                  }}>
+              <div className="stats-container">
+                <div className="stat-card users">
+                  <div className="stat-number users">
                     {groupedConsultations.length}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                    Người dùng
-                  </div>
+                  <div className="stat-label">Người dùng</div>
                 </div>
-                
-                <div style={{
-                  padding: '16px',
-                  background: '#fef3c7',
-                  borderRadius: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700, 
-                    color: '#f59e0b',
-                    marginBottom: '4px'
-                  }}>
-                    {groupedConsultations.reduce((total, grouped) => 
-                      total + grouped.consultations.filter(c => c.consultationsStatus === ConsultationStatus.PENDING).length, 0
+
+                <div className="stat-card pending">
+                  <div className="stat-number pending">
+                    {groupedConsultations.reduce(
+                      (total, grouped) =>
+                        total +
+                        grouped.consultations.filter(
+                          (c) =>
+                            c.consultationsStatus === ConsultationStatus.PENDING
+                        ).length,
+                      0
                     )}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                    Chờ phản hồi
-                  </div>
+                  <div className="stat-label">Chờ phản hồi</div>
                 </div>
-                
-                <div style={{
-                  padding: '16px',
-                  background: '#d1fae5',
-                  borderRadius: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700, 
-                    color: '#10b981',
-                    marginBottom: '4px'
-                  }}>
-                    {groupedConsultations.reduce((total, grouped) => 
-                      total + grouped.consultations.filter(c => c.consultationsStatus === ConsultationStatus.ANSWERED).length, 0
+
+                <div className="stat-card answered">
+                  <div className="stat-number answered">
+                    {groupedConsultations.reduce(
+                      (total, grouped) =>
+                        total +
+                        grouped.consultations.filter(
+                          (c) =>
+                            c.consultationsStatus ===
+                            ConsultationStatus.ANSWERED
+                        ).length,
+                      0
                     )}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                    Đã trả lời
-                  </div>
+                  <div className="stat-label">Đã trả lời</div>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Loading Spinner Animation */}
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };

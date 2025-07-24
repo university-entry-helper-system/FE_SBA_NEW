@@ -50,7 +50,7 @@ import Schoolarship from "../components/admin/AdminScholarship.tsx";
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
 import FAQs from "../components/admin/AdminFAQs.tsx";
-import AdminConsultantProfiles from "../components/admin/AdminConsultantProfiles.tsx";
+import AdminConsultantProfiles from "../components/admin/AdminConsultantProfiles";
 import ConsultantPage from "../components/consutant/ConsultantPage.tsx";
 
 const UserLayout = () => {
@@ -120,9 +120,13 @@ const AppRouter = () => {
           <Route path="campus-types" element={<AdminCampusType />} />
           <Route path="campuses" element={<AdminCampuses />} />
           <Route path="news" element={<AdminNews />} />
+          <Route
+            path="consultant-profiles"
+            element={<AdminConsultantProfiles />}
+          />
         </Route>
 
-           {/* Consultant Route - Standalone without layout */}
+        {/* Consultant Route - Standalone without layout */}
         <Route
           path="/consultant"
           element={
@@ -131,7 +135,10 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
+        <Route
+          path="consultant-profiles"
+          element={<AdminConsultantProfiles />}
+        />
         <Route
           path="consultant-profiles"
           element={<AdminConsultantProfiles />}
