@@ -438,6 +438,26 @@ const AdminSidebar = ({ isOpen }: SidebarProps) => {
               </li>
               <li className="admin-nav-item">
                 <NavLink
+                  to="/consultant-profiles"
+                  className={({ isActive }) =>
+                    isActive ? "admin-nav-link active" : "admin-nav-link"
+                  }
+                >
+                  <svg
+                    className="admin-nav-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M6 20v-2a6 6 0 0112 0v2" />
+                  </svg>
+                  <span className="admin-nav-text">Quản lý Quản trị viên</span>
+                </NavLink>
+              </li>
+              <li className="admin-nav-item">
+                <NavLink
                   to="/admin/roles"
                   className={({ isActive }) =>
                     isActive ? "admin-nav-link active" : "admin-nav-link"
