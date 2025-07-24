@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../api/axios";
+import "../../css/AdminConsultantProfiles.css";
 
 interface Specialty {
   id: number;
@@ -164,59 +165,48 @@ const changeConsultantStatus = async (profileIndex: number, newStatus: 'ONLINE' 
 
 // Function để render status với màu sắc
 const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
-  const getStatusStyle = (status: string) => {
+  const getStatusClass = (status: string) => {
     switch (status) {
       case 'ONLINE':
-        return { backgroundColor: '#d4edda', color: '#155724', border: '1px solid #c3e6cb' };
+        return 'status-badge status-online';
       case 'OFFLINE':
-        return { backgroundColor: '#f8d7da', color: '#721c24', border: '1px solid #f5c6cb' };
+        return 'status-badge status-offline';
       case 'BUSY':
-        return { backgroundColor: '#fff3cd', color: '#856404', border: '1px solid #ffeaa7' };
+        return 'status-badge status-busy';
       default:
-        return { backgroundColor: '#e2e3e5', color: '#383d41', border: '1px solid #d6d8db' };
+        return 'status-badge';
     }
   };
 
   return (
-    <span style={{
-      ...getStatusStyle(status),
-      padding: '4px 8px',
-      borderRadius: '12px',
-      fontSize: '0.85em',
-      fontWeight: '500',
-      display: 'inline-block'
-    }}>
+    <span className={getStatusClass(status)}>
       {status}
     </span>
   );
 };
 
   return (
-    <div className="admin-consultant-profiles-page">
-      <h2>Quản lý Quản trị viên</h2>
+    <div className="admin-universities">
+      <div className="universities-header">
+        <div className="header-content">
+          <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
+            Quản lý Quản trị viên
+          </h1>
+          <p className="admin-text-sm admin-text-gray-600">
+            Quản lý thông tin các quản trị viên tư vấn trong hệ thống
+          </p>
+        </div>
+      </div>
       
       {/* Search Bar */}
-      <div style={{ 
-        marginBottom: '20px', 
-        padding: '15px', 
-        backgroundColor: '#f8f9fa', 
-        borderRadius: '8px',
-        border: '1px solid #dee2e6'
-      }}>
+      <div className="admin-news-filter-row">
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="text"
             placeholder="Tìm kiếm theo tên, bio, chuyên ngành..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            style={{
-              flex: '1',
-              minWidth: '250px',
-              padding: '8px 12px',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
+            className="search-input"
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 searchProfiles(searchKeyword);
@@ -226,192 +216,152 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
           <button
             onClick={() => searchProfiles(searchKeyword)}
             disabled={loading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            className="search-button"
           >
             {loading ? 'Đang tìm...' : 'Tìm kiếm'}
           </button>
           {isSearching && (
             <button
               onClick={resetSearch}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
+              className="reset-button"
             >
               Đặt lại
             </button>
           )}
         </div>
         {isSearching && (
-          <div style={{ 
-            marginTop: '8px', 
-            fontSize: '14px', 
-            color: '#6c757d',
-            fontStyle: 'italic'
-          }}>
+          <div className="search-info">
             Đang hiển thị kết quả tìm kiếm cho: "{searchKeyword}"
           </div>
         )}
       </div>
       {editingProfile && (
         <div className="edit-profile-modal">
-          <h3>Chỉnh sửa thông tin cho {editingProfile.fullName}</h3>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setLoading(true);
-              setError("");
-              // Kiểm tra editingProfile và accountId
-              if (!editingProfile || !editingProfile.accountId) {
-                setError("Không tìm thấy ID quản trị viên để cập nhật.");
-                setLoading(false);
-                return;
-              }
-              try {
-                // Sử dụng index + 1 làm ID cho endpoint PUT
-                const profileIndex = profiles.findIndex(p => p.accountId === editingProfile.accountId);
-                const profileId = profileIndex + 1;
-                
-                await axios.put(
-                  `/consultant-profiles/${profileId}`,
-                  {
-                    accountId: editingProfile.accountId,
-                    bio: editBio,
-                    specialtyIds: editSpecialtyIds,
-                  }
-                );
-                // Cập nhật lại bảng
-                setProfiles((prev) =>
-                  prev.map((p) =>
-                    p.accountId === editingProfile.accountId
-                      ? {
-                          ...p,
-                          bio: editBio,
-                          specialties: majors
-                            .filter(m => editSpecialtyIds.includes(m.id))
-                            .map(m => ({ id: m.id, name: m.name, status: "active" }))
-                        }
-                      : p
-                  )
-                );
-                setEditingProfile(null);
-              } catch (err) {
-                setError("Không thể cập nhật thông tin.");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <label>Bio:</label>
-            <textarea
-              value={editBio}
-              onChange={(e) => setEditBio(e.target.value)}
-              rows={4}
-              style={{ width: "100%" }}
-            />
-            <label style={{ marginTop: 12, display: "block" }}>Chuyên ngành:</label>
-            <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #eee", padding: 8, borderRadius: 4 }}>
-              {majors.map((major) => (
-                <div key={major.id}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={editSpecialtyIds.includes(major.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setEditSpecialtyIds([...editSpecialtyIds, major.id]);
-                        } else {
-                          setEditSpecialtyIds(editSpecialtyIds.filter(id => id !== major.id));
-                        }
-                      }}
-                    />
-                    {major.name}
-                  </label>
+          <div className="modal-content">
+            <h3>Chỉnh sửa thông tin cho {editingProfile.fullName}</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError("");
+                // Kiểm tra editingProfile và accountId
+                if (!editingProfile || !editingProfile.accountId) {
+                  setError("Không tìm thấy ID quản trị viên để cập nhật.");
+                  setLoading(false);
+                  return;
+                }
+                try {
+                  // Sử dụng index + 1 làm ID cho endpoint PUT
+                  const profileIndex = profiles.findIndex(p => p.accountId === editingProfile.accountId);
+                  const profileId = profileIndex + 1;
+                  
+                  await axios.put(
+                    `/consultant-profiles/${profileId}`,
+                    {
+                      accountId: editingProfile.accountId,
+                      bio: editBio,
+                      specialtyIds: editSpecialtyIds,
+                    }
+                  );
+                  // Cập nhật lại bảng
+                  setProfiles((prev) =>
+                    prev.map((p) =>
+                      p.accountId === editingProfile.accountId
+                        ? {
+                            ...p,
+                            bio: editBio,
+                            specialties: majors
+                              .filter(m => editSpecialtyIds.includes(m.id))
+                              .map(m => ({ id: m.id, name: m.name, status: "active" }))
+                          }
+                        : p
+                    )
+                  );
+                  setEditingProfile(null);
+                } catch (err) {
+                  setError("Không thể cập nhật thông tin.");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              <div className="form-group">
+                <label className="form-label">Bio:</label>
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  rows={4}
+                  className="form-textarea"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Chuyên ngành:</label>
+                <div className="specialty-list">
+                  {majors.map((major) => (
+                    <div key={major.id} className="specialty-item">
+                      <input
+                        type="checkbox"
+                        className="specialty-checkbox"
+                        checked={editSpecialtyIds.includes(major.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditSpecialtyIds([...editSpecialtyIds, major.id]);
+                          } else {
+                            setEditSpecialtyIds(editSpecialtyIds.filter(id => id !== major.id));
+                          }
+                        }}
+                      />
+                      <label className="specialty-label">{major.name}</label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <button type="submit" disabled={loading}>Lưu</button>
-              <button type="button" onClick={() => setEditingProfile(null)} style={{ marginLeft: 8 }}>Hủy</button>
-            </div>
-            {error && <div className="error">{error}</div>}
-          </form>
+              </div>
+              <div className="form-buttons">
+                <button type="submit" disabled={loading} className="save-button">Lưu</button>
+                <button type="button" onClick={() => setEditingProfile(null)} className="cancel-button">Hủy</button>
+              </div>
+              {error && <div className="error">{error}</div>}
+            </form>
+          </div>
         </div>
       )}
       
       {/* Popup xem chi tiết consultant profile */}
       {viewingProfile && (
-        <div className="view-profile-modal" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflowY: 'auto'
-          }}>
+        <div className="view-profile-modal">
+          <div className="view-modal-content">
             <h3>Chi tiết Quản trị viên: {viewingProfile.fullName}</h3>
             
-            <div style={{ marginBottom: '15px' }}>
-              <strong>Account ID:</strong>
-              <div style={{ padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.9em' }}>
+            <div className="detail-section">
+              <div className="detail-label">Account ID:</div>
+              <div className="detail-content account-id">
                 {viewingProfile.accountId}
               </div>
             </div>
             
-            <div style={{ marginBottom: '15px' }}>
-              <strong>Trạng thái:</strong>
+            <div className="detail-section">
+              <div className="detail-label">Trạng thái:</div>
               <div style={{ marginTop: '8px' }}>
                 {renderStatus(viewingProfile.status)}
               </div>
             </div>
             
-            <div style={{ marginBottom: '15px' }}>
-              <strong>Bio:</strong>
-              <div style={{ padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '4px', marginTop: '5px' }}>
+            <div className="detail-section">
+              <div className="detail-label">Bio:</div>
+              <div className="detail-content">
                 {viewingProfile.bio || 'Chưa có thông tin bio'}
               </div>
             </div>
             
-            <div style={{ marginBottom: '15px' }}>
-              <strong>Chuyên ngành ({viewingProfile.specialties.length}):</strong>
+            <div className="detail-section">
+              <div className="detail-label">Chuyên ngành ({viewingProfile.specialties.length}):</div>
               <div style={{ marginTop: '8px' }}>
                 {viewingProfile.specialties.length > 0 ? (
                   viewingProfile.specialties.map((specialty) => (
-                    <div key={specialty.id} style={{
-                      display: 'inline-block',
-                      margin: '4px',
-                      padding: '6px 12px',
-                      backgroundColor: specialty.status === 'active' ? '#e8f5e8' : '#f5f5f5',
-                      border: `1px solid ${specialty.status === 'active' ? '#4caf50' : '#ccc'}`,
-                      borderRadius: '20px',
-                      fontSize: '0.9em'
-                    }}>
+                    <div 
+                      key={specialty.id} 
+                      className={`specialty-detail-tag ${specialty.status === 'active' ? 'specialty-active' : 'specialty-inactive'}`}
+                    >
                       {specialty.name}
                       <span style={{ 
                         marginLeft: '6px', 
@@ -431,14 +381,7 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
             <div style={{ textAlign: 'right', marginTop: '20px' }}>
               <button 
                 onClick={() => setViewingProfile(null)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
+                className="close-button"
               >
                 Đóng
               </button>
@@ -447,88 +390,89 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
         </div>
       )}
       {loading ? (
-        <div>Đang tải...</div>
+        <div className="admin-news-loading-container">
+          <div className="admin-news-loading-spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
       ) : error ? (
-        <div className="error">{error}</div>
+        <div className="admin-news-alert alert-error">{error}</div>
       ) : (
         <>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Họ tên</th>
-                <th>Trạng thái</th>
-                <th>Bio</th>
-                <th>Chuyên ngành</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {profiles.map((profile, index) => (
-                <tr key={profile.accountId}>
-                  <td>{index + 1}</td>
-                  <td>{profile.fullName}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {renderStatus(profile.status)}
-                      <select
-                        value={profile.status}
-                        onChange={(e) => changeConsultantStatus(index, e.target.value as 'ONLINE' | 'OFFLINE' | 'BUSY')}
-                        disabled={loading}
-                        style={{
-                          padding: '2px 4px',
-                          fontSize: '0.8em',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: 'white'
-                        }}
-                      >
-                        <option value="ONLINE">ONLINE</option>
-                        <option value="OFFLINE">OFFLINE</option>
-                        <option value="BUSY">BUSY</option>
-                      </select>
-                    </div>
-                  </td>
-                  <td>{profile.bio}</td>
-                  <td>
-                    {profile.specialties.map((s) => (
-                      <span key={s.id} style={{ display: "inline-block", marginRight: 8 }}>
-                        {s.name} <span style={{ color: "#888", fontSize: "0.9em" }}>({s.status})</span>
-                      </span>
-                    ))}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => {
-                        setEditingProfile(profile);
-                        setEditBio(profile.bio);
-                      }}
-                      style={{ marginRight: '8px' }}
-                    >Sửa Bio</button>
-                    <button
-                      onClick={() => viewProfileDetail(index)}
-                      disabled={viewLoading}
-                      style={{ 
-                        backgroundColor: '#17a2b8',
-                        color: 'white',
-                        border: 'none',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {viewLoading ? 'Đang tải...' : 'Xem chi tiết'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="admin-news-table-container">
+            <div className="table-wrapper">
+              <table className="admin-news-table">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Họ tên</th>
+                    <th>Trạng thái</th>
+                    <th>Bio</th>
+                    <th>Chuyên ngành</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profiles.map((profile, index) => (
+                    <tr key={profile.accountId} className="table-row">
+                      <td>{index + 1}</td>
+                      <td>{profile.fullName}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {renderStatus(profile.status)}
+                          <select
+                            value={profile.status}
+                            onChange={(e) => changeConsultantStatus(index, e.target.value as 'ONLINE' | 'OFFLINE' | 'BUSY')}
+                            disabled={loading}
+                            className="status-dropdown"
+                          >
+                            <option value="ONLINE">ONLINE</option>
+                            <option value="OFFLINE">OFFLINE</option>
+                            <option value="BUSY">BUSY</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td>{profile.bio}</td>
+                      <td>
+                        {profile.specialties.map((s) => (
+                          <span key={s.id} className="specialty-tag">
+                            {s.name} <span className="specialty-status">({s.status})</span>
+                          </span>
+                        ))}
+                      </td>
+                      <td>
+                        <div className="admin-news-action-buttons">
+                          <button
+                            onClick={() => {
+                              setEditingProfile(profile);
+                              setEditBio(profile.bio);
+                            }}
+                            className="action-btn edit-btn"
+                            title="Sửa Bio"
+                          >
+                            Sửa Bio
+                          </button>
+                          <button
+                            onClick={() => viewProfileDetail(index)}
+                            disabled={viewLoading}
+                            className="action-btn view-btn"
+                            title="Xem chi tiết"
+                          >
+                            {viewLoading ? 'Đang tải...' : 'Xem chi tiết'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
           {totalPages > 1 && (
-            <div className="pagination">
+            <div className="admin-news-pagination">
               {Array.from({ length: totalPages }).map((_, idx) => (
                 <button
                   key={`page-${idx + 1}`}
+                  className={`pagination-btn ${idx === page ? 'active' : ''}`}
                   onClick={() => {
                     if (isSearching) {
                       searchProfiles(searchKeyword, idx);
