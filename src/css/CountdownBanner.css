@@ -35,7 +35,7 @@
 }
 .countdown-heading {
   font-size: 1.875rem;
-  font-weight: 800;
+  font-weight: 1000;
   color: white;
   line-height: 1.2;
   animation: pulse-glow 1.8s ease-in-out infinite;
@@ -129,25 +129,66 @@
   }
 }
 @media (min-width: 640px) {
-  .countdown-banner { padding: 4rem 0; }
-  .bg-element-1 { width: 10rem; height: 10rem; }
-  .bg-element-2 { width: 12rem; height: 12rem; }
-  .bg-element-3 { width: 9rem; height: 9rem; }
-  .countdown-heading { font-size: 2.25rem; }
-  .countdown-subheading { font-size: 1.25rem; }
-  .time-boxes { flex-direction: row; gap: 1rem; max-width: 42rem; }
-  .time-box { min-width: auto; }
-  .time-value { font-size: 1.875rem; }
-  .time-label { font-size: 0.75rem; }
+  .countdown-banner {
+    padding: 4rem 0;
+  }
+  .bg-element-1 {
+    width: 10rem;
+    height: 10rem;
+  }
+  .bg-element-2 {
+    width: 12rem;
+    height: 12rem;
+  }
+  .bg-element-3 {
+    width: 9rem;
+    height: 9rem;
+  }
+  .countdown-heading {
+    font-size: 2.25rem;
+  }
+  .countdown-subheading {
+    font-size: 1.25rem;
+  }
+  .time-boxes {
+    flex-direction: row;
+    gap: 1rem;
+    max-width: 42rem;
+  }
+  .time-box {
+    min-width: auto;
+  }
+  .time-value {
+    font-size: 1.875rem;
+  }
+  .time-label {
+    font-size: 0.75rem;
+  }
 }
 @media (min-width: 768px) {
-  .countdown-banner { padding: 5rem 0; }
-  .countdown-content { flex-direction: row; gap: 1.5rem; }
-  .countdown-heading { font-size: 3rem; }
-  .time-boxes { gap: 1.5rem; max-width: 48rem; }
-  .time-value { font-size: 2.25rem; }
-  .time-label { font-size: 0.875rem; }
+  .countdown-banner {
+    padding: 5rem 0;
+  }
+  .countdown-content {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+  .countdown-heading {
+    font-size: 3rem;
+  }
+  .time-boxes {
+    gap: 1.5rem;
+    max-width: 48rem;
+  }
+  .time-value {
+    font-size: 2.25rem;
+  }
+  .time-label {
+    font-size: 0.875rem;
+  }
 }
 @media (min-width: 1024px) {
-  .time-boxes { gap: 2rem; }
+  .time-boxes {
+    gap: 2rem;
+  }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../api/axios";
-import "../../css/AdminConsultantProfiles.css";
+import "../../css/AdminUniversities.css";
 
 interface Specialty {
   id: number;
@@ -12,7 +12,7 @@ interface ConsultantProfile {
   accountId: string;
   fullName: string;
   bio: string;
-  status: 'ONLINE' | 'OFFLINE' | 'BUSY';
+  status: "ONLINE" | "OFFLINE" | "BUSY";
   specialties: Specialty[];
 }
 
@@ -36,208 +36,392 @@ const AdminConsultantProfiles: React.FC = () => {
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [editingProfile, setEditingProfile] = useState<ConsultantProfile | null>(null);
+  const [editingProfile, setEditingProfile] =
+    useState<ConsultantProfile | null>(null);
   const [editBio, setEditBio] = useState("");
-  const [viewingProfile, setViewingProfile] = useState<ConsultantProfile | null>(null);
-  const [viewLoading, setViewLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
   // useEffect lấy danh sách majors khi mở form edit
-useEffect(() => {
-  if (editingProfile) {
-    (async () => {
+  useEffect(() => {
+    if (editingProfile) {
+      (async () => {
+        try {
+          const res = await axios.get("/majors?page=0&size=50");
+          setMajors(res.data.result.items);
+          setEditSpecialtyIds(editingProfile.specialties.map((s) => s.id));
+        } catch {
+          // ignore error when loading majors for edit
+        }
+      })();
+    }
+  }, [editingProfile]);
+
+  // useEffect lấy danh sách profiles khi đổi page
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      setLoading(true);
+      setError("");
       try {
-        const res = await axios.get("/majors?page=0&size=50");
-        setMajors(res.data.result.items);
-        setEditSpecialtyIds(editingProfile.specialties.map(s => s.id));
-      } catch {}
-    })();
-  }
-}, [editingProfile]);
+        const res = await axios.get<ApiResponse>(
+          `http://localhost:8080/api/v1/consultant-profiles?page=${page}&size=10`
+        );
+        setProfiles(res.data.result.content);
+        setTotalPages(res.data.result.totalPages);
+      } catch {
+        setError("Không thể tải danh sách quản trị viên.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfiles();
+  }, [page]);
 
-// useEffect lấy danh sách profiles khi đổi page
-useEffect(() => {
-  const fetchProfiles = async () => {
+  // Function để tìm kiếm consultant profiles
+  const searchProfiles = async (keyword: string, searchPage: number = 0) => {
     setLoading(true);
     setError("");
+    setIsSearching(keyword.trim() !== "");
+
     try {
-      const res = await axios.get<ApiResponse>(
-        `http://localhost:8080/api/v1/consultant-profiles?page=${page}&size=10`
-      );
+      let res;
+      if (keyword.trim() === "") {
+        // Nếu keyword rỗng, lấy tất cả profiles
+        res = await axios.get<ApiResponse>(
+          `http://localhost:8080/api/v1/consultant-profiles?page=${searchPage}&size=10`
+        );
+      } else {
+        // Nếu có keyword, tìm kiếm
+        res = await axios.get<ApiResponse>(
+          `/consultant-profiles/search?keyword=${encodeURIComponent(
+            keyword
+          )}&page=${searchPage}&size=10`
+        );
+      }
       setProfiles(res.data.result.content);
       setTotalPages(res.data.result.totalPages);
-    } catch (err) {
-      setError("Không thể tải danh sách quản trị viên.");
+      setPage(searchPage);
+    } catch {
+      setError("Không thể tìm kiếm quản trị viên.");
     } finally {
       setLoading(false);
     }
   };
-  fetchProfiles();
-}, [page]);
 
-// Function để tìm kiếm consultant profiles
-const searchProfiles = async (keyword: string, searchPage: number = 0) => {
-  setLoading(true);
-  setError("");
-  setIsSearching(keyword.trim() !== "");
-  
-  try {
-    let res;
-    if (keyword.trim() === "") {
-      // Nếu keyword rỗng, lấy tất cả profiles
-      res = await axios.get<ApiResponse>(
-        `http://localhost:8080/api/v1/consultant-profiles?page=${searchPage}&size=10`
-      );
-    } else {
-      // Nếu có keyword, tìm kiếm
-      res = await axios.get<ApiResponse>(
-        `/consultant-profiles/search?keyword=${encodeURIComponent(keyword)}&page=${searchPage}&size=10`
-      );
-    }
-    setProfiles(res.data.result.content);
-    setTotalPages(res.data.result.totalPages);
-    setPage(searchPage);
-  } catch (err) {
-    setError("Không thể tìm kiếm quản trị viên.");
-  } finally {
-    setLoading(false);
-  }
-};
+  // Function để reset tìm kiếm
+  const resetSearch = () => {
+    setSearchKeyword("");
+    setIsSearching(false);
+    setPage(0);
+    // Tự động reload danh sách ban đầu
+    const fetchProfiles = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await axios.get<ApiResponse>(
+          `http://localhost:8080/api/v1/consultant-profiles?page=0&size=10`
+        );
+        setProfiles(res.data.result.content);
+        setTotalPages(res.data.result.totalPages);
+      } catch {
+        setError("Không thể tải danh sách quản trị viên.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfiles();
+  };
 
-// Function để reset tìm kiếm
-const resetSearch = () => {
-  setSearchKeyword("");
-  setIsSearching(false);
-  setPage(0);
-  // Tự động reload danh sách ban đầu
-  const fetchProfiles = async () => {
+  // Function để thay đổi status consultant profile
+  const changeConsultantStatus = async (
+    profileId: number,
+    newStatus: "ONLINE" | "OFFLINE" | "BUSY"
+  ) => {
     setLoading(true);
-    setError("");
     try {
-      const res = await axios.get<ApiResponse>(
-        `http://localhost:8080/api/v1/consultant-profiles?page=0&size=10`
+      await axios.patch(
+        `/consultant-profiles/${profileId}/status?status=${newStatus}`
       );
-      setProfiles(res.data.result.content);
-      setTotalPages(res.data.result.totalPages);
-    } catch (err) {
-      setError("Không thể tải danh sách quản trị viên.");
+
+      // Cập nhật lại bảng sau khi thay đổi status thành công
+      setProfiles((prev) =>
+        prev.map((p) =>
+          p.accountId === profiles[profileId - 1].accountId
+            ? { ...p, status: newStatus }
+            : p
+        )
+      );
+    } catch {
+      setError("Không thể cập nhật trạng thái quản trị viên.");
     } finally {
       setLoading(false);
     }
   };
-  fetchProfiles();
-};
 
-// Function để xem chi tiết consultant profile
-const viewProfileDetail = async (profileIndex: number) => {
-  setViewLoading(true);
-  try {
-    const profileId = profileIndex + 1;
-    const res = await axios.get(`/consultant-profiles/${profileId}`);
-    setViewingProfile(res.data.result);
-  } catch (err) {
-    setError("Không thể tải thông tin chi tiết quản trị viên.");
-  } finally {
-    setViewLoading(false);
-  }
-};
+  // Function để render status với màu sắc
+  const renderStatus = (status: "ONLINE" | "OFFLINE" | "BUSY") => {
+    const getStatusClass = (status: string) => {
+      switch (status) {
+        case "ONLINE":
+          return "status-badge status-online";
+        case "OFFLINE":
+          return "status-badge status-offline";
+        case "BUSY":
+          return "status-badge status-busy";
+        default:
+          return "status-badge";
+      }
+    };
 
-// Function để thay đổi status consultant profile
-const changeConsultantStatus = async (profileIndex: number, newStatus: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
-  setLoading(true);
-  try {
-    const profileId = profileIndex + 1;
-    await axios.patch(`/consultant-profiles/${profileId}/status?status=${newStatus}`);
-    
-    // Cập nhật lại bảng sau khi thay đổi status thành công
-    setProfiles((prev) =>
-      prev.map((p, idx) =>
-        idx === profileIndex ? { ...p, status: newStatus } : p
-      )
-    );
-  } catch (err) {
-    setError("Không thể cập nhật trạng thái quản trị viên.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Function để render status với màu sắc
-const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'ONLINE':
-        return 'status-badge status-online';
-      case 'OFFLINE':
-        return 'status-badge status-offline';
-      case 'BUSY':
-        return 'status-badge status-busy';
-      default:
-        return 'status-badge';
-    }
+    return <span className={getStatusClass(status)}>{status}</span>;
   };
-
-  return (
-    <span className={getStatusClass(status)}>
-      {status}
-    </span>
-  );
-};
 
   return (
     <div className="admin-universities">
       <div className="universities-header">
         <div className="header-content">
           <h1 className="admin-text-2xl admin-font-bold admin-text-gray-900">
-            Quản lý Quản trị viên
+            Quản lý Quản trị viên tư vấn
           </h1>
           <p className="admin-text-sm admin-text-gray-600">
             Quản lý thông tin các quản trị viên tư vấn trong hệ thống
           </p>
         </div>
       </div>
-      
+      {/* Alerts */}
+      {error && <div className="alert alert-error">{error}</div>}
+      {loading && (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      )}
       {/* Search Bar */}
-      <div className="admin-news-filter-row">
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên, bio, chuyên ngành..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="search-input"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                searchProfiles(searchKeyword);
-              }
-            }}
-          />
-          <button
-            onClick={() => searchProfiles(searchKeyword)}
-            disabled={loading}
-            className="search-button"
-          >
-            {loading ? 'Đang tìm...' : 'Tìm kiếm'}
-          </button>
-          {isSearching && (
+      <div className="search-section">
+        <div className="search-controls">
+          <div className="search-input-group">
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên, bio, chuyên ngành..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="search-input"
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  searchProfiles(searchKeyword);
+                }
+              }}
+            />
             <button
-              onClick={resetSearch}
-              className="reset-button"
+              onClick={() => searchProfiles(searchKeyword)}
+              disabled={loading}
+              className="search-btn"
             >
-              Đặt lại
+              {loading ? "Đang tìm..." : "Tìm kiếm"}
             </button>
+            {isSearching && (
+              <button onClick={resetSearch} className="reset-btn">
+                Đặt lại
+              </button>
+            )}
+          </div>
+          {isSearching && (
+            <div className="search-info">
+              Đang hiển thị kết quả tìm kiếm cho: "{searchKeyword}"
+            </div>
           )}
         </div>
-        {isSearching && (
-          <div className="search-info">
-            Đang hiển thị kết quả tìm kiếm cho: "{searchKeyword}"
-          </div>
-        )}
       </div>
+      {/* Table */}
+      <div className="table-container">
+        <div className="table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Họ tên</th>
+                <th>Trạng thái</th>
+                <th>Bio</th>
+                <th>Chuyên ngành</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map((profile, index) => (
+                <tr key={profile.accountId} className="table-row">
+                  <td>{index + 1}</td>
+                  <td>{profile.fullName}</td>
+                  <td>{renderStatus(profile.status)}</td>
+                  <td>{profile.bio}</td>
+                  <td>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                      }}
+                    >
+                      {profile.specialties.length === 0 ? (
+                        <span style={{ color: "#888", fontStyle: "italic" }}>
+                          Chưa có chuyên ngành
+                        </span>
+                      ) : (
+                        profile.specialties.map((s) => (
+                          <span
+                            key={s.id}
+                            className="chip"
+                            style={{
+                              marginBottom: 2,
+                              background:
+                                s.status === "active" ? "#e0f2fe" : "#f3f4f6",
+                              color: s.status === "active" ? "#0369a1" : "#888",
+                            }}
+                          >
+                            {s.name}
+                            <span
+                              className="specialty-status"
+                              style={{ marginLeft: 6, fontSize: "0.8em" }}
+                            >
+                              ({s.status})
+                            </span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div
+                      className="action-buttons"
+                      style={{
+                        justifyContent: "flex-end",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          setEditingProfile(profile);
+                          setEditBio(profile.bio);
+                        }}
+                        className="action-btn edit-btn"
+                        title="Sửa Bio"
+                        style={{ minWidth: 80 }}
+                      >
+                        Sửa Bio
+                      </button>
+                      {/* Nút chỉnh trạng thái */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          marginLeft: 12,
+                        }}
+                      >
+                        {/* Nút trạng thái hiện tại (nổi bật) */}
+                        <button
+                          className="action-btn"
+                          style={{
+                            minWidth: 90,
+                            fontWeight: 600,
+                            background:
+                              profile.status === "ONLINE"
+                                ? "#10b981"
+                                : profile.status === "OFFLINE"
+                                ? "#6b7280"
+                                : "#f59e0b",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "default",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          }}
+                          disabled
+                          title={`Trạng thái hiện tại: ${profile.status}`}
+                        >
+                          {profile.status === "ONLINE" && "🟢 Online"}
+                          {profile.status === "OFFLINE" && "⚪ Offline"}
+                          {profile.status === "BUSY" && "🟠 Busy"}
+                        </button>
+                        {/* Các nút chuyển trạng thái khác */}
+                        {["ONLINE", "OFFLINE", "BUSY"]
+                          .filter((s) => s !== profile.status)
+                          .map((status) => (
+                            <button
+                              key={status}
+                              className="action-btn"
+                              style={{
+                                minWidth: 36,
+                                fontWeight: 500,
+                                background:
+                                  status === "ONLINE"
+                                    ? "#d1fae5"
+                                    : status === "OFFLINE"
+                                    ? "#e5e7eb"
+                                    : "#fef3c7",
+                                color:
+                                  status === "ONLINE"
+                                    ? "#059669"
+                                    : status === "OFFLINE"
+                                    ? "#374151"
+                                    : "#b45309",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: loading ? "not-allowed" : "pointer",
+                                opacity: loading ? 0.6 : 1,
+                                fontSize: 13,
+                                marginLeft: 2,
+                                padding: "6px 8px",
+                                transition: "background 0.2s",
+                              }}
+                              disabled={loading}
+                              onClick={() =>
+                                changeConsultantStatus(
+                                  index + 1,
+                                  status as "ONLINE" | "OFFLINE" | "BUSY"
+                                )
+                              }
+                              title={`Chuyển sang ${status}`}
+                            >
+                              {status === "ONLINE" && "🟢"}
+                              {status === "OFFLINE" && "⚪"}
+                              {status === "BUSY" && "🟠"}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {profiles.length === 0 && !loading && (
+            <div className="empty-state">
+              <svg
+                className="empty-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m21 21-4.35-4.35"
+                />
+              </svg>
+              <h3>Không tìm thấy quản trị viên tư vấn</h3>
+              <p>Thử tìm kiếm với từ khóa khác hoặc thêm mới</p>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Edit Modal and View Modal giữ nguyên như cũ, chỉ cần đảm bảo nằm trong admin-universities */}
       {editingProfile && (
-        <div className="edit-profile-modal">
-          <div className="modal-content">
+        <div className="modal-overlay">
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Chỉnh sửa thông tin cho {editingProfile.fullName}</h3>
             <form
               onSubmit={async (e) => {
@@ -251,18 +435,16 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
                   return;
                 }
                 try {
-                  // Sử dụng index + 1 làm ID cho endpoint PUT
-                  const profileIndex = profiles.findIndex(p => p.accountId === editingProfile.accountId);
-                  const profileId = profileIndex + 1;
-                  
-                  await axios.put(
-                    `/consultant-profiles/${profileId}`,
-                    {
-                      accountId: editingProfile.accountId,
-                      bio: editBio,
-                      specialtyIds: editSpecialtyIds,
-                    }
-                  );
+                  const profileId =
+                    profiles.findIndex(
+                      (p) => p.accountId === editingProfile.accountId
+                    ) + 1;
+
+                  await axios.put(`/consultant-profiles/${profileId}`, {
+                    accountId: editingProfile.accountId,
+                    bio: editBio,
+                    specialtyIds: editSpecialtyIds,
+                  });
                   // Cập nhật lại bảng
                   setProfiles((prev) =>
                     prev.map((p) =>
@@ -271,14 +453,18 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
                             ...p,
                             bio: editBio,
                             specialties: majors
-                              .filter(m => editSpecialtyIds.includes(m.id))
-                              .map(m => ({ id: m.id, name: m.name, status: "active" }))
+                              .filter((m) => editSpecialtyIds.includes(m.id))
+                              .map((m) => ({
+                                id: m.id,
+                                name: m.name,
+                                status: "active",
+                              })),
                           }
                         : p
                     )
                   );
                   setEditingProfile(null);
-                } catch (err) {
+                } catch {
                   setError("Không thể cập nhật thông tin.");
                 } finally {
                   setLoading(false);
@@ -305,9 +491,14 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
                         checked={editSpecialtyIds.includes(major.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setEditSpecialtyIds([...editSpecialtyIds, major.id]);
+                            setEditSpecialtyIds([
+                              ...editSpecialtyIds,
+                              major.id,
+                            ]);
                           } else {
-                            setEditSpecialtyIds(editSpecialtyIds.filter(id => id !== major.id));
+                            setEditSpecialtyIds(
+                              editSpecialtyIds.filter((id) => id !== major.id)
+                            );
                           }
                         }}
                       />
@@ -317,177 +508,46 @@ const renderStatus = (status: 'ONLINE' | 'OFFLINE' | 'BUSY') => {
                 </div>
               </div>
               <div className="form-buttons">
-                <button type="submit" disabled={loading} className="save-button">Lưu</button>
-                <button type="button" onClick={() => setEditingProfile(null)} className="cancel-button">Hủy</button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="save-button"
+                >
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingProfile(null)}
+                  className="cancel-button"
+                >
+                  Hủy
+                </button>
               </div>
               {error && <div className="error">{error}</div>}
             </form>
           </div>
         </div>
       )}
-      
-      {/* Popup xem chi tiết consultant profile */}
-      {viewingProfile && (
-        <div className="view-profile-modal">
-          <div className="view-modal-content">
-            <h3>Chi tiết Quản trị viên: {viewingProfile.fullName}</h3>
-            
-            <div className="detail-section">
-              <div className="detail-label">Account ID:</div>
-              <div className="detail-content account-id">
-                {viewingProfile.accountId}
-              </div>
-            </div>
-            
-            <div className="detail-section">
-              <div className="detail-label">Trạng thái:</div>
-              <div style={{ marginTop: '8px' }}>
-                {renderStatus(viewingProfile.status)}
-              </div>
-            </div>
-            
-            <div className="detail-section">
-              <div className="detail-label">Bio:</div>
-              <div className="detail-content">
-                {viewingProfile.bio || 'Chưa có thông tin bio'}
-              </div>
-            </div>
-            
-            <div className="detail-section">
-              <div className="detail-label">Chuyên ngành ({viewingProfile.specialties.length}):</div>
-              <div style={{ marginTop: '8px' }}>
-                {viewingProfile.specialties.length > 0 ? (
-                  viewingProfile.specialties.map((specialty) => (
-                    <div 
-                      key={specialty.id} 
-                      className={`specialty-detail-tag ${specialty.status === 'active' ? 'specialty-active' : 'specialty-inactive'}`}
-                    >
-                      {specialty.name}
-                      <span style={{ 
-                        marginLeft: '6px', 
-                        fontSize: '0.8em',
-                        color: specialty.status === 'active' ? '#2e7d32' : '#666'
-                      }}>
-                        ({specialty.status})
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ fontStyle: 'italic', color: '#666' }}>Chưa có chuyên ngành nào</div>
-                )}
-              </div>
-            </div>
-            
-            <div style={{ textAlign: 'right', marginTop: '20px' }}>
-              <button 
-                onClick={() => setViewingProfile(null)}
-                className="close-button"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
+
+      {totalPages > 1 && (
+        <div className="admin-news-pagination">
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <button
+              key={`page-${idx + 1}`}
+              className={`pagination-btn ${idx === page ? "active" : ""}`}
+              onClick={() => {
+                if (isSearching) {
+                  searchProfiles(searchKeyword, idx);
+                } else {
+                  setPage(idx);
+                }
+              }}
+              disabled={idx === page}
+            >
+              {idx + 1}
+            </button>
+          ))}
         </div>
-      )}
-      {loading ? (
-        <div className="admin-news-loading-container">
-          <div className="admin-news-loading-spinner"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
-      ) : error ? (
-        <div className="admin-news-alert alert-error">{error}</div>
-      ) : (
-        <>
-          <div className="admin-news-table-container">
-            <div className="table-wrapper">
-              <table className="admin-news-table">
-                <thead>
-                  <tr>
-                    <th>STT</th>
-                    <th>Họ tên</th>
-                    <th>Trạng thái</th>
-                    <th>Bio</th>
-                    <th>Chuyên ngành</th>
-                    <th>Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profiles.map((profile, index) => (
-                    <tr key={profile.accountId} className="table-row">
-                      <td>{index + 1}</td>
-                      <td>{profile.fullName}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {renderStatus(profile.status)}
-                          <select
-                            value={profile.status}
-                            onChange={(e) => changeConsultantStatus(index, e.target.value as 'ONLINE' | 'OFFLINE' | 'BUSY')}
-                            disabled={loading}
-                            className="status-dropdown"
-                          >
-                            <option value="ONLINE">ONLINE</option>
-                            <option value="OFFLINE">OFFLINE</option>
-                            <option value="BUSY">BUSY</option>
-                          </select>
-                        </div>
-                      </td>
-                      <td>{profile.bio}</td>
-                      <td>
-                        {profile.specialties.map((s) => (
-                          <span key={s.id} className="specialty-tag">
-                            {s.name} <span className="specialty-status">({s.status})</span>
-                          </span>
-                        ))}
-                      </td>
-                      <td>
-                        <div className="admin-news-action-buttons">
-                          <button
-                            onClick={() => {
-                              setEditingProfile(profile);
-                              setEditBio(profile.bio);
-                            }}
-                            className="action-btn edit-btn"
-                            title="Sửa Bio"
-                          >
-                            Sửa Bio
-                          </button>
-                          <button
-                            onClick={() => viewProfileDetail(index)}
-                            disabled={viewLoading}
-                            className="action-btn view-btn"
-                            title="Xem chi tiết"
-                          >
-                            {viewLoading ? 'Đang tải...' : 'Xem chi tiết'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          {totalPages > 1 && (
-            <div className="admin-news-pagination">
-              {Array.from({ length: totalPages }).map((_, idx) => (
-                <button
-                  key={`page-${idx + 1}`}
-                  className={`pagination-btn ${idx === page ? 'active' : ''}`}
-                  onClick={() => {
-                    if (isSearching) {
-                      searchProfiles(searchKeyword, idx);
-                    } else {
-                      setPage(idx);
-                    }
-                  }}
-                  disabled={idx === page}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
       )}
     </div>
   );
