@@ -342,7 +342,7 @@ const ConsultantList: React.FC = () => {
               }}
             >
               <span style={{ fontSize: '1.3rem' }}>💬</span>
-              {isAuthenticated ? 'Chat với tư vấn viên' : 'Đăng nhập để chat'}
+              {isAuthenticated ? 'Đặt câu hỏi với tư vấn viên' : 'Đăng nhập để chat'}
             </button>
           </div>
         ))}

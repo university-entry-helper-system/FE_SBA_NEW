@@ -147,7 +147,13 @@ useEffect(() => {
     try {
       setLoading(true);
       const response = await getConsultantConsultations(0, 100);
-      const newGrouped = response.result.content || [];
+      let newGrouped = response.result.content || [];
+      // Sort by most recent consultation (by sentAt)
+      newGrouped = newGrouped.sort((a, b) => {
+        const aDate = a.consultations[0]?.sentAt ? new Date(a.consultations[0].sentAt).getTime() : 0;
+        const bDate = b.consultations[0]?.sentAt ? new Date(b.consultations[0].sentAt).getTime() : 0;
+        return bDate - aDate;
+      });
       setGroupedConsultations(newGrouped);
       setError('');
       return newGrouped;
