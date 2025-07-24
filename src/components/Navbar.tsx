@@ -244,11 +244,15 @@ const Navbar = () => {
                 </Link>
               </div>
             </li>
-            <div className="navbar-actions">
-              <Link to="/scholarship-review" className="navbar-scholarship-btn">
-                Xét duyệt học bổng
+            <li>
+              <Link
+                  to="/scholarship-review"
+                  className={`navbar-menu-link  ${isLinkActive("/scholarship-review")}`}
+                   onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              >
+                Học bổng
               </Link>
-            </div>
+            </li>
             {/* Role-based links */}
             {isAuthenticated && user?.roleName === "ROLE_ADMIN" && (
               <li>

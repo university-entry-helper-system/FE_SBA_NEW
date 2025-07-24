@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { getScholarshipsByUniversity } from "../api/scholarshipService.ts";
-import type { ScholarshipResponse } from "../types/scholarshipTypes.ts";
+import { searchScholarships } from "../api/scholarshipService.ts";
+import type { ScholarshipResponse, ScholarshipSearchRequest, ValueType, EligibilityType } from "../types/scholarshipTypes.ts";
+import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
 import "../css/scholarship-review.css";
-
-
 
 interface Province {
     id: number;
@@ -37,47 +41,73 @@ const ScholarshipReview = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchInput, setSearchInput] = useState("");
+    const [scholarshipName, setScholarshipName] = useState("");
+    const [valueType, setValueType] = useState<ValueType | "">("");
+    const [eligibilityType, setEligibilityType] = useState<EligibilityType | "">("");
     const universitiesPerPage = 12;
-    // const navigate = useNavigate();
+
+    // Kiểm tra xem form có giá trị nào không để hiển thị nút Cancel
+    const hasFilterValues = searchInput || scholarshipName || valueType || eligibilityType;
+
+    // Hàm reset form tìm kiếm
+    const resetFilters = () => {
+        setSearchInput("");
+        setScholarshipName("");
+        setValueType("");
+        setEligibilityType("");
+        setCurrentPage(1);
+    };
 
     useEffect(() => {
         const fetchUniversitiesAndScholarships = async () => {
             setLoading(true);
             setError("");
             try {
-                const res = await axios.get("http://localhost:8080/api/v1/universities");
-                const universityData = Array.isArray(res.data.result?.items) ? res.data.result.items : [];
+                // Lấy danh sách trường theo tên
+                const universityRes = await axios.get("http://localhost:8080/api/v1/universities", {
+                    params: { search: searchInput || undefined },
+                });
+                const universityData = Array.isArray(universityRes.data.result?.items)
+                    ? universityRes.data.result.items
+                    : [];
 
-                const universitiesWithScholarships = await Promise.all(
-                    universityData.map(async (university: University) => {
-                        try {
-                            const scholarshipRes = await getScholarshipsByUniversity(university.id);
-                            return { ...university, scholarships: scholarshipRes.data.result };
-                        } catch {
-                            return { ...university, scholarships: [] };
-                        }
-                    })
+                // Lấy danh sách học bổng theo bộ lọc
+                const searchParams: ScholarshipSearchRequest = {
+                    name: scholarshipName || undefined,
+                    valueType: valueType || undefined,
+                    eligibilityType: eligibilityType || undefined,
+                };
+                const scholarshipRes = await searchScholarships(searchParams);
+                const scholarshipData = Array.isArray(scholarshipRes.data.result)
+                    ? scholarshipRes.data.result
+                    : [];
+
+                // Kết hợp dữ liệu: nhóm học bổng theo trường
+                const universitiesWithScholarships: UniversityWithScholarships[] = universityData.map(
+                    (university: University) => {
+                        const scholarships = scholarshipData.filter((scholarship: ScholarshipResponse) =>
+                            scholarship.universities?.some((u) => u.id === university.id)
+                        );
+                        return { ...university, scholarships };
+                    }
                 );
 
-                setUniversities(universitiesWithScholarships);
-            } catch {
+                // Lọc bỏ các trường không có học bổng phù hợp nếu có bộ lọc học bổng
+                const filteredUniversities = scholarshipName || valueType || eligibilityType
+                    ? universitiesWithScholarships.filter((u) => u.scholarships.length > 0)
+                    : universitiesWithScholarships;
+
+                setUniversities(filteredUniversities);
+            } catch (err) {
                 setError("Không thể tải danh sách trường và học bổng.");
+                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
         fetchUniversitiesAndScholarships();
-    }, []);
-
-    // const getLogoUrl = (logoUrl?: string) => {
-    //     if (!logoUrl) return "/default-logo.png";
-    //     if (logoUrl.startsWith("http")) {
-    //         let url = logoUrl.split("?")[0];
-    //         url = url.replace("minio:9000", "localhost:9000");
-    //         return url;
-    //     }
-    //     return `http://localhost:9000/mybucket/${logoUrl}`;
-    // };
+    }, [searchInput, scholarshipName, valueType, eligibilityType]);
 
     const formatValueType = (valueType: string, valueAmount: number) => {
         switch (valueType) {
@@ -92,14 +122,14 @@ const ScholarshipReview = () => {
         }
     };
 
-    const formatEligibilityType = (eligibilityType: string, minScore : number ) => {
+    const formatEligibilityType = (eligibilityType: string, minScore: number) => {
         switch (eligibilityType) {
             case "GPA":
-                return `${minScore}  Điểm trung bình học bạ `;
+                return `${minScore} Điểm trung bình học bạ`;
             case "EXAM_SCORE":
-                return `${minScore}  Điểm thi THPT Quốc gia`;
+                return `${minScore} Điểm thi THPT Quốc gia`;
             case "EVALUATION":
-                return `${minScore}  Điểm ĐGNL`;
+                return `${minScore} Điểm ĐGNL`;
             default:
                 return minScore.toString();
         }
@@ -156,18 +186,74 @@ const ScholarshipReview = () => {
         return pages;
     };
 
-
-
-    // const handleApplyClick = (id : number) => {
-    //     // Điều hướng đến trang user-profile với scholarship.id
-    //     // navigate(`/user-profile/${id}`);
-    // };
-
     return (
         <div className="university-container">
             <h2 className="university-title">Danh sách các trường đại học và học bổng</h2>
 
-
+            {/* Advanced Filter UI */}
+            <div className="admin-news-filter-row" style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+                <TextField
+                    label="Tìm kiếm tên trường"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    size="small"
+                    style={{ minWidth: 90, height: 22 }}
+                    className="filter-input"
+                />
+                <TextField
+                    label="Tìm kiếm học bổng"
+                    value={scholarshipName}
+                    onChange={(e) => setScholarshipName(e.target.value)}
+                    size="small"
+                    style={{ minWidth: 90, height: 22 }}
+                    className="filter-input"
+                />
+                <FormControl size="small" style={{ minWidth: 90, height: 22 }} className="filter-select">
+                    <InputLabel>Loại giá trị</InputLabel>
+                    <Select
+                        value={valueType}
+                        onChange={(e) => setValueType(e.target.value as ValueType)}
+                        label="Loại giá trị"
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="PERCENTAGE">Phần trăm</MenuItem>
+                        <MenuItem value="FIXED_AMOUNT">Số tiền</MenuItem>
+                        <MenuItem value="ACADEMIC_YEAR">Năm học</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl size="small" style={{ minWidth: 90, height: 22 }} className="filter-select">
+                    <InputLabel>Loại điều kiện</InputLabel>
+                    <Select
+                        value={eligibilityType}
+                        onChange={(e) => setEligibilityType(e.target.value as EligibilityType)}
+                        label="Loại điều kiện"
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="GPA">Học bạ</MenuItem>
+                        <MenuItem value="EXAM_SCORE">Điểm thi</MenuItem>
+                        <MenuItem value="EVALUATION">ĐGNL</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button
+                    variant="outlined"
+                    onClick={() => setCurrentPage(1)}
+                    style={{ height: 22, padding: "0 14px" }}
+                    className="filter-button"
+                >
+                    Lọc
+                </Button>
+                {hasFilterValues && (
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={resetFilters}
+                        style={{ height: 22, padding: "0 14px" }}
+                        className="filter-button cancel-button"
+                    >
+                        Hủy
+                    </Button>
+                )}
+            </div>
 
             {/* Info bar */}
             {!loading && !error && universities.length > 0 && (
@@ -183,8 +269,8 @@ const ScholarshipReview = () => {
                     trong tổng số {universities.length} trường
                     {totalPages > 1 && (
                         <span>
-              {" "} | Trang {currentPage}/{totalPages}
-            </span>
+                            {" "} | Trang {currentPage}/{totalPages}
+                        </span>
                     )}
                 </div>
             )}
@@ -200,14 +286,6 @@ const ScholarshipReview = () => {
                             <div key={u.id} className="university-card">
                                 <div className="university-card-link">
                                     <Link to={`/universities/${u.id}`}>
-                                        {/*<img*/}
-                                        {/*    src={getLogoUrl(u.logoUrl)}*/}
-                                        {/*    alt={u.name}*/}
-                                        {/*    className="university-logo"*/}
-                                        {/*    onError={(e) => {*/}
-                                        {/*        e.currentTarget.src = "/default-logo.png";*/}
-                                        {/*    }}*/}
-                                        {/*/>*/}
                                         <div className="university-info">
                                             <h3 className="university-name">{u.name}</h3>
                                             <p className="university-short">{u.shortName}</p>
@@ -235,19 +313,27 @@ const ScholarshipReview = () => {
                                                 <div key={scholarship.id} className="scholarship-item">
                                                     <h5 className="scholarship-name">{scholarship.name}</h5>
                                                     <p className="scholarship-details">
-                                                        <strong>Giá trị:</strong> {formatValueType(scholarship.valueType, scholarship.valueAmount)}
+                                                        <strong>Giá trị:</strong>{" "}
+                                                        {formatValueType(scholarship.valueType, scholarship.valueAmount)}
                                                         <br />
-                                                        <strong>Cách thức:</strong> {formatEligibilityType(scholarship.eligibilityType, scholarship.minScore)}
+                                                        <strong>Cách thức:</strong>{" "}
+                                                        {formatEligibilityType(
+                                                            scholarship.eligibilityType,
+                                                            scholarship.minScore
+                                                        )}
                                                         <br />
-                                                        <strong>Hạn nộp:</strong> {formatDate(scholarship.applicationDeadline)}
+                                                        <strong>Hạn nộp:</strong>{" "}
+                                                        {formatDate(scholarship.applicationDeadline)}
                                                     </p>
-                                                    {scholarship.id && (
-                                                        <button
-                                                            // onClick={() => handleApplyClick(scholarship.id)}
+                                                    {scholarship.applyLink && (
+                                                        <a
+                                                            href={scholarship.applyLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
                                                             className="scholarship-apply-btn"
                                                         >
                                                             Đăng ký xét tuyển
-                                                        </button>
+                                                        </a>
                                                     )}
                                                 </div>
                                             ))}
@@ -277,8 +363,7 @@ const ScholarshipReview = () => {
                                     padding: "8px 12px",
                                     border: "1px solid rgba(56, 217, 169, 0.3)",
                                     borderRadius: "6px",
-                                    background:
-                                        currentPage === 1 ? "#f3f4f6" : "rgba(56, 217, 169, 0.05)",
+                                    background: currentPage === 1 ? "#f3f4f6" : "rgba(56, 217, 169, 0.05)",
                                     color: currentPage === 1 ? "#9ca3af" : "#38d9a9",
                                     cursor: currentPage === 1 ? "not-allowed" : "pointer",
                                     fontSize: "0.9rem",
@@ -292,9 +377,7 @@ const ScholarshipReview = () => {
                             {generatePageNumbers().map((page, index) => (
                                 <button
                                     key={index}
-                                    onClick={() =>
-                                        typeof page === "number" && handlePageChange(page)
-                                    }
+                                    onClick={() => typeof page === "number" && handlePageChange(page)}
                                     disabled={page === "..."}
                                     style={{
                                         padding: "8px 12px",
@@ -323,12 +406,9 @@ const ScholarshipReview = () => {
                                     border: "1px solid rgba(56, 217, 169, 0.3)",
                                     borderRadius: "6px",
                                     background:
-                                        currentPage === totalPages
-                                            ? "#f3f4f6"
-                                            : "rgba(56, 217, 169, 0.05)",
+                                        currentPage === totalPages ? "#f3f4f6" : "rgba(56, 217, 169, 0.05)",
                                     color: currentPage === totalPages ? "#9ca3af" : "#38d9a9",
-                                    cursor:
-                                        currentPage === totalPages ? "not-allowed" : "pointer",
+                                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
                                     fontSize: "0.9rem",
                                     fontWeight: "500",
                                     transition: "all 0.2s ease",

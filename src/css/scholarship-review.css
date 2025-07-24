@@ -473,6 +473,38 @@ Dùng cho: Trang danh sách trường đại học và học bổng
     text-transform: none;
     font-weight: 600;
 }
+.admin-news-filter-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.admin-news-filter-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-input, .filter-select {
+    transition: all 0.3s ease;
+}
+
+.filter-input:hover, .filter-select:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-button {
+    transition: all 0.3s ease;
+}
+
+.filter-button:hover {
+    transform: translateY(-2px);
+    background-color: rgba(56, 217, 169, 0.1);
+    border-color: #38d9a9;
+}
 
 /* Responsive Design for Search Form */
 @media (max-width: 768px) {
