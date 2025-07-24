@@ -50,6 +50,7 @@ import Schoolarship from "../components/admin/AdminScholarship.tsx";
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
 import FAQs from "../components/admin/AdminFAQs.tsx";
+import AdminConsultantProfiles from "../components/admin/AdminConsultantProfiles.tsx";
 const UserLayout = () => {
   return (
     <>
@@ -108,7 +109,7 @@ const AppRouter = () => {
           <Route path="campuses" element={<AdminCampuses />} />
           <Route path="news" element={<AdminNews />} />
         </Route>
-
+<Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
         {/* User Routes with UserLayout (Navbar + Footer) */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
