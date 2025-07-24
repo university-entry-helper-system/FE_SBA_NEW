@@ -53,7 +53,22 @@ const ConsultantList: React.FC = () => {
     try {
       setLoading(true);
       const response = await getConsultantProfiles({ page: 0, size: 9 });
-      setConsultants(response.data.result.content);
+      let consultantList = response.data.result.content;
+      // Sort by updatedAt (if available), fallback to name
+      consultantList = consultantList.sort((a, b) => {
+        const aUpdated = (a as any).updatedAt;
+        const bUpdated = (b as any).updatedAt;
+        if (aUpdated && bUpdated) {
+          return new Date(bUpdated).getTime() - new Date(aUpdated).getTime();
+        } else if (aUpdated) {
+          return -1;
+        } else if (bUpdated) {
+          return 1;
+        }
+        // fallback: sort by name
+        return a.fullName.localeCompare(b.fullName);
+      });
+      setConsultants(consultantList);
       setError('');
     } catch (err: any) {
       setError(err.message || 'Failed to load consultants');
@@ -342,7 +357,7 @@ const ConsultantList: React.FC = () => {
               }}
             >
               <span style={{ fontSize: '1.3rem' }}>💬</span>
-              {isAuthenticated ? 'Chat với tư vấn viên' : 'Đăng nhập để chat'}
+              {isAuthenticated ? 'Đặt câu hỏi với tư vấn viên' : 'Đăng nhập để chat'}
             </button>
           </div>
         ))}
