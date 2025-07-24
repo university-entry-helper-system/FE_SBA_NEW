@@ -46,6 +46,8 @@ import UniversityScoreLookup from "../components/UniversityScoreLookup";
 import ScoreEvaluation from "../components/ScoreEvaluation";
 import PriorityScoreInfo from "../components/PriorityScoreInfo";
 import Schoolarship from "../components/admin/AdminScholarship.tsx";
+import SchoolarshipPage from "../components/ScholarshipReview.tsx";
+import UserDashBoard from "../components/UserProfilePage.tsx";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
@@ -122,6 +124,8 @@ const AppRouter = () => {
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/scholarship-review" element={<SchoolarshipPage />} />
+          <Route path="/user-profile/:scholarshipId" element={<UserDashBoard />} />
           <Route
             path="/graduation-score"
             element={<GraduationScoreCalculator />}
@@ -167,6 +171,24 @@ const AppRouter = () => {
           <Route path="/about" element={<AdmissionConsulting />} />
           {/* Other user routes */}
         </Route>
+        {/*<Route element={<UserLayout />}>*/}
+        {/*  <Route*/}
+        {/*      path="/user-dashboard"*/}
+        {/*      element={*/}
+        {/*        <ProtectedRoute allowedRoles={[2]}>*/}
+        {/*          <UserDashboard />*/}
+        {/*        </ProtectedRoute>*/}
+        {/*      }*/}
+        {/*  />*/}
+        {/*  <Route*/}
+        {/*      path="/user-profile"*/}
+        {/*      element={*/}
+        {/*        <ProtectedRoute allowedRoles={[2]}>*/}
+        {/*          <UserProfile />*/}
+        {/*        </ProtectedRoute>*/}
+        {/*      }*/}
+        {/*  />*/}
+        {/*</Route>*/}
       </Routes>
     </BrowserRouter>
   );

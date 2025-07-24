@@ -525,3 +525,38 @@ body,
 .navbar-container {
   min-width: 100%;
 }
+
+/* Nút Xét duyệt học bổng */
+.navbar-scholarship-btn {
+  background-color: #ff9800;
+  color: white;
+  font-weight: bold;
+  animation: blink 1s infinite; /* Hiệu ứng nhấp nháy */
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-left: 20px;
+  margin-top: 10px;
+  display: inline-block;
+  text-decoration: none; /* Xóa gạch chân */
+  transition: transform 0.2s ease-in-out; /* Thêm hiệu ứng nổi lên */
+}
+
+.navbar-scholarship-btn:hover {
+  background-color: #f57c00;
+  cursor: pointer;
+  transform: scale(1.1); /* Hiệu ứng phóng to khi hover */
+}
+
+/* Hiệu ứng nhấp nháy */
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

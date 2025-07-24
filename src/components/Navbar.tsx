@@ -244,6 +244,11 @@ const Navbar = () => {
                 </Link>
               </div>
             </li>
+            <div className="navbar-actions">
+              <Link to="/scholarship-review" className="navbar-scholarship-btn">
+                Xét duyệt học bổng
+              </Link>
+            </div>
             {/* Role-based links */}
             {isAuthenticated && user?.roleName === "ROLE_ADMIN" && (
               <li>
