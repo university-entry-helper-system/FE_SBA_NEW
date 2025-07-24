@@ -6,6 +6,7 @@ import type {
     UserProfileImage,
     UserProfileImageCreateRequest,
     ApiResponse,
+    GetUserProfileImageRequest,
 } from "../types/userProfile";
 
 const BASE_URL = "/user-profiles";
@@ -59,5 +60,5 @@ export const updateUserProfileImage = (id: number, data: UserProfileImageCreateR
 // Xóa UserProfile Image
 export const deleteUserProfileImage = (id: number) =>
     axios.delete<ApiResponse<null>>(`${IMAGE_URL}/${id}`);
-export const getUserProfileImageByType = (data: UserProfileImageCreateRequest) =>
+export const getUserProfileImageByType = (data: GetUserProfileImageRequest) =>
     axios.post<ApiResponse<UserProfileImage>>(`${IMAGE_URL}`, data);

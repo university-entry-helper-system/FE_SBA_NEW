@@ -1,5 +1,6 @@
 // userProfile.ts
 export type Gender = "MALE" | "FEMALE";
+export type ImageType = "CCCD1" | "CCCD2" | "DGNL" | "THPT" | "HOCBA11" | "HOCBA12";
 export type UserProfile = {
     id: number;
     profileCode: string;
@@ -8,6 +9,7 @@ export type UserProfile = {
     idCard: string;
     email: string;
     phone: string;
+    gender: Gender;
     accountId: number;
     createdAt: string;
     updatedAt: string;
@@ -36,7 +38,7 @@ export type UserProfileUpdateRequest = {
 export type UserProfileImage = {
     id: number;
     userProfileId: number;
-    imageType: string;
+    imageType: ImageType;
     imageName: string;
     imageUrl: string;
 
@@ -48,7 +50,7 @@ export type UserProfileImageCreateRequest = {
 };
 export type GetUserProfileImageRequest = {
     userProfileId: number;
-    imageType :string;
+    imageType : ImageType;
 }
 // API response types
 export type ApiResponse<T> = {

@@ -5,7 +5,6 @@ import {
     Tab,
     TextField,
     Typography,
-    Grid,
     Paper,
     Button,
     IconButton,
@@ -17,6 +16,7 @@ import {
     Select,
     MenuItem,
 } from "@mui/material";
+import Grid from '@mui/material/Grid';
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -35,8 +35,12 @@ import type {
     UserProfileUpdateRequest,
     UserProfileImage,
     UserProfileImageCreateRequest,
+    ImageType,
+    GetUserProfileImageRequest,
 } from "../types/userProfile";
 import "../css/UserProfilePage.css";
+import { AxiosError } from 'axios';
+
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -75,13 +79,8 @@ interface DecodedToken {
     accountId: string;
 }
 
-interface ApiError {
-    response?: {
-        data?: {
-            message?: string;
-        };
-    };
-}
+
+
 
 interface UserProfilePageProps {
     scholarshipId?: number;
@@ -90,17 +89,12 @@ interface UserProfilePageProps {
 const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
     const [tabValue, setTabValue] = useState(0);
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [images, setImages] = useState<Record<string, UserProfileImage | null>>({
-        PROFILE: null,
-        ID_CARD: null,
-        OTHER: null,
-    });
+    const [images, setImages] = useState<Record<string, UserProfileImage | null>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [isEditing, setIsEditing] = useState(false);
-    const imageTypes = ["PROFILE", "ID_CARD", "OTHER"];
-
+    const ImageTypes: ImageType[] = ["CCCD1", "CCCD2", "DGNL", "THPT", "HOCBA11", "HOCBA12"];
     // Formik for profile creation
     const createFormik = useFormik({
         initialValues: {
@@ -125,7 +119,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                     fullName: values.fullName,
                     dateOfBirth: values.dateOfBirth,
                     idCard: values.idCard,
-                    gender: values.gender,
+                    gender: values.gender as "MALE" | "FEMALE",
                     email: values.email,
                     phone: values.phone,
                     accountId: decodedToken.accountId,
@@ -134,8 +128,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                 setProfile(response.data.result);
                 setSuccessMessage("Tạo hồ sơ thành công!");
                 setTabValue(1);
-            } catch (err: ApiError) {
-                setError(err.response?.data?.message || "Không thể tạo hồ sơ.");
+            } catch (err) {
+                if (err instanceof AxiosError) {
+                    setError(err.response?.data?.message || "Không thể tạo hồ sơ.");
+                } else {
+                    setError("Đã xảy ra lỗi không xác định.");
+                }
             } finally {
                 setLoading(false);
             }
@@ -164,7 +162,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                     fullName: values.fullName,
                     dateOfBirth: values.dateOfBirth,
                     idCard: values.idCard,
-                    gender: values.gender,
+                    gender: values.gender as "MALE" | "FEMALE",
                     email: values.email,
                     phone: values.phone,
                 };
@@ -172,8 +170,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                 setProfile(response.data.result);
                 setSuccessMessage("Cập nhật hồ sơ thành công!");
                 setIsEditing(false);
-            } catch (err: ApiError) {
-                setError(err.response?.data?.message || "Không thể cập nhật hồ sơ.");
+            } catch (err  ) {
+                if(err instanceof AxiosError) {
+                    setError(err.response?.data?.message || "Không thể cập nhật hồ sơ.");
+                }else{
+                    setError("Đã xảy ra lỗi không xác định.");
+                }
             } finally {
                 setLoading(false);
             }
@@ -214,8 +216,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                 setError("");
                 try {
                     const newImages: Record<string, UserProfileImage | null> = {};
-                    for (const type of imageTypes) {
-                        const response = await getUserProfileImageByType(profile.id, type);
+                    for (const type of ImageTypes  ) {
+                        const data : GetUserProfileImageRequest = {
+                            userProfileId: profile.id,
+                            imageType: type,
+                            };
+                        const response = await getUserProfileImageByType(data);
                         newImages[type] = response.data.result || null;
                     }
                     setImages(newImages);
@@ -246,10 +252,17 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
             };
             await createUserProfileImage(profile.id, data);
             setSuccessMessage(`Tải ảnh ${imageType} thành công!`);
-            const response = await getUserProfileImageByType(profile.id, imageType);
+            const dataforget : GetUserProfileImageRequest ={
+                userProfileId: profile.id,
+                imageType: imageType as ImageType,
+            }
+            const response = await getUserProfileImageByType( dataforget );
             setImages((prev) => ({ ...prev, [imageType]: response.data.result || null }));
-        } catch (err: ApiError) {
-            setError(err.response?.data?.message || `Không thể tải ảnh ${imageType}.`);
+        } catch (err ) {
+            if(err instanceof AxiosError){
+                 setError(err.response?.data?.message || `Không thể tải ảnh ${imageType}.`);
+            }
+                    setError("Không thể tải danh sách ảnh.");
         } finally {
             setLoading(false);
             event.target.value = "";
@@ -265,17 +278,19 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
             await deleteUserProfileImage(imageId);
             setSuccessMessage(`Xóa ảnh ${imageType} thành công!`);
             setImages((prev) => ({ ...prev, [imageType]: null }));
-        } catch (err: ApiError) {
-            setError(err.response?.data?.message || `Không thể xóa ảnh ${imageType}.`);
+        } catch (err) {
+            if (err instanceof AxiosError) {
+setError(err.response?.data?.message || `Không thể xóa ảnh ${imageType}.`);
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN");
-    };
+    // const formatDate = (dateString: string) => {
+    //     const date = new Date(dateString);
+    //     return date.toLocaleDateString("vi-VN");
+    // };
 
     const getImageUrl = (imageUrl: string) => {
         return `http://localhost:9000/mybucket/${imageUrl}`;
@@ -592,11 +607,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ scholarshipId }) => {
                     )}
                     {!loading && !error && profile && (
                         <Grid container spacing={2} className="image-list">
-                            {imageTypes.map((type) => (
+                            {ImageTypes.map((type) => (
                                 <Grid item xs={12} sm={6} md={4} key={type} component="div">
                                     <Paper className="image-card">
                                         <Typography variant="subtitle1" className="image-type-title">
-                                            {type === "PROFILE" ? "Ảnh đại diện" : type === "ID_CARD" ? "Ảnh CMND/CCCD" : "Ảnh khác"}
+                                            {type === "CCCD1" ? "MAT TRUOC CCCD" : type === "CCCD2" ? "MAT SAU CCCD" : type==="HOCBA11"
+                                                ? "HOC BA LOP 11" : type === "HOCBA12" ? "HOC BA LOP 12" : type === "DGNL" ? "DANH GIA NANG LUC" : "TRUNG HOC PHO THONG"}
                                         </Typography>
                                         {images[type] ? (
                                             <>
