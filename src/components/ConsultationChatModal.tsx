@@ -1,24 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import  { 
-  ConsultationResponse, 
-  ConsultationCreateRequest, 
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ConsultationResponse,
+  ConsultationCreateRequest,
   ConsultationStatus,
   WebSocketNotification,
-  NotificationType 
-}  from '../types/consultation';
-import { 
-  createConsultation, 
-  updateConsultation, 
-  getUserConsultations 
-} from '../api/consultation';
-import { 
-  initializeWebSocket, 
-  getWebSocketClient, 
-  ConsultationWebSocketClient 
-} from '../utils/consultationSocket';
-import type { ConsultantProfile } from '../types/consultant';
-import { showToastNotification } from '../utils/notification';
-
+} from "../types/consultation";
+import {
+  createConsultation,
+  updateConsultation,
+  getUserConsultations,
+} from "../api/consultation";
+import {
+  initializeWebSocket,
+  getWebSocketClient,
+  ConsultationWebSocketClient,
+} from "../utils/consultationSocket";
+import type { ConsultantProfile } from "../types/consultant";
+import { showToastNotification } from "../utils/notification";
+import "../css/ConsultationChatModal.css";
 
 interface ConsultationChatModalProps {
   isOpen: boolean;
@@ -35,53 +34,55 @@ const ConsultationChatModal: React.FC<ConsultationChatModalProps> = ({
   consultant,
   currentUserId,
   userRole,
-  authToken
+  authToken,
 }) => {
-  const [consultations, setConsultations] = useState<ConsultationResponse[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [title, setTitle] = useState('');
+  const [consultations, setConsultations] = useState<ConsultationResponse[]>(
+    []
+  );
+  const [newMessage, setNewMessage] = useState("");
+  const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [pendingConsultation, setPendingConsultation] = useState<ConsultationResponse | null>(null);
+  const [error, setError] = useState("");
+  const [pendingConsultation, setPendingConsultation] =
+    useState<ConsultationResponse | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsClientRef = useRef<ConsultationWebSocketClient | null>(null);
 
-
   // Load consultations when modal opens
-useEffect(() => {
-  if (isOpen && consultant.accountId) {
-    // Clear existing data first to show loading state
-    setConsultations([]);
-    setPendingConsultation(null);
-    setError('');
-    
-    // Always load fresh data when modal opens
-    loadConsultations();
-    // Create a new WebSocket client for this modal
-    wsClientRef.current = new ConsultationWebSocketClient({
-      baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-      userId: currentUserId,
-      userRole: userRole,
-      authToken: authToken,
-      onNotification: handleWebSocketNotification,
-      onConnect: () => console.log('WebSocket connected (modal)'),
-      onDisconnect: () => console.log('WebSocket disconnected (modal)'),
-      onError: (err) => console.error('WebSocket error (modal):', err),
-    });
-    wsClientRef.current.connect();
-  }
-  // Disconnect WebSocket when modal closes or component unmounts
-  if (!isOpen && wsClientRef.current) {
-    wsClientRef.current.disconnect();
-    wsClientRef.current = null;
-  }
-  return () => {
-    if (wsClientRef.current) {
+  useEffect(() => {
+    if (isOpen && consultant.accountId) {
+      // Clear existing data first to show loading state
+      setConsultations([]);
+      setPendingConsultation(null);
+      setError("");
+
+      // Always load fresh data when modal opens
+      loadConsultations();
+      // Create a new WebSocket client for this modal
+      wsClientRef.current = new ConsultationWebSocketClient({
+        baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
+        userId: currentUserId,
+        userRole: userRole,
+        authToken: authToken,
+        onNotification: handleWebSocketNotification,
+        onConnect: () => console.log("WebSocket connected (modal)"),
+        onDisconnect: () => console.log("WebSocket disconnected (modal)"),
+        onError: (err) => console.error("WebSocket error (modal):", err),
+      });
+      wsClientRef.current.connect();
+    }
+    // Disconnect WebSocket when modal closes or component unmounts
+    if (!isOpen && wsClientRef.current) {
       wsClientRef.current.disconnect();
       wsClientRef.current = null;
     }
-  };
-}, [isOpen, consultant.accountId, currentUserId, userRole, authToken]);
+    return () => {
+      if (wsClientRef.current) {
+        wsClientRef.current.disconnect();
+        wsClientRef.current = null;
+      }
+    };
+  }, [isOpen, consultant.accountId, currentUserId, userRole, authToken]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -89,113 +90,99 @@ useEffect(() => {
   }, [consultations]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const initializeWebSocketConnection = () => {
-    // Use existing WebSocket connection or create new one
-    let wsClient = getWebSocketClient();
-    
-    if (!wsClient) {
-      wsClient = initializeWebSocket({
-        baseUrl: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
-        userId: currentUserId,
-        userRole: userRole,
-        authToken: authToken,
-        onNotification: handleWebSocketNotification,
-        onConnect: () => console.log('WebSocket connected'),
-        onDisconnect: () => console.log('WebSocket disconnected'),
-        onError: (error) => console.error('WebSocket error:', error)
-      });
-    }
-
-    wsClientRef.current = wsClient;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Make the notification handler async to ensure data reload is awaited
-  const handleWebSocketNotification = async (notification: WebSocketNotification) => {
+  const handleWebSocketNotification = async (
+    notification: WebSocketNotification
+  ) => {
     try {
-      console.log('handleWebSocketNotification called');
+      console.log("handleWebSocketNotification called");
       showToastNotification(notification);
-      console.log('Received notification:', notification);
-      console.log('Notification type (raw):', notification.type, typeof notification.type);
-      console.log('Type as JSON:', JSON.stringify(notification.type));
+      console.log("Received notification:", notification);
+      console.log(
+        "Notification type (raw):",
+        notification.type,
+        typeof notification.type
+      );
+      console.log("Type as JSON:", JSON.stringify(notification.type));
 
-      switch (notification.type && notification.type.toString().trim().toUpperCase()) {
+      switch (
+        notification.type &&
+        notification.type.toString().trim().toUpperCase()
+      ) {
         case "CONSULTATION_ANSWERED":
         case "CONSULTATION_UPDATED":
         case "CONSULTATION_CANCELLED":
         case "NEW_CONSULTATION":
-          console.log('Triggering loadConsultations due to notification');
+          console.log("Triggering loadConsultations due to notification");
           await loadConsultations();
-          console.log('loadConsultations finished');
+          console.log("loadConsultations finished");
           break;
         default:
-          console.log('Notification type did not match any case');
+          console.log("Notification type did not match any case");
           break;
       }
 
       if (
         notification.type &&
-        notification.type.toString().toUpperCase().includes('CONSULTATION')
+        notification.type.toString().toUpperCase().includes("CONSULTATION")
       ) {
-        console.log('Fallback: type contains CONSULTATION, triggering loadConsultations');
+        console.log(
+          "Fallback: type contains CONSULTATION, triggering loadConsultations"
+        );
         await loadConsultations();
       }
     } catch (err) {
-      console.error('Error in handleWebSocketNotification:', err);
+      console.error("Error in handleWebSocketNotification:", err);
     }
   };
 
   const loadConsultations = async () => {
-    console.log('loadConsultations called');
+    console.log("loadConsultations called");
     try {
       setLoading(true);
-      setError('');
+      setError("");
       // Add cache busting param to avoid stale data
-      const response = await getUserConsultations(
-        consultant.accountId, 
-        0, 
-        100,
-      );
-      console.log('Consultations API response:', response);
+      const response = await getUserConsultations(consultant.accountId, 0, 100);
+      console.log("Consultations API response:", response);
       const consultationList = response.result.content;
       setConsultations([...consultationList]);
-      console.log('Updated consultations state:', consultationList);
+      console.log("Updated consultations state:", consultationList);
       const pending = consultationList.find(
-        c => c.consultationsStatus === ConsultationStatus.PENDING
+        (c) => c.consultationsStatus === ConsultationStatus.PENDING
       );
       setPendingConsultation(pending ? { ...pending } : null);
     } catch (err) {
-      setError('Failed to load consultations');
-      console.error('Error loading consultations:', err);
+      setError("Failed to load consultations");
+      console.error("Error loading consultations:", err);
     } finally {
       setLoading(false);
     }
   };
-  
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !title.trim() || pendingConsultation) return;
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const request: ConsultationCreateRequest = {
         consultant: consultant.accountId,
         title: title.trim(),
-        content: newMessage.trim()
+        content: newMessage.trim(),
       };
 
       await createConsultation(request);
       // Clear form
-      setNewMessage('');
-      setTitle('');
+      setNewMessage("");
+      setTitle("");
       // Immediately reload data after sending
       await loadConsultations();
     } catch (err: any) {
-      setError(err.message || 'Failed to send consultation');
+      setError(err.message || "Failed to send consultation");
     } finally {
       setLoading(false);
     }
@@ -206,57 +193,57 @@ useEffect(() => {
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const request: ConsultationCreateRequest = {
         consultant: consultant.accountId,
         title: pendingConsultation.title,
-        content: newMessage.trim()
+        content: newMessage.trim(),
       };
 
       await updateConsultation(pendingConsultation.id, request);
       // Clear form
-      setNewMessage('');
+      setNewMessage("");
       // Immediately reload data after updating
       await loadConsultations();
     } catch (err: any) {
-      setError(err.message || 'Failed to update consultation');
+      setError(err.message || "Failed to update consultation");
     } finally {
       setLoading(false);
     }
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusColor = (status: ConsultationStatus) => {
     switch (status) {
       case ConsultationStatus.PENDING:
-        return '#f59e0b';
+        return "#f59e0b";
       case ConsultationStatus.ANSWERED:
-        return '#10b981';
+        return "#10b981";
       case ConsultationStatus.CANCELLED:
-        return '#ef4444';
+        return "#ef4444";
       default:
-        return '#6b7280';
+        return "#6b7280";
     }
   };
 
   const getStatusText = (status: ConsultationStatus) => {
     switch (status) {
       case ConsultationStatus.PENDING:
-        return 'Đang chờ phản hồi';
+        return "Đang chờ phản hồi";
       case ConsultationStatus.ANSWERED:
-        return 'Đã phản hồi';
+        return "Đã phản hồi";
       case ConsultationStatus.CANCELLED:
-        return 'Đã hủy';
+        return "Đã hủy";
 
       default:
         return status;
@@ -266,173 +253,104 @@ useEffect(() => {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        width: '90%',
-        maxWidth: '800px',
-        height: '80%',
-        maxHeight: '600px',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden'
-      }}>
+    <div className="chat-modal-overlay">
+      <div className="chat-modal-container">
         {/* Header */}
-        <div style={{
-          padding: '20px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="chat-modal-header">
+          <div className="chat-modal-avatar">
             <img
-              src={'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg/800px-Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg'}
+              src={
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg/800px-Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg"
+              }
               alt={consultant.fullName}
-              style={{
-                width: '50px',
-                height: '50px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                marginRight: '12px'
-              }}
             />
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#222' }}>
+              <h2 className="chat-modal-title">
                 Tư vấn với {consultant.fullName}
               </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+              <div className="chat-modal-specialties">
                 {consultant.specialties.map((specialty) => (
-                  <span
-                    key={specialty.id}
-                    style={{
-                      fontSize: '0.75rem',
-                      padding: '2px 6px',
-                      borderRadius: '8px',
-                      background: '#e2e8f0',
-                      color: '#4a5568'
-                    }}
-                  >
+                  <span key={specialty.id} className="chat-modal-specialty">
                     {specialty.name}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#6b7280'
-            }}
-          >
+          <button onClick={onClose} className="chat-modal-btn-close">
             ×
           </button>
         </div>
 
         {/* Messages Area */}
-        <div style={{
-          flex: 1,
-          padding: '16px',
-          overflowY: 'auto',
-          backgroundColor: '#f9fafb'
-        }}>
+        <div className="chat-modal-messages">
           {loading && consultations.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#6b7280' }}>
+            <div className="chat-modal-loading-message">
               Đang tải tin nhắn...
             </div>
           )}
 
           {consultations.length === 0 && !loading && (
-            <div style={{ textAlign: 'center', color: '#6b7280' }}>
+            <div className="chat-modal-no-messages-message">
               Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
             </div>
           )}
 
           {consultations.map((consultation) => (
-            <div key={consultation.id} style={{ marginBottom: '24px' }}>
+            <div key={consultation.id} className="chat-modal-message-container">
               {/* User Message */}
-              <div style={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                padding: '12px 16px',
-                borderRadius: '12px 12px 4px 12px',
-                marginLeft: '20%',
-                marginBottom: '8px'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+              <div className="chat-modal-message-user">
+                <div className="chat-modal-message-title">
                   {consultation.title}
                 </div>
-                <div style={{ marginBottom: '8px' }}>
+                <div className="chat-modal-message-content">
                   {consultation.content}
                 </div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                <div className="chat-modal-message-timestamp">
                   {formatDateTime(consultation.sentAt)}
                   {consultation.senderUpdatedAt && (
-                    <span> (đã chỉnh sửa: {formatDateTime(consultation.senderUpdatedAt)})</span>
+                    <span>
+                      {" "}
+                      (đã chỉnh sửa:{" "}
+                      {formatDateTime(consultation.senderUpdatedAt)})
+                    </span>
                   )}
                 </div>
               </div>
 
               {/* Status */}
-              <div style={{
-                textAlign: 'center',
-                margin: '8px 0'
-              }}>
-                <span style={{
-                  fontSize: '0.8rem',
-                  color: getStatusColor(consultation.consultationsStatus),
-                  backgroundColor: `${getStatusColor(consultation.consultationsStatus)}20`,
-                  padding: '4px 8px',
-                  borderRadius: '12px'
-                }}>
+              <div className="chat-modal-status-container">
+                <span
+                  className="chat-modal-status"
+                  style={{
+                    backgroundColor: `${getStatusColor(
+                      consultation.consultationsStatus
+                    )}20`,
+                  }}
+                >
                   {getStatusText(consultation.consultationsStatus)}
                 </span>
               </div>
 
               {/* Consultant Answer */}
               {consultation.answer && (
-                <div style={{
-                  backgroundColor: '#e5e7eb',
-                  color: '#374151',
-                  padding: '12px 16px',
-                  borderRadius: '12px 12px 12px 4px',
-                  marginRight: '20%',
-                  marginBottom: '8px'
-                }}>
-                  <div style={{ marginBottom: '8px' }}>
+                <div className="chat-modal-message-consultant">
+                  <div className="chat-modal-message-content">
                     {consultation.answer}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                    {consultation.answeredAt && formatDateTime(consultation.answeredAt)}
+                  <div className="chat-modal-message-timestamp">
+                    {consultation.answeredAt &&
+                      formatDateTime(consultation.answeredAt)}
                     {consultation.consultantUpdatedAt && (
-                      <span> (đã chỉnh sửa: {formatDateTime(consultation.consultantUpdatedAt)})</span>
+                      <span>
+                        {" "}
+                        (đã chỉnh sửa:{" "}
+                        {formatDateTime(consultation.consultantUpdatedAt)})
+                      </span>
                     )}
                   </div>
                   {consultation.resolutionNotes && (
-                    <div style={{
-                      marginTop: '8px',
-                      padding: '8px',
-                      backgroundColor: '#f3f4f6',
-                      borderRadius: '6px',
-                      fontSize: '0.85rem',
-                      color: '#4b5563'
-                    }}>
+                    <div className="chat-modal-resolution-notes">
                       <strong>Ghi chú:</strong> {consultation.resolutionNotes}
                     </div>
                   )}
@@ -444,34 +362,13 @@ useEffect(() => {
         </div>
 
         {/* Input Area */}
-        <div style={{
-          padding: '16px',
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: 'white'
-        }}>
-          {error && (
-            <div style={{
-              color: '#ef4444',
-              fontSize: '0.9rem',
-              marginBottom: '8px',
-              padding: '8px',
-              backgroundColor: '#fef2f2',
-              borderRadius: '6px'
-            }}>
-              {error}
-            </div>
-          )}
+        <div className="chat-modal-input-area">
+          {error && <div className="chat-modal-error">{error}</div>}
 
           {pendingConsultation && (
-            <div style={{
-              backgroundColor: '#fef3c7',
-              color: '#92400e',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '0.9rem',
-              marginBottom: '12px'
-            }}>
-              Bạn có một câu hỏi đang chờ phản hồi. Bạn có thể chỉnh sửa nội dung câu hỏi.
+            <div className="chat-modal-pending-alert">
+              Bạn có một câu hỏi đang chờ phản hồi. Bạn có thể chỉnh sửa nội
+              dung câu hỏi.
             </div>
           )}
 
@@ -481,108 +378,63 @@ useEffect(() => {
               placeholder="Tiêu đề câu hỏi"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                marginBottom: '8px',
-                outline: 'none'
-              }}
+              className="chat-modal-title-input"
               disabled={loading}
             />
           )}
 
           <textarea
-            placeholder={pendingConsultation ? "Chỉnh sửa câu hỏi của bạn..." : "Nội dung câu hỏi..."}
+            placeholder={
+              pendingConsultation
+                ? "Chỉnh sửa câu hỏi của bạn..."
+                : "Nội dung câu hỏi..."
+            }
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            style={{
-              width: '100%',
-              minHeight: '80px',
-              padding: '10px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '0.9rem',
-              resize: 'vertical',
-              outline: 'none',
-              fontFamily: 'inherit'
-            }}
+            className="chat-modal-textarea"
             disabled={loading}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.ctrlKey) {
-                pendingConsultation ? handleUpdateMessage() : handleSendMessage();
+              if (e.key === "Enter" && e.ctrlKey) {
+                if (pendingConsultation) {
+                  handleUpdateMessage();
+                } else {
+                  handleSendMessage();
+                }
               }
             }}
           />
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: '12px'
-          }}>
-            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-              {pendingConsultation ? 'Nhấn Ctrl+Enter để cập nhật' : 'Nhấn Ctrl+Enter để gửi'}
+          <div className="chat-modal-input-footer">
+            <div className="chat-modal-input-hint">
+              {pendingConsultation
+                ? "Nhấn Ctrl+Enter để cập nhật"
+                : "Nhấn Ctrl+Enter để gửi"}
             </div>
             <button
-              onClick={pendingConsultation ? handleUpdateMessage : handleSendMessage}
+              onClick={
+                pendingConsultation ? handleUpdateMessage : handleSendMessage
+              }
               disabled={
-                loading || 
-                !newMessage.trim() || 
+                loading ||
+                !newMessage.trim() ||
                 (!pendingConsultation && !title.trim())
               }
-              style={{
-                backgroundColor: loading || !newMessage.trim() || (!pendingConsultation && !title.trim()) 
-                  ? '#9ca3af' 
-                  : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                fontSize: '0.9rem',
-                cursor: loading || !newMessage.trim() || (!pendingConsultation && !title.trim()) 
-                  ? 'not-allowed' 
-                  : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className="chat-modal-btn"
             >
               {loading ? (
-                <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid transparent',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                  {pendingConsultation ? 'Đang cập nhật...' : 'Đang gửi...'}
-                </>
+                <div className="chat-modal-spinner" />
               ) : (
                 <>
-                  <span style={{ fontSize: '1.1rem' }}>
-                    {pendingConsultation ? '✏️' : '📤'}
+                  <span className="chat-modal-btn-icon">
+                    {pendingConsultation ? "✏️" : "📤"}
                   </span>
-                  {pendingConsultation ? 'Cập nhật' : 'Gửi câu hỏi'}
+                  {pendingConsultation ? "Cập nhật" : "Gửi câu hỏi"}
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
-
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };
