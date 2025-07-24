@@ -1,811 +1,1049 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-const WS_URL = "ws://localhost:8081/ws/chat";
-const HISTORY_API = "http://localhost:8081/api/chatbot/history/";
-const SESSION_API = "http://localhost:8081/api/chatbot/session";
-
-function generateSessionId() {
-  return (
-    "chat_" + Date.now() + "_" + Math.random().toString(36).substring(2, 10)
-  );
-}
+const BASE_URL_CHATBOT = "http://localhost:8001";
+const SESSION_API = BASE_URL_CHATBOT + "/api/v1/chat/session";
+const HISTORY_API = BASE_URL_CHATBOT + "/api/v1/chat/history/";
+const MESSAGE_API = BASE_URL_CHATBOT + "/api/v1/chat/message";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  lastMessage: string;
+  timestamp: number;
+  messageCount: number;
+}
+
 const Chatbot: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [streamingMessage, setStreamingMessage] = useState("");
+  const [currentSessionId, setCurrentSessionId] = useState<string>("");
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [showSessionList, setShowSessionList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [showTypingIndicator, setShowTypingIndicator] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
+  const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
+  const [error, setError] = useState<string>("");
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected"
   >("disconnected");
-  const [error, setError] = useState<string>("");
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
 
-  // Khởi tạo session khi component mount
-  useEffect(() => {
-    initializeSession();
-  }, []);
+  // Debug mode flag
+  const debug = true;
 
-  // Auto scroll khi có tin nhắn mới
+  // Scroll to bottom when messages change
   useEffect(() => {
     if (open && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, streamingMessage, open]);
+  }, [messages, currentStreamingMessage, open]);
 
-  // Xử lý khi có sessionId (load history ngay)
-  useEffect(() => {
-    if (sessionId) {
-      loadChatHistory();
+  // Load sessions from localStorage
+  const loadSessions = (): ChatSession[] => {
+    try {
+      const stored = localStorage.getItem("chatbotSessions");
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error("[Chatbot] Error loading sessions:", error);
+      return [];
     }
-  }, [sessionId]);
+  };
 
-  // Xử lý khi mở/đóng chatbox
-  useEffect(() => {
-    if (open && sessionId) {
-      connectWebSocket();
-    } else if (!open) {
-      disconnectWebSocket();
+  // Save sessions to localStorage
+  const saveSessions = (sessions: ChatSession[]) => {
+    try {
+      localStorage.setItem("chatbotSessions", JSON.stringify(sessions));
+    } catch (error) {
+      console.error("[Chatbot] Error saving sessions:", error);
     }
+  };
 
-    return () => {
-      disconnectWebSocket();
+  // Generate session title from first message
+  const generateSessionTitle = (firstMessage: string): string => {
+    if (firstMessage.length <= 30) return firstMessage;
+    return firstMessage.substring(0, 30) + "...";
+  };
+
+  // Create new session
+  const createSession = async (): Promise<string> => {
+    try {
+      console.log("[Chatbot] Creating new session...");
+
+      const response = await fetch(SESSION_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const sessionId = String(
+        data.session_id ||
+          data.data?.session_id ||
+          data.data?.sessionId ||
+          data.sessionId ||
+          ""
+      );
+
+      if (!sessionId) {
+        throw new Error("Session ID not found in response");
+      }
+
+      console.log("[Chatbot] Session created successfully:", sessionId);
+      return sessionId;
+    } catch (error) {
+      console.error("[Chatbot] Error creating session:", error);
+      throw error;
+    }
+  };
+
+  // Initialize sessions on mount
+  useEffect(() => {
+    const initializeSessions = async () => {
+      try {
+        const storedSessions = loadSessions();
+        setSessions(storedSessions);
+
+        if (storedSessions.length > 0) {
+          // Use the most recent session
+          const latestSession = storedSessions[0];
+          setCurrentSessionId(latestSession.id);
+          console.log("[Chatbot] Using latest session:", latestSession.id);
+        }
+      } catch (error) {
+        console.error("[Chatbot] Error initializing sessions:", error);
+        setError("Failed to initialize chat sessions");
+      }
     };
-  }, [open, sessionId]);
 
-  // Xử lý streaming message
+    initializeSessions();
+  }, []);
+
+  // Load history when session changes
   useEffect(() => {
-    if (!isStreaming || !streamingMessage) return;
+    if (!currentSessionId || !open) return;
 
-    setMessages((prevMessages) => {
-      const lastMessage = prevMessages[prevMessages.length - 1];
+    const fetchHistory = async () => {
+      try {
+        setConnectionStatus("connecting");
+        console.log(
+          "[Chatbot] Fetching history for session:",
+          currentSessionId
+        );
 
-      if (lastMessage && lastMessage.role === "assistant") {
-        // Cập nhật message cuối nếu đang streaming
-        return [
-          ...prevMessages.slice(0, -1),
-          { role: "assistant", content: streamingMessage },
-        ];
-      } else {
-        // Thêm message mới nếu message cuối là user
-        return [
-          ...prevMessages,
-          { role: "assistant", content: streamingMessage },
-        ];
+        const response = await fetch(HISTORY_API + currentSessionId);
+
+        if (!response.ok) {
+          if (response.status === 404 || response.status === 400) {
+            console.log("[Chatbot] Session not found, creating new session...");
+            await handleNewSession();
+            return;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const historyData = Array.isArray(data.data) ? data.data : [];
+        historyData.reverse();
+        const messages = transformHistoryData(historyData);
+
+        setMessages(messages);
+        setConnectionStatus("connected");
+        console.log(
+          "[Chatbot] History loaded successfully, messages:",
+          messages.length
+        );
+      } catch (error) {
+        console.error("[Chatbot] Error fetching history:", error);
+        setMessages([]);
+        setConnectionStatus("disconnected");
+        setError("Unable to load chat history");
+      }
+    };
+
+    fetchHistory();
+  }, [currentSessionId, open]);
+
+  // Transform server data to frontend format
+  const transformHistoryData = (serverData: any[]): Message[] => {
+    const flatMessages: Message[] = [];
+
+    serverData.forEach((item: any) => {
+      if (item.user_message && item.user_message.trim()) {
+        flatMessages.push({
+          role: "user",
+          content: item.user_message.trim(),
+        });
+      }
+
+      if (item.bot_response && item.bot_response.trim()) {
+        flatMessages.push({
+          role: "assistant",
+          content: item.bot_response.trim(),
+        });
       }
     });
-  }, [streamingMessage, isStreaming]);
 
-  // Khi kết thúc streaming (assistant trả lời xong), chờ 2s rồi mới hiển thị response
-  useEffect(() => {
-    if (!isStreaming && streamingMessage) {
-      const timeout = setTimeout(() => {
-        setMessages((msgs) => {
-          if (
-            msgs.length &&
-            msgs[msgs.length - 1].role === "assistant" &&
-            msgs[msgs.length - 1].content !== streamingMessage
-          ) {
-            return [
-              ...msgs.slice(0, -1),
-              { role: "assistant", content: streamingMessage },
-            ];
-          }
-          return msgs;
-        });
-        setStreamingMessage("");
-        refreshConnection();
-      }, 2000);
-      return () => clearTimeout(timeout);
-    }
-    // eslint-disable-next-line
-  }, [isStreaming, streamingMessage]);
-
-  // Khởi tạo session
-  const initializeSession = async () => {
-    try {
-      let sid = localStorage.getItem("chatbotSessionId");
-      console.log("Current session from localStorage:", sid);
-
-      if (!sid) {
-        console.log("No existing session, creating new one...");
-        // Tạo session mới qua API
-        const response = await fetch(SESSION_API, { method: "POST" });
-        if (response.ok) {
-          const data = await response.json();
-          sid = data.sessionId;
-          console.log("New session created via API:", sid);
-        } else {
-          // Fallback: tạo session ID local nếu API fail
-          sid = generateSessionId();
-          console.log("API failed, generated local session:", sid);
-        }
-        localStorage.setItem("chatbotSessionId", sid);
-      } else {
-        console.log("Using existing session:", sid);
-      }
-
-      setSessionId(sid);
-    } catch (error) {
-      console.error("Lỗi khởi tạo session:", error);
-      // Fallback: tạo session ID local
-      const sid = generateSessionId();
-      localStorage.setItem("chatbotSessionId", sid);
-      setSessionId(sid);
-      console.log("Error occurred, generated fallback session:", sid);
-    }
+    return flatMessages;
   };
 
-  // Load lịch sử chat
-  const loadChatHistory = async () => {
-    if (!sessionId) return;
+  // Update session info
+  const updateSessionInfo = (sessionId: string, firstMessage: string) => {
+    const currentSessions = loadSessions();
+    const sessionIndex = currentSessions.findIndex((s) => s.id === sessionId);
 
-    console.log("Loading chat history for session:", sessionId);
+    if (sessionIndex >= 0) {
+      // Update existing session
+      currentSessions[sessionIndex] = {
+        ...currentSessions[sessionIndex],
+        lastMessage:
+          firstMessage.substring(0, 50) +
+          (firstMessage.length > 50 ? "..." : ""),
+        timestamp: Date.now(),
+        messageCount: Math.ceil(messages.length / 2) + 1,
+      };
+    } else {
+      // Create new session entry
+      const newSession: ChatSession = {
+        id: sessionId,
+        title: generateSessionTitle(firstMessage),
+        lastMessage:
+          firstMessage.substring(0, 50) +
+          (firstMessage.length > 50 ? "..." : ""),
+        timestamp: Date.now(),
+        messageCount: 1,
+      };
 
-    try {
-      const response = await fetch(HISTORY_API + sessionId);
-      console.log("History API response status:", response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("History data received:", data);
-        setMessages(Array.isArray(data) ? data : []);
-      } else {
-        console.log("History API failed, starting with empty messages");
-        setMessages([]);
+      // Add to beginning and limit to 3 sessions
+      currentSessions.unshift(newSession);
+      if (currentSessions.length > 3) {
+        currentSessions.splice(3);
       }
-    } catch (error) {
-      console.error("Lỗi load lịch sử:", error);
-      setMessages([]);
     }
+
+    saveSessions(currentSessions);
+    setSessions([...currentSessions]);
   };
 
-  // Kết nối WebSocket
-  const connectWebSocket = useCallback(() => {
-    if (!sessionId || wsRef.current?.readyState === WebSocket.OPEN) return;
-
-    setConnectionStatus("connecting");
+  // Send message
+  const handleSend = async () => {
     setError("");
 
-    const socket = new WebSocket(WS_URL);
-    wsRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("[WebSocket] onopen, sessionId:", sessionId);
-      socket.send(sessionId);
-      setWs(socket);
-      setConnectionStatus("connected");
-      reconnectAttemptsRef.current = 0;
-      console.log("[WebSocket] readyState after open:", socket.readyState);
-    };
-
-    socket.onmessage = (event) => {
-      const chunk = event.data;
-      console.log(
-        "[WebSocket] onmessage, chunk:",
-        chunk,
-        "sessionId:",
-        sessionId
-      );
-      // Nếu là chunk đầu tiên, ẩn typing indicator và bắt đầu streaming
-      if (!streamingMessage) {
-        setShowTypingIndicator(false);
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
-      }
-      setStreamingMessage((prev) => prev + chunk);
-      setIsStreaming(true);
-    };
-
-    socket.onclose = (event) => {
-      console.log(
-        "[WebSocket] onclose:",
-        event.code,
-        event.reason,
-        "readyState:",
-        socket.readyState
-      );
-      setWs(null);
-      setConnectionStatus("disconnected");
-      // Kết thúc streaming khi socket đóng
-      if (isStreaming) {
-        setIsStreaming(false);
-        setStreamingMessage("");
-      }
-      // Reset typing indicator
-      setShowTypingIndicator(false);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-      // Auto reconnect nếu không phải đóng có chủ ý
-      if (
-        open &&
-        event.code !== 1000 &&
-        reconnectAttemptsRef.current < maxReconnectAttempts
-      ) {
-        const delay = Math.min(
-          1000 * Math.pow(2, reconnectAttemptsRef.current),
-          30000
-        );
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++;
-          connectWebSocket();
-        }, delay);
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error("[WebSocket] onerror:", error);
-      setError("Lỗi kết nối WebSocket");
-    };
-  }, [sessionId, open, isStreaming, streamingMessage]);
-
-  // Ngắt kết nối WebSocket
-  const disconnectWebSocket = () => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = null;
-    }
-
-    if (wsRef.current) {
-      wsRef.current.close(1000, "User closed chatbox");
-      wsRef.current = null;
-    }
-
-    setWs(null);
-    setConnectionStatus("disconnected");
-    setIsStreaming(false);
-    setStreamingMessage("");
-    setShowTypingIndicator(false);
-  };
-
-  // Gửi tin nhắn
-  const handleSend = () => {
-    // Kiểm tra SBD phải đúng 8 số
-    if (input.length !== 8) {
-      setError("SBD phải có đúng 8 số!");
+    if (!input.trim()) {
+      setError("Please enter a message!");
       return;
     }
 
-    if (
-      !input.trim() ||
-      !ws ||
-      ws.readyState !== WebSocket.OPEN ||
-      isStreaming
-    ) {
-      console.log(
-        "[handleSend] Blocked: input=",
-        input,
-        "ws=",
-        ws,
-        "readyState=",
-        ws?.readyState,
-        "isStreaming=",
-        isStreaming
-      );
+    if (!currentSessionId) {
+      // Create new session if none exists
+      await handleNewSession();
       return;
     }
 
-    // Tạo message với format yêu cầu
-    const formattedMessage = `Tôi muốn tra cứu điểm chuẩn ${input.trim()} năm 2025`;
+    if (isStreaming) {
+      setError("Please wait for the current message to complete!");
+      return;
+    }
 
-    // Thêm tin nhắn user vào lịch sử (hiển thị message được format)
-    const userMessage: Message = { role: "user", content: formattedMessage };
-    setMessages((prev) => [...prev, userMessage]);
+    setIsStreaming(true);
+    setCurrentStreamingMessage("");
 
-    // Clear error
-    setError("");
-
-    // Hiển thị typing indicator trong 3 giây
-    setShowTypingIndicator(true);
-    typingTimeoutRef.current = setTimeout(() => {
-      setShowTypingIndicator(false);
-    }, 3000);
-
-    // Gửi message được format qua WebSocket
-    console.log(
-      "[handleSend] Sending message:",
-      formattedMessage,
-      "sessionId:",
-      sessionId,
-      "ws.readyState:",
-      ws.readyState
-    );
-    ws.send(formattedMessage);
-
-    // Reset input và chuẩn bị cho streaming
+    const userInput = input;
+    setMessages((prev) => [...prev, { role: "user", content: userInput }]);
     setInput("");
-    setStreamingMessage("");
-    setIsStreaming(false); // Chờ response từ server
 
-    // Đảm bảo session được lưu
-    if (sessionId) {
-      localStorage.setItem("chatbotSessionId", sessionId);
-      console.log("[handleSend] Saved session to localStorage:", sessionId);
+    // Update session info with first message
+    if (messages.length === 0) {
+      updateSessionInfo(currentSessionId, userInput);
+    }
+
+    try {
+      const response = await fetch(MESSAGE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: currentSessionId,
+          user_message: userInput,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("No stream body!");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        if (chunk.startsWith("[ERROR]:")) {
+          console.error("[Chatbot] Server error:", chunk);
+          setError(chunk.replace("[ERROR]:", "").trim());
+          setIsStreaming(false);
+          setCurrentStreamingMessage("");
+          setMessages((prev) => prev.slice(0, -1));
+          return;
+        }
+
+        assistantMessage += chunk;
+        setCurrentStreamingMessage(assistantMessage);
+      }
+
+      if (assistantMessage.trim()) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: assistantMessage },
+        ]);
+      }
+
+      setCurrentStreamingMessage("");
+    } catch (error) {
+      console.error("[Chatbot] Error sending message:", error);
+      setError("Failed to send message to server!");
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setIsStreaming(false);
     }
   };
 
-  // Xử lý phím Enter
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Handle Enter key
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  // Xóa lịch sử chat
-  const clearHistory = () => {
-    setMessages([]);
-    localStorage.removeItem("chatbotSessionId");
-    initializeSession();
-    setError("");
-  };
-
-  // Kiểm tra URL
-  const isUrl = (text: string) => /^https?:\/\//.test(text);
-
-  // Refresh kết nối
-  const refreshConnection = () => {
-    disconnectWebSocket();
-    setTimeout(() => {
-      if (open && sessionId) {
-        connectWebSocket();
-      }
-    }, 500);
-  };
-
-  // Xử lý input SBD
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Chỉ cho nhập số, tối đa 8 số
-    const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-    setInput(val);
-
-    // Clear error khi user bắt đầu nhập lại
-    if (error && val.length <= 8) {
+  // Create new session
+  const handleNewSession = async () => {
+    try {
+      setMessages([]);
+      setCurrentStreamingMessage("");
       setError("");
+      setConnectionStatus("connecting");
+
+      const newSessionId = await createSession();
+      setCurrentSessionId(newSessionId);
+      setConnectionStatus("connected");
+
+      console.log("[Chatbot] New session created:", newSessionId);
+    } catch (error) {
+      console.error("[Chatbot] Error creating new session:", error);
+      setError("Unable to create new chat session");
+      setConnectionStatus("disconnected");
     }
   };
 
+  // Switch to different session
+  const handleSwitchSession = async (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+
+    setCurrentSessionId(sessionId);
+    setShowSessionList(false);
+    setMessages([]);
+    setError("");
+  };
+
+  // Delete session
+  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const currentSessions = loadSessions();
+    const filteredSessions = currentSessions.filter((s) => s.id !== sessionId);
+
+    saveSessions(filteredSessions);
+    setSessions(filteredSessions);
+
+    if (sessionId === currentSessionId) {
+      if (filteredSessions.length > 0) {
+        setCurrentSessionId(filteredSessions[0].id);
+      } else {
+        setCurrentSessionId("");
+        setMessages([]);
+      }
+    }
+  };
+
+  // Format timestamp
+  const formatTimestamp = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffHours < 1) return "Just now";
+    if (diffHours < 24) return `${Math.floor(diffHours)}h ago`;
+    if (diffHours < 48) return "Yesterday";
+    return date.toLocaleDateString();
+  };
+
   return (
-    <>
-      {/* Nút mở chat */}
+    <div style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      {/* Chat Button */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          style={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            borderRadius: "50%",
-            width: 60,
-            height: 60,
-            background: "linear-gradient(135deg, #667eea, #764ba2)",
-            color: "#fff",
-            border: "none",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            fontSize: 28,
-            cursor: "pointer",
-            transition: "transform 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-          onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          aria-label="Mở chatbot"
+          className="chat-fab"
+          aria-label="Open EduPath AI Chatbot"
         >
           🎓
         </button>
       )}
 
-      {/* Chatbox popup */}
+      {/* Chatbox */}
       {open && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            width: 380,
-            maxWidth: "90vw",
-            height: 550,
-            background: "#fff",
-            borderRadius: 20,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
-            zIndex: 1001,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
+        <div className="chatbox">
           {/* Header */}
-          <div
-            style={{
-              padding: 16,
-              background: "linear-gradient(135deg, #667eea, #764ba2)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 600, fontSize: 16 }}>
-                🎓 EDU Chatbot
-              </span>
+          <div className="chat-header">
+            <div className="header-left">
+              <div className="header-title">
+                🎓 EduPath AI
+                <div className="header-subtitle">Academic Counseling</div>
+              </div>
               <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background:
-                    connectionStatus === "connected"
-                      ? "#4CAF50"
-                      : connectionStatus === "connecting"
-                      ? "#FF9800"
-                      : "#F44336",
-                  animation:
-                    connectionStatus === "connecting"
-                      ? "pulse 1.5s infinite"
-                      : "none",
-                }}
-                title={`Trạng thái: ${connectionStatus}`}
+                className={`connection-status ${connectionStatus}`}
+                title={`Status: ${connectionStatus}`}
               />
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="header-actions">
               <button
-                onClick={refreshConnection}
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: 4,
-                  color: "#fff",
-                  padding: "4px 8px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
-                title="Refresh kết nối"
+                onClick={() => setShowSessionList(!showSessionList)}
+                className="header-btn"
+                title="Chat History"
               >
-                🔄
+                📋
+                {sessions.length > 0 && (
+                  <span className="session-count">{sessions.length}</span>
+                )}
               </button>
               <button
-                onClick={clearHistory}
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: 4,
-                  color: "#fff",
-                  padding: "4px 8px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
-                title="Xóa lịch sử"
+                onClick={handleNewSession}
+                className="header-btn"
+                title="New Chat"
               >
-                🗑️
+                ➕
               </button>
               <button
                 onClick={() => setOpen(false)}
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: 4,
-                  color: "#fff",
-                  padding: "4px 8px",
-                  cursor: "pointer",
-                  fontSize: 14,
-                }}
+                className="header-btn close-btn"
               >
-                ×
+                ✕
               </button>
             </div>
           </div>
 
-          {/* Session info */}
-          <div
-            style={{
-              padding: "8px 16px",
-              background: "#f8f9fa",
-              borderBottom: "1px solid #eee",
-              fontSize: 11,
-              color: "#666",
-              fontFamily: "monospace",
-            }}
-          >
-            Session:{" "}
-            {sessionId ? sessionId.substring(0, 20) + "..." : "Đang tạo..."}
-          </div>
-
-          {/* Error message */}
-          {error && (
-            <div
-              style={{
-                padding: 8,
-                background: "#ffebee",
-                color: "#c62828",
-                fontSize: 12,
-                borderBottom: "1px solid #eee",
-                textAlign: "center",
-                fontWeight: 500,
-              }}
-            >
-              ⚠️ {error}
+          {/* Session List */}
+          {showSessionList && (
+            <div className="session-list">
+              <div className="session-list-header">
+                <h4>Recent Chats (Max 3)</h4>
+              </div>
+              {sessions.length === 0 ? (
+                <div className="no-sessions">No chat history yet</div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`session-item ${
+                      session.id === currentSessionId ? "active" : ""
+                    }`}
+                    onClick={() => handleSwitchSession(session.id)}
+                  >
+                    <div className="session-content">
+                      <div className="session-title">{session.title}</div>
+                      <div className="session-meta">
+                        <span className="session-time">
+                          {formatTimestamp(session.timestamp)}
+                        </span>
+                        <span className="session-messages">
+                          {session.messageCount} messages
+                        </span>
+                      </div>
+                      <div className="session-preview">
+                        {session.lastMessage}
+                      </div>
+                    </div>
+                    <button
+                      className="delete-session"
+                      onClick={(e) => handleDeleteSession(session.id, e)}
+                      title="Delete this chat"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
+          {/* Session Info
+          <div className="session-info">
+            Current Session:{" "}
+            {currentSessionId
+              ? currentSessionId.substring(0, 8) + "..."
+              : "None"}
+          </div> */}
+
+          {/* Error Message */}
+          {error && <div className="error-message">⚠️ {error}</div>}
+
           {/* Messages */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: 16,
-              background: "#f7f9fa",
-            }}
-          >
-            {messages.length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "#666",
-                  fontSize: 14,
-                  padding: 20,
-                }}
-              >
-                👋 Xin chào! Tôi là chatbot tra cứu điểm chuẩn.
-                <br />
-                Hãy nhập SBD (8 số) để tra cứu điểm chuẩn năm 2025.
-              </div>
-            )}
-
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                style={{
-                  marginBottom: 12,
-                  display: "flex",
-                  justifyContent:
-                    msg.role === "user" ? "flex-end" : "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    display: "inline-block",
-                    background:
-                      msg.role === "user"
-                        ? "linear-gradient(135deg, #667eea, #764ba2)"
-                        : "#fff",
-                    color: msg.role === "user" ? "#fff" : "#333",
-                    borderRadius: 18,
-                    padding: "10px 14px",
-                    maxWidth: 280,
-                    wordBreak: "break-word",
-                    boxShadow:
-                      msg.role === "user"
-                        ? "0 2px 8px rgba(102, 126, 234, 0.3)"
-                        : "0 2px 8px rgba(0,0,0,0.1)",
-                    border:
-                      msg.role === "assistant" ? "1px solid #e0e0e0" : "none",
-                    animation: "fadeIn 0.3s ease-in",
-                  }}
-                >
-                  {isUrl(msg.content) ? (
-                    <img
-                      src={msg.content}
-                      alt="Response image"
-                      style={{
-                        maxWidth: "100%",
-                        borderRadius: 8,
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <div style={{ lineHeight: 1.4 }}>{msg.content}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Typing indicator */}
-            {showTypingIndicator && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-start",
-                  marginBottom: 12,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#fff",
-                    borderRadius: 18,
-                    padding: "10px 14px",
-                    border: "1px solid #e0e0e0",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", gap: 4, alignItems: "center" }}
-                  >
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#999",
-                        animation: "typing 1.4s infinite",
-                      }}
-                    />
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#999",
-                        animation: "typing 1.4s infinite 0.2s",
-                      }}
-                    />
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#999",
-                        animation: "typing 1.4s infinite 0.4s",
-                      }}
-                    />
-                    <span
-                      style={{ marginLeft: 8, color: "#666", fontSize: 12 }}
-                    >
-                      Đang tra cứu...
-                    </span>
+          <div className="messages-container">
+            {messages.length === 0 && !error ? (
+              <div className="welcome-message">
+                <div className="welcome-icon">🎯</div>
+                <h3>Chào mừng tới EduPath AI!</h3>
+                <p>Tôi có thể giúp bạn với:</p>
+                <div className="feature-list">
+                  <div className="feature-item">
+                    🏫 Chọn trường & chuyên ngành
                   </div>
+                  <div className="feature-item">📊 Điểm chuẩn & yêu cầu</div>
+                  <div className="feature-item">💰 Học phí & chương trình</div>
+                  <div className="feature-item">📅 Ngày nộp hồ sơ</div>
+                  <div className="feature-item">🎯 Hướng nghề nghiệp</div>
+                </div>
+                <p className="start-prompt">
+                  Hãy hỏi tôi bất cứ điều gì để bắt đầu!
+                </p>
+              </div>
+            ) : (
+              messages.map((msg, idx) => (
+                <div key={idx} className={`message ${msg.role}`}>
+                  <div
+                    className="message-content"
+                    dangerouslySetInnerHTML={{
+                      __html: msg.content.replace(
+                        /\*\*(.*?)\*\*/g,
+                        "<strong>$1</strong>"
+                      ),
+                    }}
+                  />
+                </div>
+              ))
+            )}
+
+            {/* Streaming Message */}
+            {isStreaming && (
+              <div className="message assistant streaming">
+                <div className="message-content">
+                  {currentStreamingMessage || (
+                    <div className="typing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      EduPath is thinking...
+                    </div>
+                  )}
+                  {currentStreamingMessage && <span className="cursor">|</span>}
                 </div>
               </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div
-            style={{
-              padding: 16,
-              borderTop: "1px solid #eee",
-              background: "#fff",
-            }}
-          >
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="Nhập SBD (8 số)..."
-                  style={{
-                    width: "100%",
-                    borderRadius: 20,
-                    border: error ? "2px solid #f44336" : "2px solid #e0e0e0",
-                    padding: "10px 16px",
-                    fontSize: 14,
-                    outline: "none",
-                    transition: "border-color 0.3s ease",
-                    backgroundColor: error ? "#fff5f5" : "#fff",
-                  }}
-                  onFocus={(e) => {
-                    if (!error) {
-                      e.target.style.borderColor = "#667eea";
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!error) {
-                      e.target.style.borderColor = "#e0e0e0";
-                    }
-                  }}
-                  disabled={
-                    isStreaming ||
-                    showTypingIndicator ||
-                    connectionStatus !== "connected"
-                  }
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={8}
-                  autoComplete="off"
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 16,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: 12,
-                    color: input.length === 8 ? "#4CAF50" : "#999",
-                    fontWeight: 500,
-                  }}
-                >
-                  {input.length}/8
-                </div>
-              </div>
+          {/* Input Area */}
+          <div className="input-area">
+            <div className="input-wrapper">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Hỏi EduPath AI ..."
+                className={`message-input ${error ? "error" : ""}`}
+                disabled={isStreaming || connectionStatus !== "connected"}
+                rows={1}
+              />
               <button
                 onClick={handleSend}
                 disabled={
                   isStreaming ||
-                  showTypingIndicator ||
-                  input.length !== 8 ||
+                  !input.trim() ||
                   connectionStatus !== "connected"
                 }
-                style={{
-                  background:
-                    isStreaming ||
-                    showTypingIndicator ||
-                    input.length !== 8 ||
-                    connectionStatus !== "connected"
-                      ? "#ccc"
-                      : "linear-gradient(135deg, #667eea, #764ba2)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: 40,
-                  height: 40,
-                  cursor:
-                    isStreaming ||
-                    showTypingIndicator ||
-                    input.length !== 8 ||
-                    connectionStatus !== "connected"
-                      ? "not-allowed"
-                      : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 16,
-                  transition: "transform 0.2s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.transform = "scale(1.1)";
-                  }
-                }}
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
-                title={input.length !== 8 ? "Vui lòng nhập đủ 8 số" : "Gửi"}
+                className="send-button"
+                title={!input.trim() ? "Enter a message" : "Send message"}
               >
-                ➤
+                {isStreaming ? "⏳" : "➤"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* CSS Animations */}
       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
+        .chat-fab {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 1000;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          font-size: 28px;
+          cursor: pointer;
+          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .chat-fab:hover {
+          transform: translateY(-4px) scale(1.05);
+          box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .chatbox {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          width: 420px;
+          max-width: 90vw;
+          height: 700px;
+          max-height: 85vh;
+          background: white;
+          border-radius: 24px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          z-index: 1001;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .chat-header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .header-title {
+          font-weight: 700;
+          font-size: 16px;
+          line-height: 1.2;
+        }
+
+        .header-subtitle {
+          font-size: 12px;
+          opacity: 0.9;
+          font-weight: 400;
+        }
+
+        .connection-status {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .connection-status.connected {
+          background: #4ade80;
+        }
+        .connection-status.connecting {
+          background: #fbbf24;
+          animation: pulse 1.5s infinite;
+        }
+        .connection-status.disconnected {
+          background: #ef4444;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .header-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 8px;
+          color: white;
+          padding: 8px 12px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .header-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateY(-1px);
+        }
+
+        .session-count {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          background: #ef4444;
+          color: white;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          font-size: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .session-list {
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .session-list-header {
+          padding: 16px 20px 8px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .session-list-header h4 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #475569;
+        }
+
+        .no-sessions {
+          padding: 20px;
+          text-align: center;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .session-item {
+          padding: 12px 20px;
+          border-bottom: 1px solid #e2e8f0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          transition: all 0.2s ease;
+        }
+
+        .session-item:hover {
+          background: #e2e8f0;
+        }
+
+        .session-item.active {
+          background: #ddd6fe;
+          border-left: 4px solid #8b5cf6;
+        }
+
+        .session-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .session-title {
+          font-weight: 600;
+          font-size: 14px;
+          color: #1e293b;
+          margin-bottom: 4px;
+        }
+
+        .session-meta {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 4px;
+        }
+
+        .session-time,
+        .session-messages {
+          font-size: 11px;
+          color: #64748b;
+        }
+
+        .session-preview {
+          font-size: 12px;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .delete-session {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          opacity: 0;
+          transition: all 0.2s ease;
+        }
+
+        .session-item:hover .delete-session {
+          opacity: 1;
+        }
+
+        .delete-session:hover {
+          background: rgba(239, 68, 68, 0.1);
+        }
+
+        .session-info {
+          padding: 8px 20px;
+          background: #f1f5f9;
+          font-size: 11px;
+          color: #64748b;
+          font-family: "Courier New", monospace;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .error-message {
+          padding: 12px 20px;
+          background: #fef2f2;
+          color: #dc2626;
+          font-size: 13px;
+          border-bottom: 1px solid #fecaca;
+          text-align: center;
+          font-weight: 500;
+        }
+
+        .messages-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .welcome-message {
+          text-align: center;
+          padding: 40px 20px;
+          color: #475569;
+        }
+
+        .welcome-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+
+        .welcome-message h3 {
+          margin: 0 0 16px 0;
+          font-size: 20px;
+          font-weight: 700;
+          color: #1e293b;
+        }
+
+        .welcome-message p {
+          margin: 0 0 20px 0;
+          font-size: 14px;
+        }
+
+        .feature-list {
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          margin: 20px 0;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-item {
+          padding: 8px 0;
+          font-size: 14px;
+          text-align: left;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .feature-item:last-child {
+          border-bottom: none;
+        }
+
+        .start-prompt {
+          font-size: 13px;
+          color: #64748b;
+          font-style: italic;
+        }
+
+        .message {
+          margin-bottom: 16px;
+          display: flex;
+        }
+
+        .message.user {
+          justify-content: flex-end;
+        }
+
+        .message.assistant {
+          justify-content: flex-start;
+        }
+
+        .message-content {
+          max-width: 80%;
+          padding: 12px 16px;
+          border-radius: 16px;
+          font-size: 14px;
+          line-height: 1.5;
+          word-wrap: break-word;
+          white-space: pre-line;
+        }
+
+        .message.user .message-content {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+          background: white;
+          color: #1e293b;
+          border: 1px solid #e2e8f0;
+          border-bottom-left-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .message.streaming .message-content {
+          border-left: 4px solid #8b5cf6;
+        }
+
+        .typing-indicator {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #64748b;
+          font-style: italic;
+        }
+
+        .typing-indicator span {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #8b5cf6;
+          animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        .cursor {
+          animation: blink 1s infinite;
+          color: #8b5cf6;
+          font-weight: bold;
+        }
+
+        .input-area {
+          padding: 20px;
+          background: white;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .input-wrapper {
+          display: flex;
+          gap: 12px;
+          align-items: flex-end;
+        }
+
+        .message-input {
+          flex: 1;
+          min-height: 44px;
+          max-height: 120px;
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 12px 16px;
+          font-size: 14px;
+          font-family: inherit;
+          resize: none;
+          outline: none;
+          transition: all 0.2s ease;
+          background: #f8fafc;
+        }
+
+        .message-input:focus {
+          border-color: #8b5cf6;
+          background: white;
+          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .message-input.error {
+          border-color: #ef4444;
+          background: #fef2f2;
+        }
+
+        .message-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .send-button {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: none;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .send-button:hover:not(:disabled) {
+          transform: scale(1.05);
+          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+          background: #d1d5db;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
             opacity: 1;
-            transform: translateY(0);
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+
+        @keyframes blink {
+          0%,
+          50% {
+            opacity: 1;
+          }
+          51%,
+          100% {
+            opacity: 0;
           }
         }
 
@@ -816,23 +1054,54 @@ const Chatbot: React.FC = () => {
             transform: translateY(0);
           }
           30% {
-            transform: translateY(-8px);
+            transform: translateY(-10px);
           }
         }
 
-        @keyframes pulse {
-          0% {
-            opacity: 1;
+        /* Scrollbar styling */
+        .messages-container::-webkit-scrollbar,
+        .session-list::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track,
+        .session-list::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb,
+        .session-list::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover,
+        .session-list::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 480px) {
+          .chatbox {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+            bottom: 0;
+            right: 0;
+            border-radius: 0;
           }
-          50% {
-            opacity: 0.5;
-          }
-          100% {
-            opacity: 1;
+
+          .chat-fab {
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
           }
         }
       `}</style>
-    </>
+    </div>
   );
 };
 
