@@ -457,7 +457,12 @@ export default function GraduationScoreCalculator() {
                   </p>
                 </div>
               </div>
-              <Link to="/priority-score-info" className="gsc-info-link">
+              <Link
+                to="/priority-score-info"
+                className="gsc-info-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 📋 Xem chi tiết luật điểm ưu tiên & khuyến khích
               </Link>
             </div>

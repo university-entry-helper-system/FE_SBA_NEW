@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import "../css/ScoreDistribution.css";
+import { getScores, getSubjectDisplayName, type Score } from "../api/scores";
 
 const THPTScores = () => {
   const [selectedYear, setSelectedYear] = useState("2025");
@@ -7,67 +8,30 @@ const THPTScores = () => {
     src: string;
     alt: string;
   } | null>(null);
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [scores, setScores] = useState<Score[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const years = ["2025", "2024", "2023", "2022", "2021", "2020"];
 
-  const subjects = useMemo(
-    () => [
-      {
-        name: "Toán",
-        image: "/images/scores/thpt/toan-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Văn",
-        image: "/images/scores/thpt/van-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Tiếng Anh",
-        image: "/images/scores/thpt/anh-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Vật Lý",
-        image: "/images/scores/thpt/ly-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Hóa Học",
-        image: "/images/scores/thpt/hoa-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Sinh Học",
-        image: "/images/scores/thpt/sinh-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Lịch Sử",
-        image: "/images/scores/thpt/su-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Địa Lý",
-        image: "/images/scores/thpt/dia-" + selectedYear + ".jpg",
-      },
-      {
-        name: "GDCD",
-        image: "/images/scores/thpt/gdcd-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Kinh tế pháp luật",
-        image: "/images/scores/thpt/ktpl-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Công nghệ công nghiệp",
-        image: "/images/scores/thpt/cncn-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Công nghệ nông nghiệp",
-        image: "/images/scores/thpt/cnnn-" + selectedYear + ".jpg",
-      },
-      {
-        name: "Tin Học",
-        image: "/images/scores/thpt/tin-" + selectedYear + ".jpg",
-      },
-    ],
-    [selectedYear]
-  );
+  // Load scores từ API khi component mount hoặc year thay đổi
+  useEffect(() => {
+    const loadScores = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const scoresData = await getScores(parseInt(selectedYear), "THPT");
+        setScores(scoresData);
+      } catch (err) {
+        setError("Không thể tải dữ liệu điểm số");
+        console.error("Error loading scores:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScores();
+  }, [selectedYear]);
 
   const openModal = (src: string, alt: string) => {
     setModalImage({ src, alt });
@@ -76,38 +40,6 @@ const THPTScores = () => {
   const closeModal = () => {
     setModalImage(null);
   };
-
-  // Function to check if image exists
-  const checkImageExists = (imagePath: string, subjectName: string) => {
-    const img = new Image();
-    img.onload = () => {
-      setAvailableSubjects((prev) => [
-        ...prev.filter((s) => s !== subjectName),
-        subjectName,
-      ]);
-    };
-    img.onerror = () => {
-      setAvailableSubjects((prev) => prev.filter((s) => s !== subjectName));
-    };
-    img.src = imagePath;
-  };
-
-  // Check images when component mounts or year changes
-  useEffect(() => {
-    const checkAllImages = () => {
-      setAvailableSubjects([]);
-      subjects.forEach((subject) => {
-        checkImageExists(subject.image, subject.name);
-      });
-    };
-
-    checkAllImages();
-  }, [selectedYear, subjects]);
-
-  // Filter subjects to only show those with available images
-  const filteredSubjects = subjects.filter((subject) =>
-    availableSubjects.includes(subject.name)
-  );
 
   return (
     <div className="score-distribution-container">
@@ -136,63 +68,76 @@ const THPTScores = () => {
           Phổ điểm các môn thi trong kỳ thi Tốt nghiệp Trung học Phổ thông Quốc
           gia
         </p>
+      </div>
 
-        {/* Search Score Button */}
-        <div className="search-score-section">
-          <button
-            className="search-score-btn"
-            onClick={() =>
-              window.open("https://mazhocdata.streamlit.app/", "_blank")
-            }
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            Tra Cứu Thứ Hạng
-          </button>
-          <p className="search-note">
-            Nhấn vào đây để tra cứu thứ hạng chi tiết theo số báo danh
-          </p>
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-section">
+          <div className="loading-spinner"></div>
+          <p>Đang tải dữ liệu điểm số...</p>
         </div>
-      </div>
+      )}
 
-      <div className="subjects-grid">
-        {filteredSubjects.map((subject, index) => (
-          <div key={index} className="subject-card">
-            <h3 className="subject-name">{subject.name}</h3>
-            <div className="image-container">
-              <img
-                src={subject.image}
-                alt={`Phổ điểm ${subject.name} ${selectedYear}`}
-                className="score-image"
-                onClick={() =>
-                  openModal(
-                    subject.image,
-                    `Phổ điểm ${subject.name} ${selectedYear}`
-                  )
-                }
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/images/scores/placeholder.jpg";
-                }}
-              />
+      {/* Error State */}
+      {error && (
+        <div className="error-section">
+          <p className="error-message">{error}</p>
+          <button
+            className="retry-btn"
+            onClick={() => window.location.reload()}
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* Scores Grid */}
+      {!loading && !error && scores.length > 0 && (
+        <div className="subjects-grid">
+          {scores.map((score) => (
+            <div key={score.id} className="subject-card">
+              <h3 className="subject-name">
+                {getSubjectDisplayName(score.subject)}
+              </h3>
+              <div className="image-container">
+                <img
+                  src={score.scoreUrl}
+                  alt={`Phổ điểm ${getSubjectDisplayName(score.subject)} ${
+                    score.year
+                  }`}
+                  className="score-image"
+                  onClick={() =>
+                    openModal(
+                      score.scoreUrl,
+                      `Phổ điểm ${getSubjectDisplayName(score.subject)} ${
+                        score.year
+                      }`
+                    )
+                  }
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/scores/placeholder.jpg";
+                  }}
+                />
+              </div>
+              <div className="score-info">
+                <p>
+                  Phổ điểm môn {getSubjectDisplayName(score.subject)} - Năm{" "}
+                  {score.year}
+                </p>
+              </div>
             </div>
-            <div className="score-info">
-              <p>
-                Phổ điểm môn {subject.name} - Năm {selectedYear}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* No Data State */}
+      {!loading && !error && scores.length === 0 && (
+        <div className="no-data-section">
+          <p>Không có dữ liệu điểm số cho năm {selectedYear}</p>
+          <p>Vui lòng chọn năm khác hoặc thử lại sau.</p>
+        </div>
+      )}
 
       <div className="note-section">
         <h3>Lưu ý:</h3>

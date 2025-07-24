@@ -8,6 +8,7 @@ import {
   type Province,
   type EligibleMajor,
 } from "../api/eligibleMajors";
+import { getScoresBySubject, getSubjectCode, type Score } from "../api/scores";
 
 const ScoreEvaluation = () => {
   const [score, setScore] = useState("");
@@ -21,6 +22,13 @@ const ScoreEvaluation = () => {
   const [error, setError] = useState("");
   const [combinationsLoading, setCombinationsLoading] = useState(true);
   const [provincesLoading, setProvincesLoading] = useState(true);
+
+  // State cho phổ điểm tham khảo
+  const [showScoreDistribution, setShowScoreDistribution] = useState(false);
+  const [scoreDistributions, setScoreDistributions] = useState<{
+    [key: string]: Score[];
+  }>({});
+  const [loadingScores, setLoadingScores] = useState(false);
 
   // Load subject combinations and provinces when component mounts
   useEffect(() => {
@@ -116,6 +124,8 @@ const ScoreEvaluation = () => {
     setSelectedProvince("");
     setEligibleMajors([]);
     setError("");
+    setShowScoreDistribution(false);
+    setScoreDistributions({});
   };
 
   const getSelectedCombinationInfo = () => {
@@ -130,6 +140,49 @@ const ScoreEvaluation = () => {
     return provinces.find(
       (province) => province.id.toString() === selectedProvince
     );
+  };
+
+  // Function để load phổ điểm của các môn trong tổ hợp
+  const loadScoreDistribution = async () => {
+    if (!selectedCombination) return;
+
+    const comboInfo = getSelectedCombinationInfo();
+    if (!comboInfo) return;
+
+    setLoadingScores(true);
+    const newScoreDistributions: { [key: string]: Score[] } = {};
+
+    try {
+      // Load phổ điểm cho từng môn trong tổ hợp cho cả 2024 và 2025
+      for (const subject of comboInfo.examSubjects) {
+        const subjectCode = getSubjectCode(subject.name);
+        console.log(
+          "Loading scores for subject:",
+          subject.name,
+          "code:",
+          subjectCode
+        );
+
+        // Load cho năm 2024 và 2025
+        const [scores2024, scores2025] = await Promise.all([
+          getScoresBySubject(2024, "THPT", subjectCode),
+          getScoresBySubject(2025, "THPT", subjectCode),
+        ]);
+
+        console.log(`Scores for ${subject.name} 2024:`, scores2024);
+        console.log(`Scores for ${subject.name} 2025:`, scores2025);
+
+        newScoreDistributions[`${subject.name}_2024`] = scores2024;
+        newScoreDistributions[`${subject.name}_2025`] = scores2025;
+      }
+
+      console.log("Final score distributions:", newScoreDistributions);
+      setScoreDistributions(newScoreDistributions);
+    } catch (error) {
+      console.error("Error loading score distributions:", error);
+    } finally {
+      setLoadingScores(false);
+    }
   };
 
   return (
@@ -321,6 +374,49 @@ const ScoreEvaluation = () => {
                   </>
                 )}
               </button>
+
+              {selectedCombination && (
+                <button
+                  className="score-distribution-btn"
+                  onClick={() => {
+                    loadScoreDistribution();
+                    setShowScoreDistribution(true);
+                  }}
+                  disabled={loading || loadingScores}
+                >
+                  {loadingScores ? (
+                    <>
+                      <div className="spinner"></div>
+                      Đang tải...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect
+                          x="3"
+                          y="4"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      Xem Phổ Điểm
+                    </>
+                  )}
+                </button>
+              )}
+
               <button
                 className="reset-btn"
                 onClick={handleReset}
@@ -478,6 +574,100 @@ const ScoreEvaluation = () => {
           </div>
         </div>
       </div>
+
+      {/* Score Distribution Modal */}
+      {showScoreDistribution && (
+        <div
+          className="score-distribution-modal"
+          onClick={() => setShowScoreDistribution(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Phổ Điểm Tham Khảo - {getSelectedCombinationInfo()?.name}</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowScoreDistribution(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {loadingScores ? (
+                <div className="loading-section">
+                  <div className="spinner"></div>
+                  <p>Đang tải phổ điểm...</p>
+                </div>
+              ) : (
+                <div className="score-distribution-grid">
+                  {getSelectedCombinationInfo()?.examSubjects.map((subject) => (
+                    <div key={subject.id} className="subject-distribution">
+                      <h4>{subject.name}</h4>
+                      <div className="year-comparison">
+                        <div className="year-column">
+                          <h5>Năm 2024</h5>
+                          {scoreDistributions[`${subject.name}_2024`]?.length >
+                          0 ? (
+                            scoreDistributions[`${subject.name}_2024`].map(
+                              (score) => (
+                                <div
+                                  key={score.id}
+                                  className="score-image-container"
+                                >
+                                  <img
+                                    src={score.scoreUrl}
+                                    alt={`Phổ điểm ${subject.name} 2024`}
+                                    className="score-distribution-image"
+                                    onError={(e) => {
+                                      const target =
+                                        e.target as HTMLImageElement;
+                                      target.style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                              )
+                            )
+                          ) : (
+                            <p className="no-data">Chưa có dữ liệu</p>
+                          )}
+                        </div>
+
+                        <div className="year-column">
+                          <h5>Năm 2025</h5>
+                          {scoreDistributions[`${subject.name}_2025`]?.length >
+                          0 ? (
+                            scoreDistributions[`${subject.name}_2025`].map(
+                              (score) => (
+                                <div
+                                  key={score.id}
+                                  className="score-image-container"
+                                >
+                                  <img
+                                    src={score.scoreUrl}
+                                    alt={`Phổ điểm ${subject.name} 2025`}
+                                    className="score-distribution-image"
+                                    onError={(e) => {
+                                      const target =
+                                        e.target as HTMLImageElement;
+                                      target.style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                              )
+                            )
+                          ) : (
+                            <p className="no-data">Chưa có dữ liệu</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
