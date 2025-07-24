@@ -6,9 +6,9 @@ export interface SimpleAccountResponse {
 }
 
 export enum ConsultationStatus {
-  PENDING = 'PENDING',
-  ANSWERED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  PENDING = 'pending',
+  ANSWERED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 export interface ConsultationResponse {
@@ -72,4 +72,8 @@ export enum NotificationType {
   CONSULTATION_UPDATED = 'CONSULTATION_UPDATED',
   CONSULTATION_CANCELLED = 'CONSULTATION_CANCELLED',
   STATS_UPDATE = 'STATS_UPDATE'
+}
+export interface GroupedConsultationResponse {
+  senderId: string; // UUID as string in TypeScript
+  consultations: ConsultationResponse[];
 }
