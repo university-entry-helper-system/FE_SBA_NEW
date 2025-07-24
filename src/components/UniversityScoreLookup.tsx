@@ -274,7 +274,7 @@ const UniversityScoreLookup = () => {
               id="studentId"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ""))}
-              placeholder="Nhập số báo danh (7-8 chữ số)"
+              placeholder="Nhập số báo danh (8 chữ số)"
               maxLength={8}
               disabled={loading}
             />
@@ -312,17 +312,6 @@ const UniversityScoreLookup = () => {
               onClick={handleReset}
               disabled={loading}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="1,4 1,10 7,10" />
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
               Làm lại
             </button>
           </div>

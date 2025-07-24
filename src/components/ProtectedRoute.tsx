@@ -12,12 +12,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    // Redirect to login page if not authenticated
+    // Redirect to login page if not authenticated\
+    console.log('ProtectedRoute: Not authenticated, redirecting to /login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (user && allowedRoles && allowedRoles.length > 0) {
     // Support both roleId (number) and roleName (string)
+    console.log('ProtectedRoute: Invalid role or no user', { user, allowedRoles });
     const hasRole = allowedRoles.some(
       (role) =>
         (typeof role === "number" && user.roleId === role) ||

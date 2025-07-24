@@ -1,6 +1,7 @@
 // api/consultation.ts
 
 import { 
+GroupedConsultationResponse,
   ConsultationResponse, 
   ConsultationCreateRequest, 
   ConsultationAnswerRequest,
@@ -151,7 +152,7 @@ export const cancelConsultation = async (consultationId: number): Promise<ApiRes
 export const getConsultantConsultations = async (
   page: number = 0,
   size: number = 10
-): Promise<ApiResponse<PageResponse<ConsultationResponse>>> => {
+): Promise<ApiResponse<PageResponse<GroupedConsultationResponse>>> => {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/consultations/consultant?page=${page}&size=${size}`,
     {

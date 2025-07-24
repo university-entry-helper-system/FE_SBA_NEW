@@ -23,6 +23,7 @@
   flex-direction: row;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
+  height: 100%;
 }
 
 .carousel-slide {
@@ -38,7 +39,7 @@
 .carousel-image-container {
   width: 100vw;
   max-width: 100vw;
-  height: 520px;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,12 +47,12 @@
 }
 @media (max-width: 1024px) {
   .carousel-image-container {
-    height: 350px;
+    height: 400px;
   }
 }
 @media (max-width: 600px) {
   .carousel-image-container {
-    height: 200px;
+    height: 220px;
   }
 }
 
@@ -66,7 +67,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.7);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -80,7 +81,7 @@
 }
 
 .carousel-arrow:hover {
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .carousel-arrow-left {

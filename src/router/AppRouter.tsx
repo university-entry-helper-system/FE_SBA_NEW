@@ -3,8 +3,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import HomePage from "../components/home";
 import Question from "../components/question";
-import Login from "../components/login";
-import Register from "../components/register";
+import Login from "../components/Login";
+import Register from "../components/Register";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../components/admin/AdminLayout";
 import AdminDashboard from "../components/admin/AdminDashboard";
@@ -53,6 +53,8 @@ import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
 import FAQs from "../components/admin/AdminFAQs.tsx";
 import AdminConsultantProfiles from "../components/admin/AdminConsultantProfiles.tsx";
+import ConsultantPage from "../components/consutant/ConsultantPage.tsx";
+
 const UserLayout = () => {
   return (
     <>
@@ -61,6 +63,16 @@ const UserLayout = () => {
         <Outlet />
       </main>
       <Footer />
+    </>
+  );
+};
+
+const ConsultantLayout = () => {
+  return (
+    <>
+      <main className="main-content">
+        <ConsultantPage />
+      </main>
     </>
   );
 };
@@ -112,6 +124,21 @@ const AppRouter = () => {
           <Route path="news" element={<AdminNews />} />
         </Route>
         <Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
+
+           {/* Consultant Route - Standalone without layout */}
+        <Route
+          path="/consultant"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <ConsultantLayout />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
+        <Route
+          path="consultant-profiles"
+          element={<AdminConsultantProfiles />}
+        />
         {/* User Routes with UserLayout (Navbar + Footer) */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />

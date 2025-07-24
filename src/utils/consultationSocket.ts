@@ -89,7 +89,10 @@ export class ConsultationWebSocketClient {
 
     // Subscribe to user/consultant specific topic
     let topicPath: string;
-    if (this.config.userRole === 'CONSULTANT' || this.config.userRole === 'ADMIN') {
+    if (
+      this.config.userRole?.includes('CONSULTANT') ||
+      this.config.userRole?.includes('ADMIN')
+    ) {
       topicPath = `/topic/consultant/${this.config.userId}`;
     } else {
       topicPath = `/topic/user/${this.config.userId}`;
@@ -99,6 +102,7 @@ export class ConsultationWebSocketClient {
       try {
         const notification: WebSocketNotification = JSON.parse(message.body);
         console.log('Received notification:', notification);
+        console.log('onNotification handler:', this.config.onNotification);
         this.config.onNotification?.(notification);
       } catch (error) {
         console.error('Failed to parse notification:', error);

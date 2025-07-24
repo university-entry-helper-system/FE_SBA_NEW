@@ -8,8 +8,8 @@ import { WebSocketNotification } from '../types/consultation';
 import maleAvatar from '../assets/3270921.png';
 import femaleAvatar from '../assets/3270920.png';
 import { useAuth } from '../contexts/AuthProvider'; // Update this import path
-
-
+import { NotificationType } from '../types/consultation';
+import { showToastNotification } from '../utils/notification';
 
 const ConsultantList: React.FC = () => {
   const [consultants, setConsultants] = useState<ConsultantProfile[]>([]);
@@ -53,7 +53,22 @@ const ConsultantList: React.FC = () => {
     try {
       setLoading(true);
       const response = await getConsultantProfiles({ page: 0, size: 9 });
-      setConsultants(response.data.result.content);
+      let consultantList = response.data.result.content;
+      // Sort by updatedAt (if available), fallback to name
+      consultantList = consultantList.sort((a, b) => {
+        const aUpdated = (a as any).updatedAt;
+        const bUpdated = (b as any).updatedAt;
+        if (aUpdated && bUpdated) {
+          return new Date(bUpdated).getTime() - new Date(aUpdated).getTime();
+        } else if (aUpdated) {
+          return -1;
+        } else if (bUpdated) {
+          return 1;
+        }
+        // fallback: sort by name
+        return a.fullName.localeCompare(b.fullName);
+      });
+      setConsultants(consultantList);
       setError('');
     } catch (err: any) {
       setError(err.message || 'Failed to load consultants');
@@ -63,114 +78,19 @@ const ConsultantList: React.FC = () => {
   };
 
   function handleWebSocketNotification(notification: WebSocketNotification) {
-    // Show toast notification
-    showToastNotification(notification);
-    
-    // Handle specific notification actions
-    switch (notification.type) {
-      case 'CONSULTATION_ANSWERED':
-      case 'CONSULTATION_UPDATED':
-        // If chat modal is open and it's for the same consultation, refresh it
-        if (isChatOpen && selectedConsultant) {
-          // The chat modal will handle its own refresh via its WebSocket connection
-        }
-        break;
-    }
-  }
+  showToastNotification(notification);
 
-  const showToastNotification = (notification: WebSocketNotification) => {
-    // Create and show toast notification
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 16px 20px;
-      border-radius: '12px';
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      z-index: 10001;
-      max-width: 320px;
-      animation: slideInRight 0.3s ease-out;
-      backdrop-filter: blur(10px);
-    `;
-
-    const iconMap = {
-      'NEW_CONSULTATION': '❓',
-      'CONSULTATION_ANSWERED': '✅',
-      'CONSULTATION_UPDATED': '✏️',
-      'CONSULTATION_CANCELLED': '❌',
-      'STATS_UPDATE': '📊'
-    };
-
-    toast.innerHTML = `
-      <div style="display: flex; align-items: flex-start; gap: 12px;">
-        <div style="font-size: 1.5rem; flex-shrink: 0;">
-          ${iconMap[notification.type] || '🔔'}
-        </div>
-        <div style="flex: 1;">
-          <div style="font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">
-            ${getNotificationTitle(notification.type)}
-          </div>
-          <div style="font-size: 0.85rem; opacity: 0.95; line-height: 1.4;">
-            ${notification.message}
-          </div>
-        </div>
-        <button onclick="this.parentElement.parentElement.remove()" 
-                style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; opacity: 0.7; padding: 0; margin-left: 8px;">
-          ×
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      if (document.body.contains(toast)) {
-        toast.style.animation = 'slideOutRight 0.3s ease-in forwards';
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 300);
+  switch (notification.type) {
+    case NotificationType.CONSULTATION_ANSWERED:
+    case NotificationType.CONSULTATION_UPDATED:
+      if (isChatOpen && selectedConsultant) {
+        // The chat modal will handle its own refresh
       }
-    }, 5000);
+      break;
+  }
+}
 
-    // Add CSS animations if not already added
-    if (!document.getElementById('toast-animations')) {
-      const style = document.createElement('style');
-      style.id = 'toast-animations';
-      style.textContent = `
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  };
-type NotificationType = 
-  | 'NEW_CONSULTATION'
-  | 'CONSULTATION_ANSWERED'
-  | 'CONSULTATION_UPDATED'
-  | 'CONSULTATION_CANCELLED'
-  | 'STATS_UPDATE';
-  const getNotificationTitle = (type: NotificationType): string => {
-  const titles: Record<NotificationType, string> = {
-    'NEW_CONSULTATION': 'Có câu hỏi mới',
-    'CONSULTATION_ANSWERED': 'Câu hỏi đã được trả lời',
-    'CONSULTATION_UPDATED': 'Câu hỏi đã được cập nhật',
-    'CONSULTATION_CANCELLED': 'Câu hỏi đã bị hủy',
-    'STATS_UPDATE': 'Cập nhật thống kê'
-  };
-  return titles[type] || 'Thông báo mới';
-};
+
   const getAvatarByGender = (gender: string) => {
     return gender === 'female' ? femaleAvatar : maleAvatar;
   };
@@ -241,7 +161,7 @@ type NotificationType =
           borderRadius: '8px',
           marginBottom: '16px'
         }}>
-          {error}
+          Bạn Cần Đăng Nhập Để Sử Dụng Tính Năng
         </div>
         <button
           onClick={fetchConsultants}
@@ -437,7 +357,7 @@ type NotificationType =
               }}
             >
               <span style={{ fontSize: '1.3rem' }}>💬</span>
-              {isAuthenticated ? 'Chat với tư vấn viên' : 'Đăng nhập để chat'}
+              {isAuthenticated ? 'Đặt câu hỏi với tư vấn viên' : 'Đăng nhập để chat'}
             </button>
           </div>
         ))}
