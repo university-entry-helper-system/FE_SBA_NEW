@@ -41,7 +41,7 @@ import AdminUniversityMajorPage from "../components/admin/AdminUniversityMajorPa
 import AdminUniversityAdmissionMethodPage from "../components/admin/AdminUniversityAdmissionMethodPage";
 import Majors from "../components/Majors";
 import Contact from "../components/Contact";
-import AdmissionConsulting from "../components/AdmissionConsulting";
+// import AdmissionConsulting from "../components/AdmissionConsulting";
 import UniversityScoreLookup from "../components/UniversityScoreLookup";
 import ScoreEvaluation from "../components/ScoreEvaluation";
 import PriorityScoreInfo from "../components/PriorityScoreInfo";
@@ -50,6 +50,7 @@ import Schoolarship from "../components/admin/AdminScholarship.tsx";
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
 import FAQs from "../components/admin/AdminFAQs.tsx";
+import AdminConsultantProfiles from "../components/admin/AdminConsultantProfiles.tsx";
 const UserLayout = () => {
   return (
     <>
@@ -108,7 +109,10 @@ const AppRouter = () => {
           <Route path="campuses" element={<AdminCampuses />} />
           <Route path="news" element={<AdminNews />} />
         </Route>
-
+        <Route
+          path="consultant-profiles"
+          element={<AdminConsultantProfiles />}
+        />
         {/* User Routes with UserLayout (Navbar + Footer) */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -164,7 +168,7 @@ const AppRouter = () => {
           <Route path="/score-evaluation" element={<ScoreEvaluation />} />
           <Route path="/priority-score-info" element={<PriorityScoreInfo />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/about" element={<AdmissionConsulting />} />
+          {/* <Route path="/about" element={<AdmissionConsulting />} /> */}
           {/* Other user routes */}
         </Route>
       </Routes>

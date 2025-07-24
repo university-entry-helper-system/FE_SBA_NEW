@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
 import AuthContext from "./auth-context";
+import { useContext } from 'react';
+
 import type {
   User,
   DecodedToken,
@@ -14,6 +16,15 @@ import * as authApi from "../api/auth";
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
