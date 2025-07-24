@@ -26,7 +26,7 @@ export const ImageCarousel = ({
   const defaultImages: Image[] = [
     {
       id: 1,
-      url: "https://scontent.fsgn2-6.fna.fbcdn.net/v/t39.30808-6/487772981_1056576349836827_5370816887319958777_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=127cfc&_nc_ohc=i92TapDbrfEQ7kNvwGFeTmR&_nc_oc=AdmjeCvtJv-C2ROyZMgdBUOlc1khdxc_ebwM5GuA2jCePGkLPI0I5qDj4_s5edw0ZSg&_nc_zt=23&_nc_ht=scontent.fsgn2-6.fna&_nc_gid=mbvZjsXzICeHY0Yp_Iis8g&oh=00_AfQK3aaJL6qTS2ja6ztRcl6l-_tfO7eB4CaA-RtkH54Cwg&oe=687CF2B7",
+      url: "https://nctu.edu.vn/uploads/admissions/2025_01/tuyensinh_2_thumb.jpg",
       alt: "University entrance exam preparation",
     },
     {
@@ -38,6 +38,11 @@ export const ImageCarousel = ({
       id: 3,
       url: "https://dhhp.edu.vn/admissions/admission-banner.jpg",
       alt: "Success stories",
+    },
+    {
+      id: 4,
+      url: "https://ts.huit.edu.vn/app_web/tttstt/images/slide/thong-tin-tuyen-sinh-dai-hoc-chinh-quy-nam-2025-02.6.2025-web-tuyen-sinh-11.png",
+      alt: "Tuyển sinh Đại học Nam Cần Thơ 2025",
     },
   ];
 
@@ -72,6 +77,10 @@ export const ImageCarousel = ({
     setCurrentIndex(index);
   };
 
+  // Fallback image for failed loads
+  const FALLBACK_IMAGE =
+    "https://nctu.edu.vn/uploads/admissions/2025_01/tuyensinh_2_thumb.jpg";
+
   return (
     <div className="carousel-container">
       {/* Slides */}
@@ -89,6 +98,11 @@ export const ImageCarousel = ({
                       src={slide.content.url}
                       alt={slide.content.alt}
                       className="carousel-image"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== FALLBACK_IMAGE)
+                          target.src = FALLBACK_IMAGE;
+                      }}
                     />
                     <div className="carousel-overlay"></div>
                   </div>

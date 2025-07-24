@@ -55,7 +55,7 @@ const ScoreEvaluation = () => {
           setError("Không thể tải danh sách tỉnh thành");
         }
       } catch (err) {
-        setError("Lỗi khi tải dữ liệu");
+        setError("Bạn cần đăng nhập để sử dụng tính năng này");
         console.error("Error loading data:", err);
       } finally {
         setCombinationsLoading(false);
