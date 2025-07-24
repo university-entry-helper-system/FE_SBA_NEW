@@ -1,0 +1,55 @@
+/* Chatbot floating button pulse animation */
+.chat-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: chatbot-fab-pulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes chatbot-fab-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  }
+  30% {
+    transform: scale(1.08);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+  }
+  60% {
+    transform: scale(0.97);
+    box-shadow: 0 6px 24px rgba(102, 126, 234, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  }
+}
+
+.chat-fab:hover {
+  transform: scale(1.12);
+  box-shadow: 0 16px 48px rgba(102, 126, 234, 0.6);
+}
+
+@media (max-width: 480px) {
+  .chat-fab {
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+}

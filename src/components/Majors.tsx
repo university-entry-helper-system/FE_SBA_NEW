@@ -11,13 +11,12 @@ const Majors = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredMajors, setFilteredMajors] = useState<Major[]>([]);
 
-  const pageSize = 12; // 12 items per page for better grid layout
+  const pageSize = 12;
 
   const fetchMajors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getAllMajors(currentPage, pageSize);
-
       if (response.code === 1000) {
         setMajors(response.result.items);
         setTotalPages(response.result.totalPages);
@@ -37,7 +36,6 @@ const Majors = () => {
   }, [fetchMajors]);
 
   useEffect(() => {
-    // Filter majors based on search term
     const filtered = majors.filter((major) =>
       major.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -61,9 +59,9 @@ const Majors = () => {
 
   if (loading) {
     return (
-      <div className="majors-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+      <div className="majors">
+        <div className="majors__loading">
+          <div className="majors__spinner"></div>
           <p>Đang tải danh sách ngành học...</p>
         </div>
       </div>
@@ -72,11 +70,11 @@ const Majors = () => {
 
   if (error) {
     return (
-      <div className="majors-container">
-        <div className="error-message">
-          <h2>Có lỗi xảy ra</h2>
+      <div className="majors">
+        <div className="majors__error">
+          <h2 className="majors__error-title">Có lỗi xảy ra</h2>
           <p>{error}</p>
-          <button onClick={fetchMajors} className="retry-button">
+          <button onClick={fetchMajors} className="majors__retry-btn">
             Thử lại
           </button>
         </div>
@@ -85,24 +83,25 @@ const Majors = () => {
   }
 
   return (
-    <div className="majors-container">
-      {/* Header Section */}
-      <div className="majors-header">
-        <div className="header-content">
-          <h1 className="page-title">Danh Sách Ngành Học</h1>
-          <p className="page-description">
+    <div className="majors">
+      {/* Header */}
+      <div className="majors__header">
+        <div className="majors__header-bg" />
+        <div className="majors__header-content">
+          <h1 className="majors__title">Danh Sách Ngành Học</h1>
+          <p className="majors__desc">
             Khám phá các ngành học phổ biến và tìm hiểu thông tin chi tiết về
             từng ngành
           </p>
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className="search-section">
-        <div className="search-container">
-          <div className="search-input-wrapper">
+      {/* Search */}
+      <div className="majors__search">
+        <div className="majors__search-container">
+          <div className="majors__search-input-wrapper">
             <svg
-              className="search-icon"
+              className="majors__search-icon"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -117,10 +116,14 @@ const Majors = () => {
               placeholder="Tìm kiếm ngành học..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="search-input"
+              className="majors__search-input"
             />
             {searchTerm && (
-              <button onClick={clearSearch} className="clear-search-btn">
+              <button
+                onClick={clearSearch}
+                className="majors__search-clear-btn"
+                aria-label="Xóa tìm kiếm"
+              >
                 <svg
                   width="16"
                   height="16"
@@ -138,10 +141,10 @@ const Majors = () => {
       </div>
 
       {/* Majors Grid */}
-      <div className="majors-content">
+      <div className="majors__content">
         {filteredMajors.length === 0 ? (
-          <div className="no-results">
-            <div className="no-results-icon">
+          <div className="majors__no-results">
+            <div className="majors__no-results-icon">
               <svg
                 width="64"
                 height="64"
@@ -153,20 +156,32 @@ const Majors = () => {
                 <path d="m21 21-4.35-4.35" />
               </svg>
             </div>
-            <h3>Không tìm thấy ngành học nào</h3>
-            <p>Hãy thử từ khóa khác hoặc xóa bộ lọc tìm kiếm</p>
+            <h3 className="majors__no-results-title">
+              Không tìm thấy ngành học nào
+            </h3>
+            <p className="majors__no-results-desc">
+              Hãy thử từ khóa khác hoặc xóa bộ lọc tìm kiếm
+            </p>
             {searchTerm && (
-              <button onClick={clearSearch} className="clear-filter-btn">
+              <button
+                onClick={clearSearch}
+                className="majors__clear-filter-btn"
+              >
                 Xóa bộ lọc
               </button>
             )}
           </div>
         ) : (
-          <div className="majors-grid">
+          <div className="majors__grid">
             {filteredMajors.map((major) => (
-              <div key={major.id} className="major-card">
-                <div className="major-card-header">
-                  <div className="major-icon">
+              <div
+                key={major.id}
+                className={`majors__card majors__card--${
+                  major.status === "active" ? "active" : "inactive"
+                }`}
+              >
+                <div className="majors__card-header">
+                  <div className="majors__card-icon">
                     <svg
                       width="24"
                       height="24"
@@ -178,32 +193,15 @@ const Majors = () => {
                       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                     </svg>
                   </div>
-                  <span
-                    className={`status-badge ${
-                      major.status === "active" ? "active" : "inactive"
-                    }`}
-                  >
+                  <span className="majors__card-status">
                     {major.status === "active" ? "Đang mở" : "Tạm dừng"}
                   </span>
                 </div>
-                <div className="major-card-content">
-                  <h3 className="major-name">{major.name}</h3>
-                  <p className="major-id">Mã ngành: {major.id}</p>
+                <div className="majors__card-content">
+                  <h3 className="majors__card-name">{major.name}</h3>
+                  <p className="majors__card-id">Mã ngành: {major.id}</p>
                 </div>
-                <div className="major-card-footer">
-                  <button className="view-detail-btn">
-                    Xem chi tiết
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <polyline points="9,18 15,12 9,6" />
-                    </svg>
-                  </button>
-                </div>
+                <div className="majors__card-footer"></div>
               </div>
             ))}
           </div>
@@ -212,12 +210,12 @@ const Majors = () => {
 
       {/* Pagination */}
       {!searchTerm && totalPages > 1 && (
-        <div className="pagination-section">
-          <div className="pagination-container">
+        <div className="majors__pagination">
+          <div className="majors__pagination-container">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 0}
-              className="pagination-btn prev-btn"
+              className="majors__pagination-btn majors__pagination-btn--prev"
             >
               <svg
                 width="16"
@@ -231,11 +229,11 @@ const Majors = () => {
               Trang trước
             </button>
 
-            <div className="pagination-info">
-              <span className="page-info">
+            <div className="majors__pagination-info">
+              <span className="majors__page-info">
                 Trang {currentPage + 1} / {totalPages}
               </span>
-              <div className="page-numbers">
+              <div className="majors__page-numbers">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
                   if (totalPages <= 5) {
@@ -247,13 +245,14 @@ const Majors = () => {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-
                   return (
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`page-number-btn ${
-                        currentPage === pageNum ? "active" : ""
+                      className={`majors__page-number-btn${
+                        currentPage === pageNum
+                          ? " majors__page-number-btn--active"
+                          : ""
                       }`}
                     >
                       {pageNum + 1}
@@ -266,7 +265,7 @@ const Majors = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages - 1}
-              className="pagination-btn next-btn"
+              className="majors__pagination-btn majors__pagination-btn--next"
             >
               Trang sau
               <svg
