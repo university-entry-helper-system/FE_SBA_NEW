@@ -4,7 +4,7 @@ import * as universityApi from "../../api/university";
 import type { UniversityListItem, University } from "../../types/university";
 import Select from "react-select";
 import type { MultiValue } from "react-select";
-import {getTopUniversityOnDate} from "../../api/stats.ts";
+import {getTopUniversityToDay} from "../../api/stats.ts";
 import { useNavigate } from "react-router-dom";
 
 const defaultForm = {
@@ -95,8 +95,8 @@ const AdminUniversities: React.FC = () => {
       const items = Array.isArray(res.data?.result?.items)
         ? res.data.result.items
         : [];
-      const today = new Date().toISOString().split("T")[0]; // "2025-07-21"
-      const hotsearch = await getTopUniversityOnDate({ date: today });
+      // const today = new Date().toISOString().split("T")[0]; // "2025-07-21"
+      const hotsearch = await getTopUniversityToDay();
       setTopUniversity(hotsearch.data.result);
       setUniversities(items);
       setTotalPages(res.data.result.totalPages ?? 1);

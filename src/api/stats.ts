@@ -66,6 +66,8 @@ export const getSearchStatsByUniversity = (data: { from: string; to: string }) =
 export const getTopUniversityOnDate = (data: { date: string }) =>
     axios.post("/stats/searcher/top-on-date", data);
 
+export const getTopUniversityToDay = () =>
+    axios.post("/stats/searcher/top-today");
 /**
  * Trường được tìm kiếm nhiều nhất trong khoảng thời gian
  * @param data { from: "yyyy-MM-dd", to: "yyyy-MM-dd" }

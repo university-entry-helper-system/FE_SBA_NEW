@@ -46,6 +46,8 @@ import UniversityScoreLookup from "../components/UniversityScoreLookup";
 import ScoreEvaluation from "../components/ScoreEvaluation";
 import PriorityScoreInfo from "../components/PriorityScoreInfo";
 import Schoolarship from "../components/admin/AdminScholarship.tsx";
+import SchoolarshipPage from "../components/ScholarshipReview.tsx";
+import UserDashBoard from "../components/UserProfilePage.tsx";
 
 import VisitChart from "../components/admin/VisitChart.tsx";
 import SearchChart from "../components/admin/SearchChart.tsx";
@@ -125,6 +127,7 @@ const AppRouter = () => {
             element={<AdminConsultantProfiles />}
           />
         </Route>
+        <Route path="consultant-profiles" element={<AdminConsultantProfiles />} />
 
         {/* Consultant Route - Standalone without layout */}
         <Route
@@ -156,6 +159,8 @@ const AppRouter = () => {
           <Route path="/questions" element={<Question />} />
           <Route path="/news" element={<NewsList />} />
           <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/scholarship-review" element={<SchoolarshipPage />} />
+          <Route path="/user-profile/:scholarshipId" element={<UserDashBoard />} />
           <Route
             path="/graduation-score"
             element={<GraduationScoreCalculator />}

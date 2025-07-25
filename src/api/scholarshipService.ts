@@ -18,19 +18,19 @@ export const deleteScholarship = (id: number) =>
     axios.delete<void>(`/scholarships/${id}`);
 
 export const getScholarshipById = (id: number) =>
-    axios.get<ScholarshipResponse>(`/scholarships/${id}`);
+    axios.get<ApiResponse<ScholarshipResponse>>(`/scholarships/${id}`);
 
 export const getAllScholarships = () =>
     axios.get<ApiResponse<ScholarshipResponse[]>>("/scholarships");
 
 export const getScholarshipsByUniversity = (universityId: number) =>
-    axios.get<ScholarshipResponse[]>(`/scholarships/by-university/${universityId}`);
+    axios.get<ApiResponse<ScholarshipResponse[]>>(`/scholarships/by-university/${universityId}`);
 
 export const getScholarshipsByValueType = (type: ValueType) =>
-    axios.get<ScholarshipResponse[]>(`/scholarships/by-value/${type}`);
+    axios.get<ApiResponse<ScholarshipResponse[]>>(`/scholarships/by-value/${type}`);
 
 export const getScholarshipsByEligibilityType = (type: EligibilityType) =>
-    axios.get<ScholarshipResponse[]>(`/scholarships/by-eligibility/${type}`);
+    axios.get<ApiResponse<ScholarshipResponse[]>>(`/scholarships/by-eligibility/${type}`);
 
 export const searchScholarships = (data: ScholarshipSearchRequest) =>
     axios.post<ApiResponse<ScholarshipResponse[]>>("/scholarships/search", data);

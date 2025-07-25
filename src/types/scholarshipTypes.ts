@@ -47,4 +47,6 @@ export interface ApiResponse<T> {
     message: string;
     result: T;
 }
-
+export interface Scholarship {
+    code: number;
+}

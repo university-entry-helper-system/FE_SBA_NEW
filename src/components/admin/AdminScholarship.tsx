@@ -235,6 +235,9 @@ const AdminScholarship: React.FC = () => {
                 if (mode === "create") {
                     const res = await scholarshipApi.createScholarship(valuesToSend);
                     setScholarships([{ ...res.data.result, universities: res.data.result.universities || [] }, ...scholarships]);
+                    console.log(res.data.result.universities);
+                    console.log(valuesToSend);
+                    console.log(scholarships);
 
                 } else if (mode === "edit" && selectedScholarship) {
                     await scholarshipApi.updateScholarship(selectedScholarship.id, valuesToSend);
@@ -252,9 +255,7 @@ const AdminScholarship: React.FC = () => {
                             item.id === selectedScholarship.id ? { ...item, ...valuesToSend,universities: updatedUniversities  } : item
                         )
                     );
-                    console.log(selectedScholarship);
-                    console.log(updatedUniversities);
-                    console.log(scholarships);
+
                 }
                 setSuccess(
                     mode === "create" ? "Tạo học bổng thành công!" : "Cập nhật học bổng thành công!"
@@ -346,6 +347,7 @@ const AdminScholarship: React.FC = () => {
     };
 
     const openUniversitiesDialog = (universities: UniversityShort[]) => {
+        console.log("Selected universities:", universities);
         setSelectedUniversities(universities);
         setShowUniversitiesDialog(true);
     };
@@ -354,6 +356,8 @@ const AdminScholarship: React.FC = () => {
         setShowUniversitiesDialog(false);
         setSelectedUniversities([]);
     };
+
+
 
     // Render
     return (
@@ -387,6 +391,9 @@ const AdminScholarship: React.FC = () => {
                     Thêm học bổng
                 </button>
             </div>
+
+
+
 
             {/* Advanced Filter UI */}
             <div className="admin-news-filter-row">
