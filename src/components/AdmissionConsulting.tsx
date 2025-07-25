@@ -3,7 +3,7 @@ import { getConsultantProfiles } from '../api/consultant';
 import type { ConsultantProfile } from '../types/consultant';
 import ConsultationChatModal from './ConsultationChatModal';
 import NotificationPanel from './NotificationPanel';
-// import { useConsultationWebSocket, useWebSocketCleanup } from '../hooks/useConsultationWebSocket';
+import { useConsultationWebSocket, useWebSocketCleanup } from '../hooks/useConsultationWebSocket';
 import { WebSocketNotification } from '../types/consultation';
 import maleAvatar from '../assets/3270921.png';
 import femaleAvatar from '../assets/3270920.png';
